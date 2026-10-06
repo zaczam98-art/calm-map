@@ -1,0 +1,970 @@
+[
+ {
+  "id": "P001",
+  "name": "DDP(동대문디자인플라자)",
+  "lat": 37.566988,
+  "lng": 127.010289,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P002",
+  "name": "DMC(디지털미디어시티)",
+  "lat": 37.579278,
+  "lng": 126.891794,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P003",
+  "name": "가락시장",
+  "lat": 37.493468,
+  "lng": 127.111896,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P004",
+  "name": "가로수길",
+  "lat": 37.521389,
+  "lng": 127.023572,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P005",
+  "name": "가산디지털단지역",
+  "lat": 37.48089,
+  "lng": 126.880107,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P006",
+  "name": "강남 MICE 관광특구",
+  "lat": 37.511,
+  "lng": 127.060063,
+  "category": "관광특구",
+  "tracked": false
+ },
+ {
+  "id": "P007",
+  "name": "강남역",
+  "lat": 37.498857,
+  "lng": 127.028134,
+  "category": "인구밀집지역",
+  "tracked": true
+ },
+ {
+  "id": "P008",
+  "name": "강서한강공원",
+  "lat": 37.586514,
+  "lng": 126.818549,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P009",
+  "name": "건대입구역",
+  "lat": 37.539967,
+  "lng": 127.068195,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P010",
+  "name": "경복궁",
+  "lat": 37.579876,
+  "lng": 126.976765,
+  "category": "고궁·문화유산",
+  "tracked": true
+ },
+ {
+  "id": "P011",
+  "name": "고덕역",
+  "lat": 37.553455,
+  "lng": 127.154872,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P012",
+  "name": "고속터미널역",
+  "lat": 37.504814,
+  "lng": 127.005855,
+  "category": "인구밀집지역",
+  "tracked": true
+ },
+ {
+  "id": "P013",
+  "name": "고척돔",
+  "lat": 37.497672,
+  "lng": 126.867023,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P014",
+  "name": "광나루한강공원",
+  "lat": 37.553988,
+  "lng": 127.12982,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P015",
+  "name": "광장(전통)시장",
+  "lat": 37.570003,
+  "lng": 126.999904,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P016",
+  "name": "광화문·덕수궁",
+  "lat": 37.570931,
+  "lng": 126.977186,
+  "category": "고궁·문화유산",
+  "tracked": true
+ },
+ {
+  "id": "P017",
+  "name": "광화문광장",
+  "lat": 37.573409,
+  "lng": 126.976921,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P018",
+  "name": "교대역",
+  "lat": 37.492201,
+  "lng": 127.013958,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P019",
+  "name": "구로디지털단지역",
+  "lat": 37.483878,
+  "lng": 126.896183,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P020",
+  "name": "구로역",
+  "lat": 37.50235,
+  "lng": 126.882122,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P021",
+  "name": "국립중앙박물관·용산가족공원",
+  "lat": 37.522768,
+  "lng": 126.981427,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P022",
+  "name": "군자역",
+  "lat": 37.556316,
+  "lng": 127.080195,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P023",
+  "name": "김포공항",
+  "lat": 37.562272,
+  "lng": 126.802599,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P024",
+  "name": "난지한강공원",
+  "lat": 37.566502,
+  "lng": 126.877328,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P025",
+  "name": "남대문시장",
+  "lat": 37.559915,
+  "lng": 126.978527,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P026",
+  "name": "남산공원",
+  "lat": 37.551577,
+  "lng": 126.993762,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P027",
+  "name": "노들섬",
+  "lat": 37.517557,
+  "lng": 126.958661,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P028",
+  "name": "노량진",
+  "lat": 37.513894,
+  "lng": 126.944056,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P029",
+  "name": "대림역",
+  "lat": 37.492667,
+  "lng": 126.895543,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P030",
+  "name": "덕수궁길·정동길",
+  "lat": 37.566351,
+  "lng": 126.971785,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P031",
+  "name": "동대문 관광특구",
+  "lat": 37.567311,
+  "lng": 127.011023,
+  "category": "관광특구",
+  "tracked": false
+ },
+ {
+  "id": "P032",
+  "name": "동대문역",
+  "lat": 37.571481,
+  "lng": 127.009654,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P033",
+  "name": "뚝섬역",
+  "lat": 37.548291,
+  "lng": 127.046137,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P034",
+  "name": "뚝섬한강공원",
+  "lat": 37.529184,
+  "lng": 127.071515,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P035",
+  "name": "망원한강공원",
+  "lat": 37.553281,
+  "lng": 126.899268,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P036",
+  "name": "명동 관광특구",
+  "lat": 37.564149,
+  "lng": 126.981851,
+  "category": "관광특구",
+  "tracked": true
+ },
+ {
+  "id": "P037",
+  "name": "미아사거리역",
+  "lat": 37.612195,
+  "lng": 127.030741,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P038",
+  "name": "반포한강공원",
+  "lat": 37.509825,
+  "lng": 126.994675,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P039",
+  "name": "발산역",
+  "lat": 37.559151,
+  "lng": 126.839173,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P040",
+  "name": "보라매공원",
+  "lat": 37.492963,
+  "lng": 126.920056,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P041",
+  "name": "보신각",
+  "lat": 37.570585,
+  "lng": 126.983411,
+  "category": "고궁·문화유산",
+  "tracked": false
+ },
+ {
+  "id": "P042",
+  "name": "북서울꿈의숲",
+  "lat": 37.621852,
+  "lng": 127.041116,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P043",
+  "name": "북창동 먹자골목",
+  "lat": 37.562264,
+  "lng": 126.978498,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P044",
+  "name": "북촌한옥마을",
+  "lat": 37.582236,
+  "lng": 126.984002,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P045",
+  "name": "사당역",
+  "lat": 37.477931,
+  "lng": 126.981266,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P046",
+  "name": "삼각지역",
+  "lat": 37.535341,
+  "lng": 126.973884,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P047",
+  "name": "서대문독립공원",
+  "lat": 37.574091,
+  "lng": 126.956607,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P048",
+  "name": "서리풀공원·몽마르뜨공원",
+  "lat": 37.491583,
+  "lng": 127.002683,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P049",
+  "name": "서울 암사동 유적",
+  "lat": 37.560632,
+  "lng": 127.130759,
+  "category": "고궁·문화유산",
+  "tracked": true
+ },
+ {
+  "id": "P050",
+  "name": "서울대공원",
+  "lat": 37.429007,
+  "lng": 127.017156,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P051",
+  "name": "서울대입구역",
+  "lat": 37.480613,
+  "lng": 126.953063,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P052",
+  "name": "서울숲공원",
+  "lat": 37.542963,
+  "lng": 127.037648,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P053",
+  "name": "서울식물원·마곡나루역",
+  "lat": 37.567597,
+  "lng": 126.831061,
+  "category": "인구밀집지역",
+  "tracked": true
+ },
+ {
+  "id": "P054",
+  "name": "서울역",
+  "lat": 37.556594,
+  "lng": 126.973028,
+  "category": "인구밀집지역",
+  "tracked": true
+ },
+ {
+  "id": "P055",
+  "name": "서촌",
+  "lat": 37.580367,
+  "lng": 126.969575,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P056",
+  "name": "선릉역",
+  "lat": 37.506054,
+  "lng": 127.049807,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P057",
+  "name": "성수카페거리",
+  "lat": 37.542967,
+  "lng": 127.056596,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P058",
+  "name": "성신여대입구역",
+  "lat": 37.592393,
+  "lng": 127.016865,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P059",
+  "name": "송리단길·호수단길",
+  "lat": 37.508047,
+  "lng": 127.106314,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P060",
+  "name": "송현녹지광장",
+  "lat": 37.577857,
+  "lng": 126.983711,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P061",
+  "name": "수유역",
+  "lat": 37.64106,
+  "lng": 127.025722,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P062",
+  "name": "숭례문",
+  "lat": 37.560486,
+  "lng": 126.975729,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P063",
+  "name": "시의회 앞",
+  "lat": 37.567069,
+  "lng": 126.976939,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P064",
+  "name": "신논현역·논현역",
+  "lat": 37.50808,
+  "lng": 127.023406,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P065",
+  "name": "신도림역",
+  "lat": 37.509099,
+  "lng": 126.890205,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P066",
+  "name": "신림역",
+  "lat": 37.484677,
+  "lng": 126.929337,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P067",
+  "name": "신정네거리역",
+  "lat": 37.521306,
+  "lng": 126.855275,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P068",
+  "name": "신촌 스타광장",
+  "lat": 37.556509,
+  "lng": 126.936931,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P069",
+  "name": "신촌·이대역",
+  "lat": 37.557035,
+  "lng": 126.938972,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P070",
+  "name": "쌍문역",
+  "lat": 37.647762,
+  "lng": 127.033089,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P071",
+  "name": "아차산",
+  "lat": 37.566842,
+  "lng": 127.102811,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P072",
+  "name": "안양천",
+  "lat": 37.518668,
+  "lng": 126.879697,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P073",
+  "name": "압구정로데오거리",
+  "lat": 37.525495,
+  "lng": 127.038734,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P074",
+  "name": "양재역",
+  "lat": 37.485339,
+  "lng": 127.033972,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P075",
+  "name": "양화한강공원",
+  "lat": 37.541305,
+  "lng": 126.898185,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P076",
+  "name": "어린이대공원",
+  "lat": 37.549062,
+  "lng": 127.081361,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P077",
+  "name": "여의도",
+  "lat": 37.525022,
+  "lng": 126.925531,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P078",
+  "name": "여의도한강공원",
+  "lat": 37.528987,
+  "lng": 126.928223,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P079",
+  "name": "여의서로",
+  "lat": 37.532701,
+  "lng": 126.914584,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P080",
+  "name": "역삼역",
+  "lat": 37.500392,
+  "lng": 127.038184,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P081",
+  "name": "연남동",
+  "lat": 37.561618,
+  "lng": 126.92234,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P082",
+  "name": "연신내역",
+  "lat": 37.618659,
+  "lng": 126.920725,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P083",
+  "name": "영등포 타임스퀘어",
+  "lat": 37.516863,
+  "lng": 126.906151,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P084",
+  "name": "오목교역·목동운동장",
+  "lat": 37.528811,
+  "lng": 126.876641,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P085",
+  "name": "올림픽공원",
+  "lat": 37.519408,
+  "lng": 127.122411,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P086",
+  "name": "왕십리역",
+  "lat": 37.562216,
+  "lng": 127.0389,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P087",
+  "name": "용리단길",
+  "lat": 37.531186,
+  "lng": 126.971294,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P088",
+  "name": "용산역",
+  "lat": 37.530256,
+  "lng": 126.960822,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P089",
+  "name": "월드컵공원",
+  "lat": 37.570188,
+  "lng": 126.884201,
+  "category": "공원",
+  "tracked": true
+ },
+ {
+  "id": "P090",
+  "name": "응봉산",
+  "lat": 37.548215,
+  "lng": 127.030466,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P091",
+  "name": "이촌한강공원",
+  "lat": 37.519401,
+  "lng": 126.966651,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P092",
+  "name": "이태원 관광특구",
+  "lat": 37.534438,
+  "lng": 126.994373,
+  "category": "관광특구",
+  "tracked": false
+ },
+ {
+  "id": "P093",
+  "name": "이태원 앤틱가구거리",
+  "lat": 37.532231,
+  "lng": 126.993918,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P094",
+  "name": "이태원역",
+  "lat": 37.534186,
+  "lng": 126.993048,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P095",
+  "name": "익선동",
+  "lat": 37.572661,
+  "lng": 126.989631,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P096",
+  "name": "인사동",
+  "lat": 37.573863,
+  "lng": 126.986063,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P097",
+  "name": "잠실 관광특구",
+  "lat": 37.516479,
+  "lng": 127.115274,
+  "category": "관광특구",
+  "tracked": true
+ },
+ {
+  "id": "P098",
+  "name": "잠실롯데타워·석촌호수",
+  "lat": 37.511559,
+  "lng": 127.103306,
+  "category": "발달상권",
+  "tracked": true
+ },
+ {
+  "id": "P099",
+  "name": "잠실새내역",
+  "lat": 37.510413,
+  "lng": 127.082656,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P100",
+  "name": "잠실역",
+  "lat": 37.511997,
+  "lng": 127.100367,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P101",
+  "name": "잠실종합운동장",
+  "lat": 37.514522,
+  "lng": 127.073648,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P102",
+  "name": "잠실한강공원",
+  "lat": 37.519234,
+  "lng": 127.084298,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P103",
+  "name": "잠원한강공원",
+  "lat": 37.52381,
+  "lng": 127.014728,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P104",
+  "name": "장지역",
+  "lat": 37.47875,
+  "lng": 127.123275,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P105",
+  "name": "장한평역",
+  "lat": 37.561804,
+  "lng": 127.064786,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P106",
+  "name": "종로·청계 관광특구",
+  "lat": 37.570002,
+  "lng": 126.99737,
+  "category": "관광특구",
+  "tracked": false
+ },
+ {
+  "id": "P107",
+  "name": "창덕궁·종묘",
+  "lat": 37.578696,
+  "lng": 126.993353,
+  "category": "고궁·문화유산",
+  "tracked": true
+ },
+ {
+  "id": "P108",
+  "name": "창동 신경제 중심지",
+  "lat": 37.656148,
+  "lng": 127.054706,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P109",
+  "name": "천호역",
+  "lat": 37.539239,
+  "lng": 127.125013,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P110",
+  "name": "청계산",
+  "lat": 37.440739,
+  "lng": 127.050018,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P111",
+  "name": "청담동 명품거리",
+  "lat": 37.525832,
+  "lng": 127.043765,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P112",
+  "name": "청량리 제기동 일대 전통시장",
+  "lat": 37.58083,
+  "lng": 127.039981,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P113",
+  "name": "총신대입구(이수)역",
+  "lat": 37.486003,
+  "lng": 126.981042,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P114",
+  "name": "충정로역",
+  "lat": 37.559696,
+  "lng": 126.963691,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P115",
+  "name": "합정역",
+  "lat": 37.549376,
+  "lng": 126.911735,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P116",
+  "name": "해방촌·경리단길",
+  "lat": 37.542371,
+  "lng": 126.987183,
+  "category": "발달상권",
+  "tracked": false
+ },
+ {
+  "id": "P117",
+  "name": "혜화역",
+  "lat": 37.582482,
+  "lng": 127.001764,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P118",
+  "name": "홍대 관광특구",
+  "lat": 37.553919,
+  "lng": 126.921274,
+  "category": "관광특구",
+  "tracked": true
+ },
+ {
+  "id": "P119",
+  "name": "홍대입구역(2호선)",
+  "lat": 37.556762,
+  "lng": 126.923008,
+  "category": "인구밀집지역",
+  "tracked": false
+ },
+ {
+  "id": "P120",
+  "name": "홍제폭포",
+  "lat": 37.580788,
+  "lng": 126.936983,
+  "category": "공원",
+  "tracked": false
+ },
+ {
+  "id": "P121",
+  "name": "회기역",
+  "lat": 37.59054,
+  "lng": 127.056162,
+  "category": "인구밀집지역",
+  "tracked": false
+ }
+]

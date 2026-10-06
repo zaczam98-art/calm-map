@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "calm-map",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "kv_namespaces": [
+    { "binding": "CALM_KV", "id": "REPLACE_WITH_KV_ID" }
+  ],
+  "vars": {
+    "DATA_URL": "https://raw.githubusercontent.com/REPLACE_USER/calm-map/data/snapshot.json",
+    "GEMINI_MODEL": "gemini-2.5-flash-lite",
+    "CARD_DAILY_LIMIT": "300"
+  },
+  "observability": { "enabled": true }
+}

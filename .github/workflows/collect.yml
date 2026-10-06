@@ -1,0 +1,36 @@
+name: collect-seoul-citydata
+
+on:
+  schedule:
+    - cron: '7 * * * *' # 매시 7분(UTC). 30곳 × 24회 = 720회/일
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: checkout data branch
+        run: |
+          git fetch origin data:data || true
+          if git show-ref --quiet refs/heads/data; then git show data:snapshot.json > snapshot.json || true; fi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: collect
+        env:
+          SEOUL_KEY: ${{ secrets.SEOUL_KEY }}
+        run: python scripts/collect_seoul.py snapshot.json
+      - name: push to data branch
+        run: |
+          mkdir -p /tmp/data && cp snapshot.json /tmp/data/
+          git config user.name "calm-map-bot"
+          git config user.email "bot@users.noreply.github.com"
+          if git show-ref --quiet refs/heads/data; then git checkout data; else git checkout --orphan data && git rm -rf . >/dev/null 2>&1 || true; fi
+          cp /tmp/data/snapshot.json snapshot.json
+          git add snapshot.json
+          git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no change"
+          git push origin data
