@@ -28,9 +28,21 @@ export interface CardDraft {
 export const FORBIDDEN = [
   '장애', '자폐', '진단', '증상', '치료', '환자',
   '못 가', '못가', '가면 안', '위험', '절대', '금지', '경고', '사고',
-  '입구는', '왼쪽', '오른쪽', '직진', '층에', '엘리베이터', '원', '할인', '영업시간', '휴무',
+  '입구는', '왼쪽', '오른쪽', '직진', '층에', '엘리베이터', '할인', '영업시간', '휴무',
   '해라', '하지 마', '마라', '해야 한다', '해야한다',
 ]
+
+/** 가격 언급(숫자+원, 천원·만원). '원' 한 글자로 막으면 '공원'까지 걸리므로 패턴으로 검사한다. */
+export const FORBIDDEN_PATTERNS: RegExp[] = [/\d\s*원/, /(천|만)\s*원/]
+
+function hasForbidden(text: string): string | null {
+  for (const f of FORBIDDEN) if (text.includes(f)) return f
+  for (const re of FORBIDDEN_PATTERNS) {
+    const m = text.match(re)
+    if (m) return m[0]
+  }
+  return null
+}
 
 export const MAX_STEP_LEN = 28
 export const MAX_LINE_LEN = 30
@@ -49,13 +61,15 @@ export function validateCard(c: unknown): { ok: boolean; reasons: string[]; card
     if (!(CARD_ICONS as readonly string[]).includes(s.icon)) reasons.push(`${i + 1}단계 아이콘 '${s.icon}'은 허용 목록에 없음`)
     if (s.text.length > MAX_STEP_LEN) reasons.push(`${i + 1}단계 글자 수 초과(${s.text.length})`)
     if (!/(요|어요|아요|해요|예요|에요)\.?$/.test(s.text.trim())) reasons.push(`${i + 1}단계가 '~요' 서술로 끝나지 않음`)
-    for (const f of FORBIDDEN) if (s.text.includes(f)) reasons.push(`${i + 1}단계 금지어 '${f}'`)
+    const bad = hasForbidden(s.text)
+    if (bad) reasons.push(`${i + 1}단계 금지어 '${bad}'`)
   })
   for (const [k, v] of [['prep', d.prep], ['whenHard', d.whenHard]] as const) {
     if (typeof v !== 'string' || v.length === 0) reasons.push(`${k} 없음`)
     else {
       if (v.length > MAX_LINE_LEN) reasons.push(`${k} 글자 수 초과(${v.length})`)
-      for (const f of FORBIDDEN) if (v.includes(f)) reasons.push(`${k} 금지어 '${f}'`)
+      const bad = hasForbidden(v)
+      if (bad) reasons.push(`${k} 금지어 '${bad}'`)
     }
   }
   if (reasons.length) return { ok: false, reasons }
