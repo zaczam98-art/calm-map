@@ -3,7 +3,7 @@
 사용: SEOUL_KEY=발급키 python scripts/collect_seoul.py [출력경로]
 키가 없으면 'sample' 키로 광화문·덕수궁만 받는다(시험용).
 """
-import json, os, sys, time, urllib.parse, urllib.request
+import datetime, json, os, sys, time, urllib.parse, urllib.request, zoneinfo
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEY = os.environ.get('SEOUL_KEY', 'sample')
@@ -35,7 +35,7 @@ def fetch(name: str):
             fcst.append({'time': f['FCST_TIME'], 'level': f['FCST_CONGEST_LVL'], 'min': int(f['FCST_PPLTN_MIN']), 'max': int(f['FCST_PPLTN_MAX'])})
     return {'live': live, 'fcst': fcst}
 
-out = {'updatedAt': time.strftime('%Y-%m-%d %H:%M'), 'source': 'seoul', 'places': {}}
+out = {'updatedAt': datetime.datetime.now(zoneinfo.ZoneInfo('Asia/Seoul')).strftime('%Y-%m-%d %H:%M'), 'source': 'seoul', 'places': {}}  # 러너가 UTC라서 KST로 고정
 fails = []
 for p in places:
     try:
