@@ -12,7 +12,7 @@
     { "binding": "CALM_KV", "id": "REPLACE_WITH_KV_ID" }
   ],
   "vars": {
-    "DATA_URL": "https://raw.githubusercontent.com/REPLACE_USER/calm-map/data/snapshot.json",
+    "DATA_URL": "https://raw.githubusercontent.com/zaczam98-art/calm-map/data/snapshot.json",
     "GEMINI_MODEL": "gemini-2.5-flash-lite",
     "CARD_DAILY_LIMIT": "300"
   },
