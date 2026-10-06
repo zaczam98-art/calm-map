@@ -122,7 +122,7 @@ async function card(request: Request, env: Env): Promise<Response> {
     'prep(준비물 한 줄 30자 이내), whenHard(힘들 때 할 일 한 줄 30자 이내)도 쓰세요.',
   ].filter(Boolean).join('\n')
 
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
+  const model = env.GEMINI_MODEL || 'gemini-flash-lite-latest'
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

@@ -11,7 +11,7 @@ if (!KEY) {
   console.error('GEMINI_KEY 환경변수가 필요합니다.')
   process.exit(1)
 }
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
+const MODEL = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
 const LEVEL_KO: Record<string, string> = { calm: '무던함(사람이 적고 조용함)', mid: '보통', busy: '붐빔(사람이 많고 소리가 큼)' }
 
 const places = (JSON.parse(readFileSync('src/data/places.json', 'utf-8')) as { name: string; category: string; tracked: boolean }[]).filter((p) => p.tracked)
