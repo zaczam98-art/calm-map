@@ -31,17 +31,26 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
       mapRef.current = m
     }
     const map = mapRef.current
-    // 컨테이너 크기가 마운트 뒤에 정해지므로 크기를 다시 계산하고 중심을 되돌린다(StrictMode 재실행에도 동작)
+    // 컨테이너 크기가 마운트 뒤(또는 숨겨진 창이 보일 때) 정해지므로, 사용자가 지도를 움직이기 전까지는
+    // 크기가 바뀔 때마다 크기를 다시 계산하고 서울 중심으로 되돌린다.
+    let userMoved = false
+    const markMoved = () => { userMoved = true }
+    map.on('dragstart zoomstart', markMoved)
     const fix = () => {
-      map.invalidateSize()
-      map.setView([37.5565, 126.98], map.getZoom())
+      map.invalidateSize({ animate: false })
+      if (!userMoved) map.setView([37.5565, 126.98], map.getZoom(), { animate: false })
     }
-    const t = setTimeout(fix, 50)
-    const ro = new ResizeObserver(() => map.invalidateSize())
+    const timers = [50, 300, 1000, 2500].map((ms) => setTimeout(fix, ms))
+    const ro = new ResizeObserver(fix)
     ro.observe(document.getElementById('map')!)
+    window.addEventListener('resize', fix)
+    document.addEventListener('visibilitychange', fix)
     return () => {
-      clearTimeout(t)
+      timers.forEach(clearTimeout)
       ro.disconnect()
+      window.removeEventListener('resize', fix)
+      document.removeEventListener('visibilitychange', fix)
+      map.off('dragstart zoomstart', markMoved)
     }
   }, [])
 
