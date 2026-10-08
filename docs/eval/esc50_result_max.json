@@ -1,0 +1,5814 @@
+{
+ "dataset": "ESC-50 (K. J. Piczak, 2015), https://github.com/karolpiczak/ESC-50, CC BY-NC 3.0",
+ "evaluatedAt": "2026-10-08T06:07:01.787Z",
+ "method": "음원 하나를 0.975초 창으로 나눠 YAMNet으로 분류하고, 태그별 (확률×강도) 평균이 가장 큰 태그를 그 음원의 예측으로 본다. 태그 확률 집계는 'max'(sum: 분류 확률 합, max: 최대 분류 확률). 정답은 scripts/esc50_tag_map.json의 정답표다.",
+ "tagAgg": "max",
+ "limitPerClass": null,
+ "clips": 920,
+ "windows": 4600,
+ "overall": {
+  "n": 920,
+  "correct": 747
+ },
+ "byTag": {
+  "sudden": {
+   "n": 360,
+   "correct": 290
+  },
+  "ambient": {
+   "n": 200,
+   "correct": 146
+  },
+  "machine": {
+   "n": 240,
+   "correct": 223
+  },
+  "crowd": {
+   "n": 80,
+   "correct": 48
+  },
+  "music": {
+   "n": 40,
+   "correct": 40
+  }
+ },
+ "confusion": {
+  "sudden": {
+   "sudden": 290,
+   "ambient": 3,
+   "speech": 3,
+   "machine": 53,
+   "crowd": 2,
+   "music": 9
+  },
+  "ambient": {
+   "sudden": 10,
+   "ambient": 146,
+   "machine": 41,
+   "music": 2,
+   "speech": 1
+  },
+  "machine": {
+   "machine": 223,
+   "sudden": 7,
+   "music": 4,
+   "ambient": 6
+  },
+  "crowd": {
+   "crowd": 48,
+   "speech": 26,
+   "sudden": 4,
+   "music": 1,
+   "ambient": 1
+  },
+  "music": {
+   "music": 40
+  }
+ },
+ "byClass": {
+  "dog": {
+   "n": 40,
+   "correct": 40,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 40
+   }
+  },
+  "chirping_birds": {
+   "n": 40,
+   "correct": 37,
+   "truth": "ambient",
+   "predicted": {
+    "sudden": 1,
+    "ambient": 37,
+    "machine": 1,
+    "music": 1
+   }
+  },
+  "vacuum_cleaner": {
+   "n": 40,
+   "correct": 37,
+   "truth": "machine",
+   "predicted": {
+    "machine": 37,
+    "sudden": 3
+   }
+  },
+  "thunderstorm": {
+   "n": 40,
+   "correct": 40,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 40
+   }
+  },
+  "clapping": {
+   "n": 40,
+   "correct": 33,
+   "truth": "crowd",
+   "predicted": {
+    "crowd": 33,
+    "sudden": 2,
+    "speech": 4,
+    "ambient": 1
+   }
+  },
+  "fireworks": {
+   "n": 40,
+   "correct": 38,
+   "truth": "sudden",
+   "predicted": {
+    "ambient": 2,
+    "sudden": 38
+   }
+  },
+  "chainsaw": {
+   "n": 40,
+   "correct": 13,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 13,
+    "machine": 27
+   }
+  },
+  "airplane": {
+   "n": 40,
+   "correct": 36,
+   "truth": "machine",
+   "predicted": {
+    "machine": 36,
+    "music": 1,
+    "sudden": 2,
+    "ambient": 1
+   }
+  },
+  "train": {
+   "n": 40,
+   "correct": 40,
+   "truth": "machine",
+   "predicted": {
+    "machine": 40
+   }
+  },
+  "church_bells": {
+   "n": 40,
+   "correct": 40,
+   "truth": "music",
+   "predicted": {
+    "music": 40
+   }
+  },
+  "clock_alarm": {
+   "n": 40,
+   "correct": 36,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 36,
+    "music": 4
+   }
+  },
+  "wind": {
+   "n": 40,
+   "correct": 13,
+   "truth": "ambient",
+   "predicted": {
+    "ambient": 13,
+    "machine": 24,
+    "sudden": 3
+   }
+  },
+  "car_horn": {
+   "n": 40,
+   "correct": 17,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 17,
+    "machine": 19,
+    "speech": 2,
+    "music": 1,
+    "ambient": 1
+   }
+  },
+  "helicopter": {
+   "n": 40,
+   "correct": 39,
+   "truth": "machine",
+   "predicted": {
+    "machine": 39,
+    "sudden": 1
+   }
+  },
+  "rain": {
+   "n": 40,
+   "correct": 37,
+   "truth": "ambient",
+   "predicted": {
+    "ambient": 37,
+    "machine": 3
+   }
+  },
+  "laughing": {
+   "n": 40,
+   "correct": 15,
+   "truth": "crowd",
+   "predicted": {
+    "speech": 22,
+    "crowd": 15,
+    "music": 1,
+    "sudden": 2
+   }
+  },
+  "engine": {
+   "n": 40,
+   "correct": 38,
+   "truth": "machine",
+   "predicted": {
+    "machine": 38,
+    "music": 1,
+    "sudden": 1
+   }
+  },
+  "crying_baby": {
+   "n": 40,
+   "correct": 37,
+   "truth": "sudden",
+   "predicted": {
+    "speech": 1,
+    "sudden": 37,
+    "crowd": 2
+   }
+  },
+  "glass_breaking": {
+   "n": 40,
+   "correct": 39,
+   "truth": "sudden",
+   "predicted": {
+    "sudden": 39,
+    "music": 1
+   }
+  },
+  "washing_machine": {
+   "n": 40,
+   "correct": 33,
+   "truth": "machine",
+   "predicted": {
+    "machine": 33,
+    "ambient": 5,
+    "music": 2
+   }
+  },
+  "sea_waves": {
+   "n": 40,
+   "correct": 32,
+   "truth": "ambient",
+   "predicted": {
+    "ambient": 32,
+    "machine": 8
+   }
+  },
+  "siren": {
+   "n": 40,
+   "correct": 30,
+   "truth": "sudden",
+   "predicted": {
+    "music": 3,
+    "machine": 7,
+    "sudden": 30
+   }
+  },
+  "crickets": {
+   "n": 40,
+   "correct": 27,
+   "truth": "ambient",
+   "predicted": {
+    "machine": 5,
+    "music": 1,
+    "speech": 1,
+    "ambient": 27,
+    "sudden": 6
+   }
+  }
+ },
+ "perClip": [
+  {
+   "file": "1-100032-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-100038-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-100210-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-100210-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-101296-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-101296-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-104089-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-104089-B-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-105224-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-110389-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-110537-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-115521-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-115545-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-115545-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-115545-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-115546-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-115920-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-115920-B-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-115921-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-116765-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-11687-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-119125-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-13571-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-13572-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-13613-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-137296-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-14262-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-160563-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-160563-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-17124-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-172649-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-172649-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-172649-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-172649-D-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-172649-E-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-172649-F-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-17367-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-1791-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-181071-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-181071-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-18527-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-18527-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-187207-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-19026-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-19840-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-19872-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-19872-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-19898-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-19898-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-19898-C-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-20133-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-211527-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-211527-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-211527-C-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-21189-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-21421-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-21896-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-22694-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-22694-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-22804-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-22882-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-23222-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-23222-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-23996-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-23996-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-24074-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-24076-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-24524-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-24524-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-24524-C-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-24796-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-254507-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-25777-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-25781-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-26176-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-26177-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-26222-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-27165-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-27166-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-28135-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-28135-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-28808-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-29532-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-29561-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-30039-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-30043-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-30226-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-30344-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-31482-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "1-31482-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-32318-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-32373-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-32373-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-33658-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-34495-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-34497-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-34853-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-36164-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-36164-B-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-36929-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-38559-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-38560-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-39901-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-39901-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-40154-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-43760-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-43807-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-43807-B-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-43807-C-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-43807-D-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-46040-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-46744-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-47250-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-47250-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-47709-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-47714-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-48298-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-49098-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-50060-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-50454-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-50455-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-50661-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-51035-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-51036-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-51037-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-53467-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-54065-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-54065-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-54084-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "1-54747-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-54918-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-54918-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-54958-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-56311-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-56907-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "1-57316-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-57318-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "music"
+  },
+  {
+   "file": "1-59102-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-59513-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-60460-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-60997-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-60997-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-61252-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-61261-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-62509-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-62565-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-63871-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-64398-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-64398-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-64473-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-65483-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-67033-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-69760-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-70300-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-72195-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-72195-B-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-72695-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "1-73123-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-74517-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-7456-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-76831-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-76831-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-76831-C-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-76831-D-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-76831-E-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-79236-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-80840-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-80841-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-84536-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-84704-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-84705-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-85168-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-85184-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-85362-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-88409-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-88409-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-88807-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-91359-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "1-91359-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "1-94036-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "1-96890-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-97392-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-977-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "1-9841-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-100648-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-101676-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-102435-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-102567-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-102567-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-102567-C-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-102567-D-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-102568-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-102852-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-104105-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-104105-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-104475-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-104476-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-104952-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-104952-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-105270-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106014-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106015-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106015-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106019-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-106072-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106073-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106486-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106487-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106849-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-106881-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-107228-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-107228-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-107351-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-107351-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-108760-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-108760-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-108761-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-109371-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-109371-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-109371-C-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-109371-D-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-109374-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-109759-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-109759-B-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-110613-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-112213-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-112213-B-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-114280-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-114587-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-116400-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117116-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117271-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117615-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117615-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117615-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117615-D-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117615-E-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117616-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117617-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-117625-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-118072-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-118964-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-121909-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122066-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122066-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122067-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122067-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122104-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-122104-B-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-122616-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-122820-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-122820-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-124662-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-125520-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-125821-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-125875-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-125966-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-128465-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-128465-B-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-132157-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-132157-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-133863-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-135649-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-135649-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-135649-C-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-137162-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-138465-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-141563-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-141681-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-141681-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-141682-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-141682-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-144137-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-151079-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-155801-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-160888-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-165801-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-173559-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-173607-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-173618-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-188822-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-188822-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-188822-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-188822-D-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-205966-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-250710-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-25292-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-25293-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-262579-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-37806-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-37806-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-37806-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-37806-D-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-39441-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-39443-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-39443-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-39945-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-39945-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-39945-C-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-42101-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-43802-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-43806-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-50665-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-50666-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-50667-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-50667-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-50668-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-50668-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-51173-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-54086-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-56926-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-57191-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-57733-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-59241-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-59565-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-59566-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-60791-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "2-60794-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "2-60795-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "2-60900-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-61618-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-62226-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "2-66637-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-66637-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-68391-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-68391-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-70052-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-70052-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-70936-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-70938-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-70939-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-72547-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-72547-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-72547-C-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-72547-D-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-72688-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-72970-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-73027-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-73260-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-74361-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "music"
+  },
+  {
+   "file": "2-76408-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-76408-B-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-76408-C-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-76408-D-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-77346-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-77347-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-77945-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-77945-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-78381-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "2-78562-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-78562-B-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-78651-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "music"
+  },
+  {
+   "file": "2-78781-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-78799-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-79769-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-79775-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "2-80482-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-80844-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-81731-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-82367-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-83270-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-85139-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-87781-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-89516-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "2-96033-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "2-96063-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "2-96654-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "2-98866-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-103050-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-103051-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-103051-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-103051-C-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-107123-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-110536-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-111102-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-111102-B-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-115382-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-115387-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-115387-B-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-115387-C-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-117504-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-117504-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-117793-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-117883-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-118487-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-118656-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-118657-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-118657-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-118658-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-118658-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-118972-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-118972-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-119120-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-119120-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-119120-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-119120-D-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-119120-E-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-119455-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-119459-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-120526-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-120526-B-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-122110-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-123224-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-124600-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-126113-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-128160-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-128512-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-128512-B-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-129338-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-129678-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-130330-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-131943-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-132340-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-132747-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-132852-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-134699-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-134699-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-134699-C-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-134802-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-135469-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-135650-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-135650-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-136288-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-136451-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-136608-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-138114-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-138212-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-139109-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-139958-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-140774-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-141240-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-141240-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-141559-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-142005-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-142006-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-143560-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-143562-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-143929-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-144028-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-144827-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-144827-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-144891-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-144891-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-145577-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-146033-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-146186-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-146697-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-148297-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-149465-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-150979-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-150979-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-150979-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-151080-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-151081-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-151081-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-151269-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-151273-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-152007-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-152007-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-152007-C-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-152007-D-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-152007-E-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-152020-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-152020-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-152020-C-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-152912-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-152997-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-153057-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-154758-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-154926-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-154926-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-155130-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-155234-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-155312-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-155577-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155578-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155579-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155583-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155584-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155642-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155642-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-155766-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-156391-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-156393-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-156581-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-156581-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-157149-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-157487-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-157492-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-157615-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-157695-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-159346-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159346-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159347-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159347-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159348-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159445-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-159445-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-161010-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-162786-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-163459-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-163607-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-163607-B-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-164120-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-164630-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-165856-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-166422-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-170015-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-172881-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-172922-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-174840-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-177082-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-177083-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-180256-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-180977-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-181132-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-181278-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "3-182710-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-182710-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-187710-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "3-188726-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-193767-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-197435-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-197435-B-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "3-203371-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-203373-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-203374-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-203375-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-203377-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-216280-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-216281-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-216284-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-243726-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "3-246513-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-246513-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-251617-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-259622-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-51376-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-51731-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-51731-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-51909-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-51909-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-58772-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-62878-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-62878-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "3-68630-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-68630-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-68630-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "3-87936-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-87936-B-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-98193-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "3-98869-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-102871-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-111671-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-111671-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119647-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119647-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119647-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119647-D-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119648-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119648-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119648-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-119648-D-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-121532-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-125070-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-125071-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-125072-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-125072-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-125825-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-125825-B-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-125929-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-132803-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "4-132810-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-132816-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-133674-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "music"
+  },
+  {
+   "file": "4-140034-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-144083-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-144083-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-144083-C-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-144085-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-146200-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-147657-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-147658-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-149294-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-149294-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-150364-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-150364-B-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-151242-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-155670-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "4-156827-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "4-156993-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-157611-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-157611-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-159609-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-159609-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-160999-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161099-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161099-B-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161100-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161103-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161105-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161105-B-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161127-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-161519-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-161579-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-161579-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-163264-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-163606-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-163608-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-163609-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-163609-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-163697-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-164206-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-164243-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "4-165606-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165791-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165791-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165813-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-165813-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-165823-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165823-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-165845-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165845-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-165933-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-166661-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-167063-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-167063-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-167063-C-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-167077-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-167077-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-167077-C-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-167571-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-168446-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-169127-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-169127-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-169508-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "4-171652-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-171823-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-172143-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-172366-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-172732-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-172733-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-172734-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-172736-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-172736-B-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-175000-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-175000-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-175000-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-175845-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-175846-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-175855-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-175856-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-176631-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-176638-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-177250-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-178402-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-178881-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-180380-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-181286-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-181362-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-181599-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "4-181999-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-182395-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-182613-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-182613-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-182795-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-183992-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-184575-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-185575-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-185575-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-185575-C-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-186935-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-186936-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-186938-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-186940-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-186962-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-187769-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-187769-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-189332-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-189828-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-189830-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "4-189832-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-189832-B-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-189833-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-189836-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-189838-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-191015-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-191687-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-192236-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-193480-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-193480-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-194246-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-194680-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-194754-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-195451-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-195497-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-195497-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-195707-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-195805-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-198841-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-199261-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-201988-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-202749-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-204115-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-204119-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-204121-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "4-204123-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-204618-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-204684-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "4-204777-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-204777-B-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-204777-C-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-205738-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "4-207124-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-209536-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "4-209698-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-212698-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-216211-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "music"
+  },
+  {
+   "file": "4-218199-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-218199-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "music"
+  },
+  {
+   "file": "4-218199-C-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-218199-D-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-218199-E-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-218199-F-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-218199-G-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-218199-H-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "music"
+  },
+  {
+   "file": "4-223125-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-223127-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "4-251959-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-255371-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "4-59579-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-59579-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-67358-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-80761-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "4-90014-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "music"
+  },
+  {
+   "file": "4-90014-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-117118-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-117120-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-117122-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-117773-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-133989-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-133989-B-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-141683-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-150409-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-151085-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-156999-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-156999-B-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-156999-C-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-156999-D-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-156999-E-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-157204-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-157204-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-160551-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-160614-A-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-B-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-C-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-D-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-E-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-160614-F-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-G-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-160614-H-48.wav",
+   "category": "fireworks",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-170338-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-170338-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-171118-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-171653-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-177957-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-177957-B-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-177957-C-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-177957-D-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-177957-E-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-179294-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-179496-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-179496-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-179860-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-179863-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-179865-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-179866-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-179868-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-180156-A-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-180156-B-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-180156-C-43.wav",
+   "category": "car_horn",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-181766-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-181977-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-182007-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-182010-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-182012-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-184323-A-42.wav",
+   "category": "siren",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-185579-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-185579-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-188365-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-188495-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-188655-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-188716-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-188796-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-188945-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-191131-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-192191-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-193339-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-194892-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-195557-A-19.wav",
+   "category": "thunderstorm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-195710-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-197118-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-197121-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-197121-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-197988-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-198321-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-198373-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-198411-A-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198411-B-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-198411-C-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198411-D-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198411-E-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198411-F-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198411-G-20.wav",
+   "category": "crying_baby",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-198600-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-199284-A-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-199284-B-45.wav",
+   "category": "train",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-200461-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-200461-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-201170-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-201172-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-202898-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-203128-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-203128-B-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-203739-A-10.wav",
+   "category": "rain",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-204352-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-204352-B-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-204741-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-205898-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-207811-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-207811-B-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-208030-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-208810-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-208810-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-209989-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-209992-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-209992-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-210540-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-210612-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-211408-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-212054-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-212059-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-212454-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-213077-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-213855-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-215172-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-215179-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-215445-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-215447-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-215449-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-216213-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-216214-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-216216-A-13.wav",
+   "category": "crickets",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-216370-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-216370-B-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-217158-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-217186-A-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-217186-B-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-217186-C-16.wav",
+   "category": "wind",
+   "truth": "ambient",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-218494-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-219044-A-46.wav",
+   "category": "church_bells",
+   "truth": "music",
+   "predicted": "music"
+  },
+  {
+   "file": "5-219242-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-219242-B-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-219379-A-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-219379-B-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-219379-C-11.wav",
+   "category": "sea_waves",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-220955-A-40.wav",
+   "category": "helicopter",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-221528-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-221529-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-221567-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-221568-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-221950-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-222524-A-41.wav",
+   "category": "chainsaw",
+   "truth": "sudden",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-223176-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-223810-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-231551-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-231762-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-232272-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-233605-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-233607-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-233645-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-234247-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-235507-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-235956-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-238021-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-240671-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-242490-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-242491-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-242932-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-242932-B-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-243448-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-243449-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-243450-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-243459-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-243459-B-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-243773-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-243773-B-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-243783-A-44.wav",
+   "category": "engine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-244526-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-245040-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-249937-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-250629-A-37.wav",
+   "category": "clock_alarm",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-251957-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-251962-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-251963-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-251971-A-47.wav",
+   "category": "airplane",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-253534-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-254160-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-257642-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-257839-A-14.wav",
+   "category": "chirping_birds",
+   "truth": "ambient",
+   "predicted": "ambient"
+  },
+  {
+   "file": "5-259514-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-260432-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-260433-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-260434-A-39.wav",
+   "category": "glass_breaking",
+   "truth": "sudden",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-260875-A-35.wav",
+   "category": "washing_machine",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-262957-A-22.wav",
+   "category": "clapping",
+   "truth": "crowd",
+   "predicted": "crowd"
+  },
+  {
+   "file": "5-263775-A-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "sudden"
+  },
+  {
+   "file": "5-263775-B-26.wav",
+   "category": "laughing",
+   "truth": "crowd",
+   "predicted": "speech"
+  },
+  {
+   "file": "5-263902-A-36.wav",
+   "category": "vacuum_cleaner",
+   "truth": "machine",
+   "predicted": "machine"
+  },
+  {
+   "file": "5-9032-A-0.wav",
+   "category": "dog",
+   "truth": "sudden",
+   "predicted": "sudden"
+  }
+ ]
+}
