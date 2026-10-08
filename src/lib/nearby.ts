@@ -17,19 +17,19 @@ export interface NearbyItem {
 }
 
 export const NEARBY_MAX_KM = 6
-export const NEARBY_MIN_GAP = 10
+const RANK: Record<Level3, number> = { calm: 0, mid: 1, busy: 2, nodata: 9 }
 
 /**
- * 기준 장소에서 직선 거리 maxKm 안에 있고, 지금 지수가 minGap 이상 낮은 장소를 가까운 순으로 고른다.
+ * 기준 장소에서 직선 거리 maxKm 안에 있고, 지금 단계가 기준 장소보다 낮은(더 무던한) 장소를 가까운 순으로 고른다.
+ * 기준이 '붐빔'이면 '보통'과 '무던함'이, 기준이 '보통'이면 '무던함'만 후보가 된다.
  * current는 각 장소의 현재 지수를 돌려주는 함수다(자료가 없으면 undefined).
  */
 export function calmerNearby(
   target: Place,
-  targetIndex: number,
+  targetLevel: Level3,
   all: Place[],
   current: (p: Place) => { index: number | null; level: Level3 } | undefined,
   maxKm = NEARBY_MAX_KM,
-  minGap = NEARBY_MIN_GAP,
   limit = 3,
 ): NearbyItem[] {
   const out: NearbyItem[] = []
@@ -39,7 +39,7 @@ export function calmerNearby(
     if (km > maxKm) continue
     const c = current(p)
     if (!c || c.index === null) continue
-    if (c.index <= targetIndex - minGap) out.push({ place: p, km, index: c.index, level: c.level })
+    if (RANK[c.level] < RANK[targetLevel]) out.push({ place: p, km, index: c.index, level: c.level })
   }
   return out.sort((a, b) => a.km - b.km).slice(0, limit)
 }

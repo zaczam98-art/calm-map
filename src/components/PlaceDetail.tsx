@@ -39,7 +39,7 @@ export default function PlaceDetail({ place, places, pattern, onSelect, snap, so
   const nearby = useMemo(() => {
     if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
     const nowKey = nowKeyFor(snap)
-    return calmerNearby(place, now.index, places, (p) => {
+    return calmerNearby(place, now.level, places, (p) => {
       const s = snap?.places[p.name]
       const d = s?.live ? new Date(s.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
       return hourScores(s, (h) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)[0]

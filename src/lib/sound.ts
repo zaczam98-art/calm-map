@@ -136,11 +136,29 @@ export async function decodeFile(file: File): Promise<Float32Array[]> {
   const ctx = new AudioContext()
   const ab = await file.arrayBuffer()
   const audio = await ctx.decodeAudioData(ab)
-  const mono = audio.getChannelData(0)
-  const wave = resample(mono, audio.sampleRate, SAMPLE_RATE)
   await ctx.close()
+  return windowsFromBuffer(audio)
+}
+
+/** 디코딩된 오디오를 16kHz로 바꿔 약 1초 창으로 자른다(최대 60창) */
+export function windowsFromBuffer(audio: AudioBuffer): Float32Array[] {
+  const wave = resample(audio.getChannelData(0), audio.sampleRate, SAMPLE_RATE)
   const need = Math.round(SAMPLE_RATE * WINDOW_SEC)
   const windows: Float32Array[] = []
   for (let i = 0; i + need <= wave.length && windows.length < 60; i += need) windows.push(wave.slice(i, i + need))
   return windows
+}
+
+/** 요약에서 값이 가장 큰 태그(배경음 포함). 평가 스크립트와 같은 기준이다. */
+export function bestTag(b: SoundBucket): SenseTag | null {
+  let best: SenseTag | null = null
+  let bestV = 0
+  for (const t of SENSE_TAGS) {
+    const v = b.tags[t] ?? 0
+    if (v > bestV) {
+      bestV = v
+      best = t
+    }
+  }
+  return best
 }

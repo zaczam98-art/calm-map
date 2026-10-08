@@ -1,0 +1,78 @@
+{
+ "note": "샘플 소리는 ESC-50 데이터셋(K. J. Piczak, 2015)에 실린 음원 가운데 개별 라이선스가 CC0인 것만 골랐다. 원 출처는 Freesound이며 음원별 출처를 credit에 적었다.",
+ "dataset": "https://github.com/karolpiczak/ESC-50",
+ "samples": [
+  {
+   "id": "siren",
+   "label": "사이렌",
+   "file": "1-54084-A-42.wav",
+   "expected": "sudden",
+   "credit": {
+    "title": "civildefense.wav",
+    "author": "guitarguy1985",
+    "url": "http://www.freesound.org/people/guitarguy1985/sounds/54084/",
+    "license": "CC0"
+   }
+  },
+  {
+   "id": "dog",
+   "label": "개 짖는 소리",
+   "file": "1-100032-A-0.wav",
+   "expected": "sudden",
+   "credit": {
+    "title": "rose_bark.wav",
+    "author": "nfrae",
+    "url": "http://www.freesound.org/people/nfrae/sounds/100032/",
+    "license": "CC0"
+   }
+  },
+  {
+   "id": "engine",
+   "label": "자동차 엔진",
+   "file": "3-119455-A-44.wav",
+   "expected": "machine",
+   "credit": {
+    "title": "Motorbike Idling.wav",
+    "author": "lmbubec",
+    "url": "http://www.freesound.org/people/lmbubec/sounds/119455/",
+    "license": "CC0"
+   }
+  },
+  {
+   "id": "rain",
+   "label": "빗소리",
+   "file": "1-17367-A-10.wav",
+   "expected": "ambient",
+   "credit": {
+    "title": "unlocki door to mod rain.wav",
+    "author": "cognito perceptu",
+    "url": "http://www.freesound.org/people/cognito%20perceptu/sounds/17367/",
+    "license": "CC0"
+   }
+  },
+  {
+   "id": "clapping",
+   "label": "박수",
+   "file": "1-115920-A-22.wav",
+   "expected": "crowd",
+   "credit": {
+    "title": "Clapping, Medium Audience, slow to fast.wav",
+    "author": "issalcake",
+    "url": "http://www.freesound.org/people/issalcake/sounds/115920/",
+    "license": "CC0"
+   }
+  },
+  {
+   "id": "church_bells",
+   "label": "종소리",
+   "file": "1-48298-A-46.wav",
+   "expected": "music",
+   "credit": {
+    "title": "Bells inside Church.mp3",
+    "author": "melarancida",
+    "url": "http://www.freesound.org/people/melarancida/sounds/48298/",
+    "license": "CC0"
+   }
+  }
+ ]
+}

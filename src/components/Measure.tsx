@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Place, SoundBucket } from '../types'
 import { TAG_LABEL } from '../types'
-import { classifyWindow, decodeFile, loadModel, startMic, summarize, type WindowResult } from '../lib/sound'
+import { bestTag, classifyWindow, decodeFile, loadModel, startMic, summarize, windowsFromBuffer, type WindowResult } from '../lib/sound'
+import samplesRaw from '../data/samples.json'
 import { submitMeasurement } from '../lib/snapshot'
+
+interface Sample {
+  id: string
+  label: string
+  file: string
+}
+const SAMPLES = (samplesRaw as { samples: Sample[] }).samples
 
 interface Props {
   places: Place[]
@@ -18,10 +26,15 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
   const [last, setLast] = useState<WindowResult | null>(null)
   const [summary, setSummary] = useState<SoundBucket | null>(null)
   const [sent, setSent] = useState<string | null>(null)
+  const [sample, setSample] = useState<string | null>(null) // 샘플 소리로 만든 요약이면 그 이름
+  const playRef = useRef<AudioContext | null>(null)
   const stopRef = useRef<(() => void) | null>(null)
   const busy = useRef(false)
 
-  useEffect(() => () => stopRef.current?.(), [])
+  useEffect(() => () => {
+    stopRef.current?.()
+    void playRef.current?.close()
+  }, [])
   useEffect(() => {
     // 개발·검증용: 콘솔에서 합성 파형으로 분류기를 시험할 수 있게 노출
     if (import.meta.env.DEV) (window as unknown as { __calmClassify?: typeof classifyWindow }).__calmClassify = classifyWindow
@@ -55,6 +68,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       setWindows([])
       setSummary(null)
       setSent(null)
+      setSample(null)
       stopRef.current = await startMic((w) => void handleWave(w))
       setRunning(true)
       setStatus('듣는 중이에요. 30초 이상 측정하면 좋아요.')
@@ -84,9 +98,41 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       setLast(results[results.length - 1] ?? null)
       setSummary(summarize(results))
       setSent(null)
+      setSample(null)
       setStatus(`파일 ${ws.length}초 분량을 분류했어요.`)
     } catch (e) {
       setStatus(`파일을 읽지 못했어요: ${(e as Error).message}`)
+    }
+  }
+  /** 내장 샘플 소리를 들려주면서 분류한다. 체험용이라 장소에는 반영하지 않는다. */
+  const playSample = async (s: Sample) => {
+    try {
+      if (running) stop()
+      void playRef.current?.close()
+      const ctx = new AudioContext()
+      playRef.current = ctx
+      void ctx.resume()
+      await loadModel(setStatus)
+      setStatus(`샘플 '${s.label}'을 불러오는 중이에요…`)
+      const ab = await (await fetch(`${import.meta.env.BASE_URL}samples/${s.file}`)).arrayBuffer()
+      const audio = await ctx.decodeAudioData(ab)
+      const src = ctx.createBufferSource()
+      src.buffer = audio
+      src.connect(ctx.destination)
+      src.start()
+      const results: WindowResult[] = []
+      for (const w of windowsFromBuffer(audio)) results.push(await classifyWindow(w))
+      const loudest = results.reduce<WindowResult | null>((a, r) => (!a || r.intensity > a.intensity ? r : a), null)
+      const sum = summarize(results)
+      const tag = bestTag(sum)
+      setWindows(results)
+      setLast(loudest)
+      setSummary(sum)
+      setSent(null)
+      setSample(s.label)
+      setStatus(`샘플 '${s.label}'을 ${results.length}초 분량 분류했어요. 가장 큰 태그는 ${tag ? TAG_LABEL[tag] : '없음'}이에요.`)
+    } catch (e) {
+      setStatus(`샘플을 재생하지 못했어요: ${(e as Error).message}`)
     }
   }
   const submit = async () => {
@@ -110,6 +156,12 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
           <label className="btn">📁 오디오 파일로 시연 <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => void onFile(e.target.files?.[0])} /></label>
           <button className="btn" onClick={prefetch}>⬇️ 모델 미리 받기</button>
         </div>
+        <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>마이크가 없어도 샘플 소리로 체험할 수 있어요. 누르면 소리가 나요.</p>
+        <div className="row" aria-label="샘플 소리">
+          {SAMPLES.map((s) => (
+            <button key={s.id} className="btn" onClick={() => void playSample(s)} disabled={running}>🔊 {s.label}</button>
+          ))}
+        </div>
         <p className="muted" style={{ marginTop: 8 }}>분류 창 {windows.length}개 {last && `· 강도 ${last.dbfs.toFixed(0)} dBFS`}</p>
         <div className="meter" aria-label="강도"><div style={{ width: `${Math.round((last?.intensity ?? 0) * 100)}%` }} /></div>
         {last && (
@@ -122,7 +174,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       </div>
       {summary && (
         <div className="card">
-          <h2>이 세션 요약</h2>
+          <h2>{sample ? `샘플 '${sample}' 요약` : '이 세션 요약'}</h2>
           <table className="simple">
             <tbody>
               {(Object.entries(summary.tags) as [keyof typeof TAG_LABEL, number][]).map(([t, v]) => (
@@ -131,8 +183,14 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
               <tr><th>창 수</th><td>{summary.n}</td></tr>
             </tbody>
           </table>
-          <p className="muted">서버로 보내는 것은 이 표의 숫자와 요일·시각뿐이에요.</p>
-          <button className="btn primary" onClick={submit} disabled={!!sent}>이 장소에 반영</button>
+          {sample ? (
+            <p className="muted">샘플 소리는 체험용이라 장소에 반영하지 않아요. 실제 장소의 소리는 마이크로 측정해요.</p>
+          ) : (
+            <>
+              <p className="muted">서버로 보내는 것은 이 표의 숫자와 요일·시각뿐이에요.</p>
+              <button className="btn primary" onClick={submit} disabled={!!sent}>이 장소에 반영</button>
+            </>
+          )}
           {sent && <p className="muted" style={{ marginTop: 8 }}>{sent}</p>}
         </div>
       )}

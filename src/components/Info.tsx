@@ -1,4 +1,7 @@
 import type { ForecastMetrics, Snapshot } from '../types'
+import samplesRaw from '../data/samples.json'
+
+const SAMPLES = samplesRaw.samples
 
 const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
 
@@ -61,6 +64,17 @@ export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics
         ) : (
           <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중이에요. 수집이 몇 번 쌓이면 여기에 일치율이 표시돼요.</p>
         )}
+      </div>
+      <div className="card">
+        <h2>샘플 소리 출처</h2>
+        <p className="muted">
+          현장 측정 화면의 샘플 소리는 ESC-50 데이터셋(K. J. Piczak, 2015)에 실린 음원 가운데 개별 라이선스가 CC0인 것만 골랐어요. 원 출처는 Freesound예요.
+        </p>
+        <ul className="credits">
+          {SAMPLES.map((s) => (
+            <li key={s.id}>{s.label}: <a href={s.credit.url} target="_blank" rel="noreferrer">{s.credit.title}</a>, {s.credit.author}, {s.credit.license}</li>
+          ))}
+        </ul>
       </div>
       <div className="card">
         <h2>한계</h2>
