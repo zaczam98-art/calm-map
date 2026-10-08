@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Card, ChildProfile, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
+import type { Card, ChildProfile, NoiseData, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
 import { TAG_LABEL } from '../types'
 import { hourScores, LEVEL3_LABEL, nowKeyFor, recommend } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
@@ -11,11 +11,14 @@ import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm from './NearbyCalm'
 import WeekPattern from './WeekPattern'
+import Factors from './Factors'
+import NoiseCard from './NoiseCard'
 
 interface Props {
   place: Place
   places: Place[]
   pattern: WeekPatternData | null
+  noise: NoiseData | null
   onSelect: (name: string) => void
   snap: Snapshot | null
   sound: SoundStore
@@ -26,7 +29,7 @@ interface Props {
   onMeasure: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, onSelect, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
   const ps = snap?.places[place.name]
   const dow = ps?.live ? new Date(ps.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
   const scores = useMemo(() => hourScores(ps, (h) => sound[place.name]?.[bucketKey(dow, h)], profile, offsets[place.name] ?? 0, nowKeyFor(snap)), [ps, sound, profile, offsets, place.name, dow, snap])
@@ -92,6 +95,8 @@ export default function PlaceDetail({ place, places, pattern, onSelect, snap, so
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {card && <CardView card={card.card} note={card.note} place={place.name} />}
+      <Factors extra={ps?.extra} />
+      <NoiseCard noise={noise} place={place.name} />
       {nearby && <NearbyCalm items={nearby} maxKm={NEARBY_MAX_KM} onSelect={onSelect} />}
       <WeekPattern pattern={pattern} place={place.name} />
       <div className="card" style={{ marginTop: 12 }}>

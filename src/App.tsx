@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import placesRaw from './data/places.json'
-import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, Place, Snapshot, WeekPattern } from './types'
+import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, NoiseData, Place, Snapshot, WeekPattern } from './types'
 import { loadProfile, loadOffsets, saveProfile } from './lib/profile'
 import { loadSnapshot, loadSoundStore, type SoundStore } from './lib/snapshot'
 import { loadPublicJson } from './lib/publicData'
@@ -28,12 +28,14 @@ export default function App() {
   const [pattern, setPattern] = useState<WeekPattern | null>(null)
   const [metrics, setMetrics] = useState<ForecastMetrics | null>(null)
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
+  const [noise, setNoise] = useState<NoiseData | null>(null)
 
   useEffect(() => {
     void loadSnapshot().then(setSnap)
     void loadPublicJson<WeekPattern>('pattern.json').then(setPattern)
     void loadPublicJson<ForecastMetrics>('metrics.json').then(setMetrics)
     void loadPublicJson<BriefingData>('briefing.json').then(setBriefing)
+    void loadPublicJson<NoiseData>('noise.json').then(setNoise)
   }, [])
   useEffect(() => {
     void loadSoundStore().then(setSound)
@@ -74,6 +76,7 @@ export default function App() {
                 place={PLACES.find((p) => p.name === selected)!}
                 places={PLACES}
                 pattern={pattern}
+                noise={noise}
                 onSelect={setSelected}
                 snap={snap}
                 sound={sound}
@@ -106,7 +109,7 @@ export default function App() {
         {view === 'measure' && (
           <Measure places={PLACES} defaultPlace={selected ?? PLACES[0].name} onSubmitted={() => setSoundVersion((v) => v + 1)} />
         )}
-        {view === 'info' && <Info snap={snap} metrics={metrics} />}
+        {view === 'info' && <Info snap={snap} metrics={metrics} noise={noise} placeCount={PLACES.length} />}
       </main>
       <nav className="nav">
         {(

@@ -1,4 +1,4 @@
-"""서울 실시간 도시데이터(citydata_ppltn)에서 추적 장소의 실시간 혼잡도와 12시간 예측을 모은다.
+"""서울 실시간 도시데이터(citydata)에서 추적 장소의 혼잡도·12시간 예측과 감각 요인(행사, 사고·통제, 날씨, 도로)을 모은다.
 
 산출물
 - snapshot.json : 최신 1회분(앱이 읽는다)
@@ -6,6 +6,7 @@
 
 사용: SEOUL_KEY=발급키 python scripts/collect_seoul.py [snapshot 경로] [history 경로]
 - 직전 수집이 50분 이내면 건너뛴다(FORCE=1이면 항상 수집). 장소당 호출을 시간당 1회 이하로 묶기 위한 장치다.
+- citydata 호출이 실패한 장소는 인구 항목만 주는 citydata_ppltn으로 한 번 더 시도한다.
 - 키가 없으면 sample 키로 광화문·덕수궁만 받는다(시험용).
 """
 import datetime, json, os, sys, time, urllib.parse, urllib.request, zoneinfo
@@ -16,9 +17,12 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'snapshot.json')
 HIST = sys.argv[2] if len(sys.argv) > 2 else None
 KST = zoneinfo.ZoneInfo('Asia/Seoul')
 NOW = datetime.datetime.now(KST)
+TODAY = NOW.strftime('%Y-%m-%d')
 MIN_GAP_MIN = 50
 LEVELS = ['여유', '보통', '약간 붐빔', '붐빔']
 KEEP_DAYS = 45
+KEEP_LEADS = (1, 3, 6, 12)  # 예측 검증에 쓰는 시차만 남겨 이력 파일 크기를 줄인다
+SHORT_EVENT_DAYS = 7  # 기간이 이보다 짧은 행사는 축제·공연처럼 사람이 몰리기 쉬운 행사로 표시한다
 
 
 def set_output(changed):
@@ -52,20 +56,87 @@ if KEY == 'sample':
     places = [{'name': '광화문·덕수궁'}]  # 샘플 키는 이 장소만 허용
 
 
-def fetch(name):
-    url = f'http://openapi.seoul.go.kr:8088/{KEY}/json/citydata_ppltn/1/5/{urllib.parse.quote(name)}'
-    with urllib.request.urlopen(url, timeout=20) as r:
-        d = json.load(r)
-    rows = d.get('SeoulRtd.citydata_ppltn') or []
-    if not rows:
-        raise RuntimeError(str(d.get('RESULT') or d)[:200])
-    row = rows[0]
+def get(service, name):
+    url = f'http://openapi.seoul.go.kr:8088/{KEY}/json/{service}/1/5/{urllib.parse.quote(name)}'
+    with urllib.request.urlopen(url, timeout=30) as r:
+        return json.load(r)
+
+
+def population(row):
     live = {'time': row['PPLTN_TIME'], 'level': row['AREA_CONGEST_LVL'], 'min': int(row['AREA_PPLTN_MIN']), 'max': int(row['AREA_PPLTN_MAX'])}
     fcst = []
     if row.get('FCST_YN') == 'Y':
         for f in row.get('FCST_PPLTN') or []:
             fcst.append({'time': f['FCST_TIME'], 'level': f['FCST_CONGEST_LVL'], 'min': int(f['FCST_PPLTN_MIN']), 'max': int(f['FCST_PPLTN_MAX'])})
     return {'live': live, 'fcst': fcst}
+
+
+def clip(s, n):
+    s = ' '.join(str(s or '').split())
+    return s if len(s) <= n else s[: n - 1] + '…'
+
+
+def first(v):
+    return (v[0] if isinstance(v, list) and v else v) or {}
+
+
+def extras(c):
+    """행사, 사고·통제, 날씨, 도로 소통을 화면에 쓸 만큼만 간추린다."""
+    out = {}
+    events = []
+    for e in c.get('EVENT_STTS') or []:
+        period = str(e.get('EVENT_PERIOD') or '')
+        try:
+            start, end = [x.strip() for x in period.split('~')]
+            if not (start <= TODAY <= end):
+                continue
+            days = (datetime.date.fromisoformat(end) - datetime.date.fromisoformat(start)).days + 1
+        except ValueError:
+            continue
+        events.append({'name': clip(e.get('EVENT_NM'), 40), 'place': clip(e.get('EVENT_PLACE'), 24), 'period': period, 'short': days <= SHORT_EVENT_DAYS})
+    events.sort(key=lambda e: (not e['short'], e['name']))
+    if events:
+        out['events'] = events[:4]
+        out['eventsN'] = len(events)
+    controls = []
+    for a in c.get('ACDNT_CNTRL_STTS') or []:
+        controls.append({'type': clip(a.get('ACDNT_TYPE'), 10), 'dtype': clip(a.get('ACDNT_DTYPE'), 14), 'info': clip(a.get('ACDNT_INFO'), 60), 'until': str(a.get('EXP_CLR_DT') or '')[:16]})
+    if controls:
+        out['controls'] = controls[:4]
+        out['controlsN'] = len(controls)
+    w = first(c.get('WEATHER_STTS'))
+    if w:
+        rain = []
+        for f in w.get('FCST24HOURS') or []:
+            dt = str(f.get('FCST_DT') or '')
+            if len(dt) >= 10 and f'{dt[:4]}-{dt[4:6]}-{dt[6:8]}' == TODAY:
+                try:
+                    chance = int(f.get('RAIN_CHANCE') or 0)
+                except ValueError:
+                    chance = 0
+                if chance >= 60 or (f.get('PRECPT_TYPE') or '없음') != '없음':
+                    rain.append(int(dt[8:10]))
+        out['weather'] = {'temp': w.get('TEMP'), 'pcp': w.get('PRECPT_TYPE'), 'uv': w.get('UV_INDEX_LVL'), 'pm25': w.get('PM25_INDEX'), 'pm10': w.get('PM10_INDEX'), 'rainHours': rain}
+    road = (c.get('ROAD_TRAFFIC_STTS') or {})
+    avg = road.get('AVG_ROAD_DATA') if isinstance(road, dict) else None
+    if isinstance(avg, dict) and avg.get('ROAD_TRAFFIC_IDX'):
+        out['road'] = {'idx': avg.get('ROAD_TRAFFIC_IDX'), 'spd': avg.get('ROAD_TRAFFIC_SPD')}
+    return out
+
+
+def fetch(name):
+    try:
+        c = get('citydata', name).get('CITYDATA') or {}
+        row = first(c.get('LIVE_PPLTN_STTS'))
+        if not row:
+            raise RuntimeError('no population in citydata')
+        return {**population(row), 'extra': extras(c)}
+    except Exception as e:  # 큰 응답이 실패하면 인구 항목만이라도 받는다
+        d = get('citydata_ppltn', name)
+        rows = d.get('SeoulRtd.citydata_ppltn') or []
+        if not rows:
+            raise RuntimeError(f'{type(e).__name__}; fallback: ' + str(d.get('RESULT') or d)[:160])
+        return population(rows[0])
 
 
 out = {'updatedAt': NOW.strftime('%Y-%m-%d %H:%M'), 'source': 'seoul', 'places': {}}  # 러너가 UTC라서 KST로 고정
@@ -77,10 +148,11 @@ for p in places:
         fails.append(f"{p['name']}: {e}")
         if p['name'] in PREV:
             out['places'][p['name']] = {**PREV[p['name']], 'stale': True}
-    time.sleep(0.3)
+    time.sleep(0.2)
 
-json.dump(out, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False)
-print(f"saved {len(out['places'])} places -> {OUT}; failures {len(fails)}")
+with_extra = sum(1 for v in out['places'].values() if 'extra' in v)
+json.dump(out, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+print(f"saved {len(out['places'])} places ({with_extra} with extras) -> {OUT}; failures {len(fails)}")
 for f in fails:
     print(' -', str(f).replace(KEY, '<KEY>'))
 
@@ -119,7 +191,7 @@ if HIST:
         for f in ps.get('fcst') or []:
             target = f['time'][:13]
             lead = hours_between(ohour, target)
-            if 1 <= lead <= 12:
+            if lead in KEEP_LEADS:
                 # fc[대상 시각][몇 시간 전 예측인지] = [예측 단계, 예측 인구 중앙값]
                 fc.setdefault(target, {})[str(lead)] = [lvl(f['level']), (f['min'] + f['max']) // 2]
         for table in (obs, fc):

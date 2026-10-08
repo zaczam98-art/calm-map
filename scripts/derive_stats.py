@@ -38,7 +38,8 @@ for name, obs in obs_all.items():
             first = hour_key
     pattern[name] = {k: [round(s / n, 2), n] for k, (s, n) in cells.items()}
 
-by_lead = {str(k): {'n': 0, 'exact': 0, 'within1': 0, 'persistN': 0, 'persistExact': 0} for k in range(1, 13)}
+LEADS = (1, 3, 6, 12)  # 수집 스크립트가 남기는 시차와 같다
+by_lead = {str(k): {'n': 0, 'exact': 0, 'within1': 0, 'persistN': 0, 'persistExact': 0} for k in LEADS}
 for name, fc in fc_all.items():
     obs = obs_all.get(name, {})
     for target, leads in fc.items():

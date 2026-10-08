@@ -1,4 +1,4 @@
-import type { ForecastMetrics, SenseTag, Snapshot } from '../types'
+import type { ForecastMetrics, NoiseData, SenseTag, Snapshot } from '../types'
 import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
 import soundEval from '../data/sound_eval.json'
@@ -8,7 +8,7 @@ const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람'
 
 const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
 
-export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics: ForecastMetrics | null }) {
+export default function Info({ snap, metrics, noise, placeCount }: { snap: Snapshot | null; metrics: ForecastMetrics | null; noise: NoiseData | null; placeCount: number }) {
   const leads = ['1', '3', '6', '12']
   return (
     <div className="page">
@@ -37,7 +37,7 @@ export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics
       </div>
       <div className="card">
         <h2>데이터 출처</h2>
-        <p className="muted">본 서비스는 서울특별시 공공데이터를 사용한 결과입니다. 서울 열린데이터광장 "서울시 실시간 인구데이터"(citydata_ppltn, 공공누리 제1유형, 121곳 중 31곳 추적), 서울시 실시간 도시데이터 핫스팟 좌표, OpenStreetMap 타일(ODbL), YAMNet(Apache-2.0).
+        <p className="muted">본 서비스는 서울특별시 공공데이터를 사용한 결과입니다. 서울 열린데이터광장 "서울시 실시간 도시데이터"(citydata, 공공누리 제1유형)에서 주요 장소 {placeCount}곳의 혼잡도와 12시간 예측, 문화행사, 사고·통제, 날씨, 도로 소통을 받아요. "스마트서울 도시데이터 센서(S-DoT) 환경정보"에서 장소 가까이 있는 센서의 시간대별 소음을 받아요{noise ? `(${noise.from}부터 ${noise.to}까지 ${noise.days}일 치, ${Object.keys(noise.places).length}곳)` : ''}. 지도는 OpenStreetMap 타일(ODbL), 소리 분류 모델은 YAMNet(Apache-2.0)이에요.
           {snap ? ` 현재 자료: ${snap.source === 'seoul' ? '서울시 API' : '데모 스냅샷'} (${snap.updatedAt} 기준).` : ''}</p>
       </div>
       <div className="card">

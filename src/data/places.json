@@ -13,7 +13,7 @@
   "lat": 37.579278,
   "lng": 126.891794,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P003",
@@ -21,7 +21,7 @@
   "lat": 37.493468,
   "lng": 127.111896,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P004",
@@ -29,7 +29,7 @@
   "lat": 37.521389,
   "lng": 127.023572,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P005",
@@ -37,7 +37,7 @@
   "lat": 37.48089,
   "lng": 126.880107,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P006",
@@ -45,7 +45,7 @@
   "lat": 37.511,
   "lng": 127.060063,
   "category": "관광특구",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P007",
@@ -61,7 +61,7 @@
   "lat": 37.586514,
   "lng": 126.818549,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P009",
@@ -69,7 +69,7 @@
   "lat": 37.539967,
   "lng": 127.068195,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P010",
@@ -85,7 +85,7 @@
   "lat": 37.553455,
   "lng": 127.154872,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P012",
@@ -101,7 +101,7 @@
   "lat": 37.497672,
   "lng": 126.867023,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P014",
@@ -109,7 +109,7 @@
   "lat": 37.553988,
   "lng": 127.12982,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P015",
@@ -117,7 +117,7 @@
   "lat": 37.570003,
   "lng": 126.999904,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P016",
@@ -141,7 +141,7 @@
   "lat": 37.492201,
   "lng": 127.013958,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P019",
@@ -149,7 +149,7 @@
   "lat": 37.483878,
   "lng": 126.896183,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P020",
@@ -157,7 +157,7 @@
   "lat": 37.50235,
   "lng": 126.882122,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P021",
@@ -173,7 +173,7 @@
   "lat": 37.556316,
   "lng": 127.080195,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P023",
@@ -181,7 +181,7 @@
   "lat": 37.562272,
   "lng": 126.802599,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P024",
@@ -189,7 +189,7 @@
   "lat": 37.566502,
   "lng": 126.877328,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P025",
@@ -197,7 +197,7 @@
   "lat": 37.559915,
   "lng": 126.978527,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P026",
@@ -205,7 +205,7 @@
   "lat": 37.551577,
   "lng": 126.993762,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P027",
@@ -213,7 +213,7 @@
   "lat": 37.517557,
   "lng": 126.958661,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P028",
@@ -221,7 +221,7 @@
   "lat": 37.513894,
   "lng": 126.944056,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P029",
@@ -229,7 +229,7 @@
   "lat": 37.492667,
   "lng": 126.895543,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P030",
@@ -237,7 +237,7 @@
   "lat": 37.566351,
   "lng": 126.971785,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P031",
@@ -245,7 +245,7 @@
   "lat": 37.567311,
   "lng": 127.011023,
   "category": "관광특구",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P032",
@@ -253,7 +253,7 @@
   "lat": 37.571481,
   "lng": 127.009654,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P033",
@@ -261,7 +261,7 @@
   "lat": 37.548291,
   "lng": 127.046137,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P034",
@@ -277,7 +277,7 @@
   "lat": 37.553281,
   "lng": 126.899268,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P036",
@@ -293,7 +293,7 @@
   "lat": 37.612195,
   "lng": 127.030741,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P038",
@@ -309,7 +309,7 @@
   "lat": 37.559151,
   "lng": 126.839173,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P040",
@@ -325,7 +325,7 @@
   "lat": 37.570585,
   "lng": 126.983411,
   "category": "고궁·문화유산",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P042",
@@ -341,7 +341,7 @@
   "lat": 37.562264,
   "lng": 126.978498,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P044",
@@ -357,7 +357,7 @@
   "lat": 37.477931,
   "lng": 126.981266,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P046",
@@ -365,7 +365,7 @@
   "lat": 37.535341,
   "lng": 126.973884,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P047",
@@ -373,7 +373,7 @@
   "lat": 37.574091,
   "lng": 126.956607,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P048",
@@ -381,7 +381,7 @@
   "lat": 37.491583,
   "lng": 127.002683,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P049",
@@ -405,7 +405,7 @@
   "lat": 37.480613,
   "lng": 126.953063,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P052",
@@ -437,7 +437,7 @@
   "lat": 37.580367,
   "lng": 126.969575,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P056",
@@ -445,7 +445,7 @@
   "lat": 37.506054,
   "lng": 127.049807,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P057",
@@ -461,7 +461,7 @@
   "lat": 37.592393,
   "lng": 127.016865,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P059",
@@ -469,7 +469,7 @@
   "lat": 37.508047,
   "lng": 127.106314,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P060",
@@ -477,7 +477,7 @@
   "lat": 37.577857,
   "lng": 126.983711,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P061",
@@ -485,7 +485,7 @@
   "lat": 37.64106,
   "lng": 127.025722,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P062",
@@ -493,7 +493,7 @@
   "lat": 37.560486,
   "lng": 126.975729,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P063",
@@ -501,7 +501,7 @@
   "lat": 37.567069,
   "lng": 126.976939,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P064",
@@ -509,7 +509,7 @@
   "lat": 37.50808,
   "lng": 127.023406,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P065",
@@ -517,7 +517,7 @@
   "lat": 37.509099,
   "lng": 126.890205,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P066",
@@ -525,7 +525,7 @@
   "lat": 37.484677,
   "lng": 126.929337,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P067",
@@ -533,7 +533,7 @@
   "lat": 37.521306,
   "lng": 126.855275,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P068",
@@ -541,7 +541,7 @@
   "lat": 37.556509,
   "lng": 126.936931,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P069",
@@ -549,7 +549,7 @@
   "lat": 37.557035,
   "lng": 126.938972,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P070",
@@ -557,7 +557,7 @@
   "lat": 37.647762,
   "lng": 127.033089,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P071",
@@ -565,7 +565,7 @@
   "lat": 37.566842,
   "lng": 127.102811,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P072",
@@ -573,7 +573,7 @@
   "lat": 37.518668,
   "lng": 126.879697,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P073",
@@ -581,7 +581,7 @@
   "lat": 37.525495,
   "lng": 127.038734,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P074",
@@ -589,7 +589,7 @@
   "lat": 37.485339,
   "lng": 127.033972,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P075",
@@ -597,7 +597,7 @@
   "lat": 37.541305,
   "lng": 126.898185,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P076",
@@ -613,7 +613,7 @@
   "lat": 37.525022,
   "lng": 126.925531,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P078",
@@ -629,7 +629,7 @@
   "lat": 37.532701,
   "lng": 126.914584,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P080",
@@ -637,7 +637,7 @@
   "lat": 37.500392,
   "lng": 127.038184,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P081",
@@ -653,7 +653,7 @@
   "lat": 37.618659,
   "lng": 126.920725,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P083",
@@ -669,7 +669,7 @@
   "lat": 37.528811,
   "lng": 126.876641,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P085",
@@ -685,7 +685,7 @@
   "lat": 37.562216,
   "lng": 127.0389,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P087",
@@ -693,7 +693,7 @@
   "lat": 37.531186,
   "lng": 126.971294,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P088",
@@ -701,7 +701,7 @@
   "lat": 37.530256,
   "lng": 126.960822,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P089",
@@ -717,7 +717,7 @@
   "lat": 37.548215,
   "lng": 127.030466,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P091",
@@ -725,7 +725,7 @@
   "lat": 37.519401,
   "lng": 126.966651,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P092",
@@ -733,7 +733,7 @@
   "lat": 37.534438,
   "lng": 126.994373,
   "category": "관광특구",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P093",
@@ -741,7 +741,7 @@
   "lat": 37.532231,
   "lng": 126.993918,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P094",
@@ -749,7 +749,7 @@
   "lat": 37.534186,
   "lng": 126.993048,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P095",
@@ -789,7 +789,7 @@
   "lat": 37.510413,
   "lng": 127.082656,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P100",
@@ -797,7 +797,7 @@
   "lat": 37.511997,
   "lng": 127.100367,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P101",
@@ -805,7 +805,7 @@
   "lat": 37.514522,
   "lng": 127.073648,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P102",
@@ -813,7 +813,7 @@
   "lat": 37.519234,
   "lng": 127.084298,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P103",
@@ -821,7 +821,7 @@
   "lat": 37.52381,
   "lng": 127.014728,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P104",
@@ -829,7 +829,7 @@
   "lat": 37.47875,
   "lng": 127.123275,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P105",
@@ -837,7 +837,7 @@
   "lat": 37.561804,
   "lng": 127.064786,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P106",
@@ -845,7 +845,7 @@
   "lat": 37.570002,
   "lng": 126.99737,
   "category": "관광특구",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P107",
@@ -861,7 +861,7 @@
   "lat": 37.656148,
   "lng": 127.054706,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P109",
@@ -869,7 +869,7 @@
   "lat": 37.539239,
   "lng": 127.125013,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P110",
@@ -877,7 +877,7 @@
   "lat": 37.440739,
   "lng": 127.050018,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P111",
@@ -885,7 +885,7 @@
   "lat": 37.525832,
   "lng": 127.043765,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P112",
@@ -893,7 +893,7 @@
   "lat": 37.58083,
   "lng": 127.039981,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P113",
@@ -901,7 +901,7 @@
   "lat": 37.486003,
   "lng": 126.981042,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P114",
@@ -909,7 +909,7 @@
   "lat": 37.559696,
   "lng": 126.963691,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P115",
@@ -917,7 +917,7 @@
   "lat": 37.549376,
   "lng": 126.911735,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P116",
@@ -925,7 +925,7 @@
   "lat": 37.542371,
   "lng": 126.987183,
   "category": "발달상권",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P117",
@@ -933,7 +933,7 @@
   "lat": 37.582482,
   "lng": 127.001764,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P118",
@@ -949,7 +949,7 @@
   "lat": 37.556762,
   "lng": 126.923008,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P120",
@@ -957,7 +957,7 @@
   "lat": 37.580788,
   "lng": 126.936983,
   "category": "공원",
-  "tracked": false
+  "tracked": true
  },
  {
   "id": "P121",
@@ -965,6 +965,6 @@
   "lat": 37.59054,
   "lng": 127.056162,
   "category": "인구밀집지역",
-  "tracked": false
+  "tracked": true
  }
 ]

@@ -127,3 +127,13 @@ select, input[type=file] { font: inherit; padding: 8px; border-radius: 8px; bord
 .rec-item { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: var(--radius); padding: 12px 14px; color: var(--ink); min-height: 56px; }
 .rec-main { flex: 1; min-width: 0; }
 .rec-index { font-size: 20px; font-weight: 700; color: var(--muted); min-width: 32px; text-align: right; }
+
+/* 오늘의 요인 꼬리표와 소음 카드 */
+.factor-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.factor { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; background: #fff3d6; color: #7a5200; border: 1px solid #f0d9a0; }
+.factor.small { font-size: 12px; padding: 2px 8px; margin: 4px 4px 0 0; }
+h3.sub { font-size: 14px; margin: 10px 0 4px; }
+.facts { margin: 0 0 6px; padding-left: 18px; font-size: 14px; }
+.chip.small { min-height: 36px; padding: 6px 12px; }
+.chip:disabled { opacity: .4; }
+.dot.ring { background: #fff; box-shadow: 0 0 0 3px #b45309; border: 0; width: 10px; height: 10px; margin: 0 3px; }

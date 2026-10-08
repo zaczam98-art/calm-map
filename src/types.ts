@@ -20,6 +20,17 @@ export interface PlaceSnapshot {
   live: { time: string; level: CongestLevel; min: number; max: number } | null
   fcst: ForecastPoint[]
   stale?: boolean
+  extra?: PlaceExtra
+}
+
+/** 혼잡도 외의 요인(서울시 실시간 도시데이터에 등록된 사실) */
+export interface PlaceExtra {
+  events?: { name: string; place: string; period: string; short: boolean }[]
+  eventsN?: number
+  controls?: { type: string; dtype: string; info: string; until: string }[]
+  controlsN?: number
+  weather?: { temp: string | null; pcp: string | null; uv: string | null; pm25: string | null; pm10: string | null; rainHours: number[] }
+  road?: { idx: string; spd: number | string | null }
 }
 
 export interface Snapshot {
@@ -118,4 +129,22 @@ export interface Briefing {
   picks: (BriefingWindow & { reason: string })[]
   avoid: BriefingWindow[]
   tip: string
+}
+
+/** 장소 주변 S-DoT 센서의 요일×시간대 소음 실측. avg[요일]과 max[요일]은 hours[0]시부터 시간순 배열 */
+export interface NoisePlace {
+  sensors: number
+  km: [number, number]
+  avg: Record<string, (number | null)[]>
+  max: Record<string, (number | null)[]>
+  n: number
+}
+
+export interface NoiseData {
+  updatedAt: string
+  days: number
+  from: string | null
+  to: string | null
+  hours: [number, number]
+  places: Record<string, NoisePlace>
 }

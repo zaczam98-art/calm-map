@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ChildProfile, HourScore, Level3, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL, nowKeyFor } from '../lib/index'
 import { distanceKm } from '../lib/nearby'
+import { factorTags } from '../lib/factors'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 
 interface Props {
@@ -47,7 +48,7 @@ export default function Recommend({ places, snap, sound, profile, offsets, onOpe
       const dow = s?.live ? new Date(s.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
       const scores = hourScores(s, (h) => sound[p.name]?.[bucketKey(dow, h)], profile, offsets[p.name] ?? 0, nowKey)
       const now = scores[0]
-      return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: calmLine(scores), km: pos ? distanceKm(pos, p) : null }
+      return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: calmLine(scores), km: pos ? distanceKm(pos, p) : null, tags: factorTags(s?.extra).filter((t) => t.key.startsWith('control') || t.key === 'rain').slice(0, 2) }
     })
   }, [places, snap, sound, profile, offsets, pos])
 
@@ -110,6 +111,9 @@ export default function Recommend({ places, snap, sound, profile, offsets, onOpe
                 <b>{r.place.name}</b> <span className="muted">{r.place.category}{r.km !== null ? ` · 직선 ${r.km.toFixed(1)}km` : ''}</span>
                 <br />
                 <span>{r.line}</span>
+                {r.tags.map((t) => (
+                  <span key={t.key} className="factor small">{t.label}</span>
+                ))}
               </span>
               {r.index !== null && <span className="rec-index" aria-label={`지수 ${r.index}`}>{r.index}</span>}
             </button>

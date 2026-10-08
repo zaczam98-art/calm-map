@@ -3,6 +3,7 @@ import L from 'leaflet'
 import type { ChildProfile, Level3, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL, nowKeyFor } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
+import { factorTags } from '../lib/factors'
 
 const FILL: Record<Level3, string> = { calm: '#d9e1ea', mid: '#8595ab', busy: '#34445a', nodata: '#c9cdd3' }
 
@@ -64,15 +65,16 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
       const scores = hourScores(ps, (h) => sound[p.name]?.[bucketKey(ps?.live ? dowOf(ps.live.time) : new Date().getDay(), h)], profile, offsets[p.name] ?? 0, nowKeyFor(snap))
       const now = scores[0]
       const level: Level3 = now?.level ?? 'nodata'
+      const controls = factorTags(ps?.extra).filter((t) => t.key.startsWith('control'))
       const m = L.circleMarker([p.lat, p.lng], {
-        radius: 11,
-        color: '#ffffff',
-        weight: 2,
+        radius: 9,
+        color: controls.length ? '#b45309' : '#ffffff', // 공사·집회 통제가 있으면 테두리 색을 바꾼다
+        weight: controls.length ? 3 : 2,
         fillColor: FILL[level],
         fillOpacity: 1,
         className: `mk ${level}`,
       })
-      m.bindTooltip(`${p.name}<br><b>${LEVEL3_LABEL[level]}</b>${now?.index != null ? ` (${now.index})` : ''}`, { direction: 'top', offset: [0, -8] })
+      m.bindTooltip(`${p.name}<br><b>${LEVEL3_LABEL[level]}</b>${now?.index != null ? ` (${now.index})` : ''}${controls.length ? `<br>${controls.map((t) => t.label).join(', ')}` : ''}`, { direction: 'top', offset: [0, -8] })
       m.on('click', () => onSelect(p.name))
       m.addTo(layer)
     }
@@ -80,12 +82,13 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
 
   return (
     <div className="map-wrap">
-      <div id="map" role="application" aria-label="서울 장소 30곳의 감각부하 지도" />
+      <div id="map" role="application" aria-label={`서울 장소 ${places.length}곳의 감각부하 지도`} />
       <div className="legend" aria-label="범례">
         <span><i className="dot calm" />무던함</span>
         <span><i className="dot mid" />보통</span>
         <span><i className="dot busy" />붐빔</span>
         <span><i className="dot nodata" />데이터 부족</span>
+        <span><i className="dot ring" />공사·통제</span>
       </div>
     </div>
   )
