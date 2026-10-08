@@ -99,8 +99,13 @@ def extras(c):
         out['events'] = events[:4]
         out['eventsN'] = len(events)
     controls = []
+    now_str = NOW.strftime('%Y-%m-%d %H:%M')
     for a in c.get('ACDNT_CNTRL_STTS') or []:
-        controls.append({'type': clip(a.get('ACDNT_TYPE'), 10), 'dtype': clip(a.get('ACDNT_DTYPE'), 14), 'info': clip(a.get('ACDNT_INFO'), 60), 'until': str(a.get('EXP_CLR_DT') or '')[:16]})
+        until = str(a.get('EXP_CLR_DT') or '')[:16]
+        if until and until < now_str:
+            continue  # 해제 예정 시각이 지난 통제는 싣지 않는다
+        controls.append({'type': clip(a.get('ACDNT_TYPE'), 10), 'dtype': clip(a.get('ACDNT_DTYPE'), 14), 'info': clip(a.get('ACDNT_INFO'), 60), 'until': until})
+    controls.sort(key=lambda x: x['until'] or '9999')
     if controls:
         out['controls'] = controls[:4]
         out['controlsN'] = len(controls)
@@ -130,7 +135,12 @@ def fetch(name):
         row = first(c.get('LIVE_PPLTN_STTS'))
         if not row:
             raise RuntimeError('no population in citydata')
-        return {**population(row), 'extra': extras(c)}
+        res = population(row)
+        try:
+            res['extra'] = extras(c)
+        except Exception as x:  # 부가 정보 처리 오류는 인구 수집을 막지 않고 로그만 남긴다
+            print(f'{name}: extras failed {type(x).__name__}: {str(x)[:80]}')
+        return res
     except Exception as e:  # 큰 응답이 실패하면 인구 항목만이라도 받는다
         d = get('citydata_ppltn', name)
         rows = d.get('SeoulRtd.citydata_ppltn') or []
@@ -147,7 +157,8 @@ for p in places:
     except Exception as e:
         fails.append(f"{p['name']}: {e}")
         if p['name'] in PREV:
-            out['places'][p['name']] = {**PREV[p['name']], 'stale': True}
+            # 이전 값을 물려주되, 날짜가 없는 행사·통제·날씨(extra)는 오늘 정보처럼 보이지 않도록 뺀다
+            out['places'][p['name']] = {**{k: v for k, v in PREV[p['name']].items() if k != 'extra'}, 'stale': True}
     time.sleep(0.2)
 
 if not any(not v.get('stale') for v in out['places'].values()):
@@ -209,6 +220,9 @@ if HIST:
                 del table[name][k]
             if not table[name]:
                 del table[name]
+    for fcn in hist['fc'].values():  # 예전 형식의 불필요한 시차 값 정리
+        for t in fcn:
+            fcn[t] = {l: v for l, v in fcn[t].items() if int(l) in KEEP_LEADS}
     hist['runs'] = [r for r in hist['runs'] if r[:13] >= cutoff] + [out['updatedAt']]
     json.dump(hist, open(HIST, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(f"history: +{added} observations, runs={len(hist['runs'])} -> {HIST}")

@@ -127,7 +127,8 @@ export function hourScores(
     const s = soundScore(b, personal ?? undefined)
     const w = s === null ? 0 : soundWeight(b?.n ?? 0)
     const idx = clamp((1 - w) * base + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
-    return { time: p.time, hour: h, index: Math.round(idx), level: level3(idx), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null }
+    const index = Math.round(idx) // 화면에 보이는 정수와 단계가 어긋나지 않게 반올림한 값으로 단계를 정한다
+    return { time: p.time, hour: h, index, level: level3(index), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null }
   })
 }
 
@@ -152,21 +153,24 @@ export function recommend(scores: HourScore[]): { text: string; from: number | n
   const now = all[0]
   const label = (s: HourScore) => (s.time.slice(0, 10) === now.time.slice(0, 10) ? '오늘' : '내일')
   const when = best === now ? `지금(${now.hour}시)` : `${label(best)} ${best.hour}시 무렵`
-  if (best.level === 'busy') return { text: `남은 시간은 대체로 붐벼요. 그중에서는 ${when}이 덜 붐벼요.`, from: best.hour }
+  if (best.level === 'busy') return { text: `낮 시간(8~21시)은 대체로 붐벼요. 그중에서는 ${when}이 덜 붐벼요.`, from: best.hour }
   if (best.level !== 'calm') return { text: `${when}이 남은 시간 중 가장 덜 붐벼요(보통 수준).`, from: best.hour }
-  // 무던한 칸: 앞뒤로 이어지는 무던한 구간을 찾는다
+  // 무던한 칸: 앞뒤로 이어지는 무던한 구간을 찾되, 가족이 외출하는 낮 시간(8~21시) 안에서만 넓힌다
+  const inDay = (s: HourScore) => s.hour >= 8 && s.hour <= 21
   const i = all.indexOf(best)
   let a = i
   let b = i
-  while (a - 1 >= 0 && all[a - 1].level === 'calm') a--
-  while (b + 1 < all.length && all[b + 1].level === 'calm') b++
+  while (a - 1 >= 0 && all[a - 1].level === 'calm' && inDay(all[a - 1])) a--
+  while (b + 1 < all.length && all[b + 1].level === 'calm' && inDay(all[b + 1])) b++
   const start = all[a]
+  const continues = b + 1 < all.length && all[b + 1].level === 'calm' // 낮 범위에서 끊었을 뿐 그 뒤도 무던한 경우
   const untilEnd = b === all.length - 1
   const endHour = (all[b].hour + 1) % 24
+  const single = a === b && !continues
   if (start === now) {
     if (untilEnd) return { text: '지금부터 예측 범위 끝까지 무던해요.', from: now.hour }
-    return { text: a === b ? `지금(${now.hour}시)이 무던해요. ${endHour}시부터는 달라져요.` : `지금부터 ${endHour}시 전까지 무던해요.`, from: now.hour }
+    return { text: single ? `지금(${now.hour}시)이 무던해요. ${endHour}시부터는 달라져요.` : `지금부터 ${endHour}시 전까지 무던해요.`, from: now.hour }
   }
   if (untilEnd) return { text: `${label(start)} ${start.hour}시부터 무던해요.`, from: start.hour }
-  return { text: a === b ? `${label(start)} ${start.hour}시 무렵이 무던해요.` : `${label(start)} ${start.hour}시부터 ${endHour}시 전까지 무던해요.`, from: start.hour }
+  return { text: single ? `${label(start)} ${start.hour}시 무렵이 무던해요.` : `${label(start)} ${start.hour}시부터 ${endHour}시 전까지 무던해요.`, from: start.hour }
 }

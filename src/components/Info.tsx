@@ -23,7 +23,7 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
         <table className="simple">
           <tbody>
             <tr><th>소리 종류 분류</th><td>YAMNet(AudioSet 521종)을 TensorFlow.js로 기기 안에서 실행해요. 소리의 크기가 아니라 종류(사이렌, 군중, 음악, 말소리…)를 알아내요. 원음은 서버로 보내지 않아요.</td></tr>
-            <tr><th>감각부하 지수(규칙)</th><td>서울시 실시간 도시데이터의 12시간 혼잡도 예측과 소리 분류 결과를 아래 산식으로 합쳐 장소×시간대 지수(0~100)를 계산하고, 아이의 민감 요인과 다녀온 뒤 기록으로 다시 계산해요. 이 부분은 학습 모델이 아니라 누구나 확인할 수 있는 고정 규칙이에요.</td></tr>
+            <tr><th>감각부하 지수(규칙)</th><td>서울시 실시간 도시데이터의 12시간 혼잡도 예측, 주변 센서의 평소 소음, 소리 분류 결과를 아래 산식으로 합쳐 장소×시간대 지수(0~100)를 계산하고, 아이의 민감 요인과 다녀온 뒤 기록으로 다시 계산해요. 이 부분은 학습 모델이 아니라 누구나 확인할 수 있는 고정 규칙이에요.</td></tr>
             <tr><th>미리 보는 카드</th><td>특수교육의 사회적 이야기 기법을 따라 3~5단계 그림 문장을 생성형 AI가 만들고, 규칙 검사(권고형, 금지어, 글자 수)를 통과한 것만 보여 줘요.</td></tr>
             <tr><th>오늘의 브리핑</th><td>규칙이 여유로운 시간대 후보를 계산하고 생성형 AI가 그중에서 골라 문장을 써요. 장소와 시간대는 예측과 다시 대조하고, 문장은 길이·어미·금지 표현을 검사해요.</td></tr>
           </tbody>
@@ -35,7 +35,7 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
       </div>
       <div className="card">
         <h2>개인정보</h2>
-        <p className="muted">아이의 이름, 진단명, 행동 기록을 받지 않아요. 프로필(민감 요인 6개의 3단계 값)과 다녀온 뒤 기록, 소리 측정 요약은 이 기기의 저장소에만 있어요. {HAS_API ? '소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달돼요.' : '이 사이트에는 받는 서버가 없어서 기기에서 밖으로 보내는 값이 없어요.'} 생성형 AI에는 자료 수집 단계에서 장소 이름과 혼잡도 예측만 전달돼요. 위치를 허용하면 거리 계산에만 쓰고 저장하지 않아요.</p>
+        <p className="muted">아이의 이름, 진단명, 행동 기록을 받지 않아요. 프로필(민감 요인 7개의 3단계 값)과 다녀온 뒤 기록, 소리 측정 요약은 이 기기의 저장소에만 있어요. {HAS_API ? '소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달돼요.' : '이 사이트에는 받는 서버가 없어서 프로필, 기록, 소리 측정 요약, 내 위치는 이 기기 밖으로 나가지 않아요. 지도 타일, 자료 파일, 소리 분류 모델을 받을 때는 접속 정보(IP 주소)가 OpenStreetMap, GitHub, unpkg, TF Hub에 전달돼요.'} 생성형 AI에는 자료 수집 단계에서 장소 이름과 혼잡도 예측만 전달돼요. 위치를 허용하면 거리 계산에만 쓰고 저장하지 않아요.</p>
       </div>
       <div className="card">
         <h2>데이터 출처</h2>
@@ -57,7 +57,7 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
                     <tr key={k}><th>{k}시간 전</th><td>{m.n}</td><td>{pct(m.exact, m.n)}</td><td>{pct(m.within1, m.n)}</td><td>{pct(m.persistExact, m.persistN)}</td></tr>
                   ) : null
                 })}
-                <tr><th>전체(1~12시간 전)</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
+                <tr><th>전체(위 네 시차 합)</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
               </tbody>
             </table>
             <p className="muted">

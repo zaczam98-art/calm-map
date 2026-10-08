@@ -96,7 +96,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {card && <CardView card={card.card} note={card.note} place={place.name} />}
-      <Factors extra={ps?.extra} />
+      <Factors extra={ps?.stale ? undefined : ps?.extra} />
       <NoiseCard noise={noise} place={place.name} />
       {nearby && <NearbyCalm items={nearby} maxKm={NEARBY_MAX_KM} onSelect={onSelect} />}
       <WeekPattern pattern={pattern} place={place.name} />

@@ -12,7 +12,7 @@ if (!KEY) {
   process.exit(1)
 }
 const MODEL = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
-const LEVEL_KO: Record<string, string> = { calm: '무던함(사람이 적고 조용함)', mid: '보통', busy: '붐빔(사람이 많고 소리가 큼)' }
+const LEVEL_KO: Record<string, string> = { calm: '무던함(혼잡도 예측이 낮은 편)', mid: '보통', busy: '붐빔(혼잡도 예측이 높은 편)' }
 
 const places = (JSON.parse(readFileSync('src/data/places.json', 'utf-8')) as { name: string; category: string; tracked: boolean }[]).filter((p) => p.tracked)
 const out = JSON.parse(readFileSync('public/data/cards.json', 'utf-8')) as Record<string, CardDraft>
@@ -25,7 +25,7 @@ async function gen(place: string, category: string, level: string): Promise<Card
     `장소: ${place} (${category})`,
     `예상 상태: ${LEVEL_KO[level]}`,
     '규칙: 단계 3~5개. 각 단계는 28자 이내, "~해요/~어요" 서술로 끝내고, 아이가 1인칭으로 읽는 쉬운 말. 명령형·반말 금지.',
-    '금지어: 장애, 자폐, 진단, 위험, 절대, 금지, 경고, 못 가, 사고. 판정하지 말고 권고만.',
+    '금지어: 장애, 자폐, 진단, 위험, 절대, 금지, 경고, 못 가, 사고. 판정하지 말고 권고만. 소리가 조용하다거나 사람이 없다고 단정하지 않습니다(사람이 적은 편이에요 정도로만).',
     `아이콘은 다음 중 하나: ${CARD_ICONS.join(', ')}.`,
     'prep(준비물 한 줄 30자 이내), whenHard(힘들 때 할 일 한 줄 30자 이내)도 쓰세요.',
   ].join('\n')

@@ -19,7 +19,7 @@ export interface Env {
 const TAGS = ['sudden', 'crowd', 'machine', 'music', 'speech', 'ambient'] as const
 type Tag = (typeof TAGS)[number]
 const TAG_KO: Record<Tag, string> = { sudden: '돌발음(사이렌·경적·알람)', crowd: '군중 소리', machine: '기계·차량', music: '음악·안내방송', speech: '말소리', ambient: '배경음' }
-const LEVEL_KO: Record<string, string> = { calm: '무던함(사람이 적고 조용함)', mid: '보통', busy: '붐빔(사람이 많고 소리가 큼)' }
+const LEVEL_KO: Record<string, string> = { calm: '무던함(혼잡도 예측이 낮은 편)', mid: '보통', busy: '붐빔(혼잡도 예측이 높은 편)' }
 
 const json = (data: unknown, status = 200, extra: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...extra } })

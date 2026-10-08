@@ -6,7 +6,7 @@ const DOWS: [number, string][] = [[1, '월'], [2, '화'], [3, '수'], [4, '목']
 const DB_MIN = 30
 const DB_MAX = 80
 
-/** 장소 주변의 소음 실측(서울시 S-DoT 센서). 소리의 크기만 보여 주며 지수 계산에는 넣지 않는다. */
+/** 장소 주변의 소음 실측(서울시 S-DoT 센서). 소리의 크기를 보여 주고, 지수에는 소음 점수(NOISE_WEIGHT 0.4)로 들어간다. */
 export default function NoiseCard({ noise, place }: { noise: NoiseData | null; place: string }) {
   const now = kstNow()
   const [dow, setDow] = useState<number | null>(null)
@@ -70,11 +70,11 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
       </svg>
       <p className="muted">막대는 그 시간의 평균 소음(dB), 위의 짧은 선은 그 시간에 난 큰 소리의 보통 수준이에요.</p>
       {cur && <p>지금 시간대({dowName}요일 {cur.hour}시)에는 평균 {cur.avg}dB{cur.max !== null ? `, 큰 소리는 ${cur.max}dB 안팎` : ''}이었어요.</p>}
-      {quiet && loud && quiet.hour !== loud.hour && (
-        <p>{dowName}요일 낮(8~21시)에는 {quiet.hour}시가 가장 조용했고(평균 {quiet.avg}dB), {loud.hour}시가 가장 시끄러웠어요(평균 {loud.avg}dB).</p>
+      {quiet && loud && loud.avg - quiet.avg >= 3 && (
+        <p>{dowName}요일 낮(8~21시)에는 {quiet.hour}시가 상대적으로 낮았고(평균 {quiet.avg}dB), {loud.hour}시가 상대적으로 높았어요(평균 {loud.avg}dB).</p>
       )}
       <p className="muted">
-        가까운 서울시 센서 {p.sensors}개(직선 {p.km[0]}~{p.km[1]}km)가 {noise.from}부터 {noise.to}까지 잰 값이에요({noise.days}일 치, 센서·시간 {p.n}건).
+        가까운 서울시 센서 {p.sensors}개(직선 {p.km[0] === p.km[1] ? `${p.km[0]}km` : `${p.km[0]}~${p.km[1]}km`})가 {noise.from}부터 {noise.to}까지 잰 값이에요({noise.days}일 치, 센서·시간 {p.n}건).
         {p.excluded ? ` 값이 변하지 않아 고장으로 보이는 센서 ${p.excluded}개는 뺐어요.` : ''}{' '}
         센서는 길가에 있어서 장소 안쪽과 다를 수 있고, 소리의 크기만 재요. 이 값은 지수의 소음 점수(기본 지수의 40%)로 들어가고, 소리의 종류는 현장 측정에서 분류해요.
       </p>

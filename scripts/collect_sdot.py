@@ -8,9 +8,10 @@ S-DoT 환경정보(IotVdata017)는 시내 약 1,000개 센서의 1시간 단위 
 - 한 번에 처리하는 날짜 수는 SDOT_MAX_DAYS(기본 6)로 제한한다. 하루 치는 약 25회 호출(1,000행씩)이다.
 - 장소와 센서의 대응은 scripts/sdot_place_sensors.json에 있다(직선 0.6km 안 최대 3개, 없으면 1.0km 안 1개).
 
-센서 품질 걸러 내기(요약을 만들 때 적용)
+센서 품질 걸러 내기
 - 값이 바닥값(35dB)에 붙어 있거나 거의 변하지 않는 센서가 있다(2026-10-08 점검: 1,021개 중 약 30개가 대부분의 시간에 35dB).
-- 관측 24시간 이상인 센서 가운데, 시간 평균이 35.5dB 이하인 시간이 80% 이상이거나 시간 평균의 최댓값과 최솟값 차이가 1dB 이하인 센서는 제외한다.
+- 센서-날짜 단위: 그날 관측이 12시간 이상인데 시간 평균이 35.5dB 이하인 시간이 80% 이상이거나 최댓값과 최솟값 차이가 1dB 이하이면 그날 치는 더하지 않는다.
+- 센서 단위(요약을 만들 때): 누적 관측 24시간 이상인 센서 가운데 같은 기준에 걸리는 센서는 제외한다.
 
 산출 정의(noise.json의 places[장소])
 - avg[요일] : 7시부터 22시까지 시간대별로, 쓸 수 있는 센서가 보고한 '시간 평균 소음(dB)'의 평균. 요일은 일요일=0
@@ -28,6 +29,8 @@ LOOKBACK = 33
 PAGE = 1000
 HOUR_FROM, HOUR_TO = 7, 22  # 앱용 요약에 싣는 시간대
 FLOOR_DB, FLOOR_FRAC, MIN_RANGE_DB, MIN_HOURS = 35.5, 0.8, 1.0, 24
+DAY_MIN_HOURS = 12  # 센서-날짜 품질 판정에 필요한 최소 관측 시간 수
+GRACE_DAYS = 2  # 어제부터 이 일수 안의 날짜는 자료가 없어도 '없음'으로 확정하지 않는다
 KST = zoneinfo.ZoneInfo('Asia/Seoul')
 NOW = datetime.datetime.now(KST)
 
@@ -87,14 +90,16 @@ for date in todo:
     except Exception as e:
         print(f'{date}: failed {type(e).__name__}: {str(e)[:120]}')
         continue
+    recent = date >= (yesterday - datetime.timedelta(days=GRACE_DAYS)).isoformat()
     if not rows:
-        # 어제 치는 아직 안 올라왔을 수 있으므로 비어 있다고 확정하지 않는다
-        if date != yesterday.isoformat():
+        # 자료가 늦게 올라올 수 있으므로 최근 며칠은 비어 있다고 확정하지 않는다
+        if not recent:
             state['empty'].append(date)
             changed = True
         print(f'{date}: no rows')
         continue
-    used = 0
+    # 센서별로 그날 값을 먼저 모은다
+    by_sensor = {}
     for r in rows:
         sn = aliases.get(r.get('SN'), r.get('SN'))
         if sn not in needed:
@@ -107,20 +112,32 @@ for date in todo:
         avg, mx = num(r.get('AVG_NIS')), num(r.get('MAX_NIS'))
         if avg is None or mx is None or not (20 <= avg <= 120) or not (20 <= mx <= 130):
             continue
-        s = state['sensors'].setdefault(sn, {'cells': {}, 'q': [0, 0, avg, avg]})
-        c = s['cells'].setdefault(f'{(t.weekday() + 1) % 7}-{t.hour}', [0, 0, 0])  # [평균 합, 최대 합, n], 요일은 일요일=0
-        c[0] += avg
-        c[1] += mx
-        c[2] += 1
+        by_sensor.setdefault(sn, []).append((t, avg, mx))
+    used = skipped = 0
+    for sn, vals in by_sensor.items():
+        # 그날 하루치가 바닥값에 붙어 있거나 거의 변하지 않으면 그 센서-날짜는 쓰지 않는다(고장이나 통신 이상)
+        avgs = [v[1] for v in vals]
+        if len(avgs) >= DAY_MIN_HOURS and (sum(1 for a in avgs if a <= FLOOR_DB) / len(avgs) >= FLOOR_FRAC or max(avgs) - min(avgs) <= MIN_RANGE_DB):
+            skipped += 1
+            continue
+        s = state['sensors'].setdefault(sn, {'cells': {}, 'q': [0, 0, avgs[0], avgs[0]]})
         q = s['q']  # [관측 시간 수, 바닥값인 시간 수, 시간 평균의 최솟값, 최댓값]
-        q[0] += 1
-        q[1] += 1 if avg <= FLOOR_DB else 0
-        q[2] = min(q[2], avg)
-        q[3] = max(q[3], avg)
-        used += 1
+        for t, avg, mx in vals:
+            c = s['cells'].setdefault(f'{(t.weekday() + 1) % 7}-{t.hour}', [0, 0, 0])  # [평균 합, 최대 합, n], 요일은 일요일=0
+            c[0] += avg
+            c[1] += mx
+            c[2] += 1
+            q[0] += 1
+            q[1] += 1 if avg <= FLOOR_DB else 0
+            q[2] = min(q[2], avg)
+            q[3] = max(q[3], avg)
+            used += 1
+    if used == 0 and recent:
+        print(f'{date}: {len(rows)} rows but nothing usable yet; will retry')
+        continue
     state['processed'].append(date)
     changed = True
-    print(f'{date}: {len(rows)} rows, {used} used')
+    print(f'{date}: {len(rows)} rows, {used} used, {skipped} sensor-days skipped for quality')
 
 state['processed'] = sorted(set(state['processed']))
 json.dump(state, open(STATE, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))

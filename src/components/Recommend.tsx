@@ -14,6 +14,8 @@ interface Props {
   offsets: Record<string, number>
   nowKey: string | undefined
   noise: NoiseData | null
+  ui: RecommendUi
+  onUi: (u: RecommendUi) => void
   onOpen: (name: string) => void
 }
 
@@ -29,19 +31,28 @@ const RANK: Record<Level3, number> = { calm: 0, mid: 1, busy: 2, nodata: 3 }
 /** 지금부터 무던한 시간이 얼마나 이어지는지, 아니면 언제부터 무던해지는지 한 줄로 */
 function calmLine(scores: HourScore[]): string {
   if (scores.length === 0) return '예측 자료가 없어요.'
-  if (scores[0].level === 'calm') {
+  const now = scores[0]
+  const dayWord = (s: HourScore) => (s.time.slice(0, 10) === now.time.slice(0, 10) ? '' : '내일 ')
+  if (now.level === 'calm') {
     let n = 0
     while (n < scores.length && scores[n].level === 'calm') n++
-    return n >= scores.length ? '예측 범위 내내 무던해요.' : `지금부터 ${scores[n].hour}시 전까지 무던해요.`
+    return n >= scores.length ? '예측 범위 내내 무던해요.' : `지금부터 ${dayWord(scores[n])}${scores[n].hour}시 전까지 무던해요.`
   }
   const next = scores.find((s, i) => i > 0 && s.level === 'calm' && s.hour >= 8 && s.hour <= 21)
-  return next ? `${next.hour}시부터 무던해져요.` : '오늘 낮에는 무던한 시간대가 보이지 않아요.'
+  return next ? `${dayWord(next)}${next.hour}시부터 무던해져요.` : '예측 범위의 8~21시 사이에는 무던한 시간대가 보이지 않아요.'
 }
 
-export default function Recommend({ places, snap, sound, profile, offsets, nowKey, noise, onOpen }: Props) {
-  const [group, setGroup] = useState(0)
-  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null)
-  const [byDistance, setByDistance] = useState(false)
+/** 탭을 옮겼다 돌아와도 유지할 추천 화면의 선택 상태(부모가 보관) */
+export interface RecommendUi {
+  group: number
+  pos: { lat: number; lng: number } | null
+  byDistance: boolean
+}
+
+export default function Recommend({ places, snap, sound, profile, offsets, nowKey, noise, ui, onUi, onOpen }: Props) {
+  const { group, pos, byDistance } = ui
+  const setGroup = (g: number) => onUi({ ...ui, group: g })
+  const setByDistance = (b: boolean) => onUi({ ...ui, byDistance: b })
   const [geoMsg, setGeoMsg] = useState<string | null>(null)
 
   const rows = useMemo(() => {
@@ -69,8 +80,7 @@ export default function Recommend({ places, snap, sound, profile, offsets, nowKe
     setGeoMsg('위치를 확인하는 중이에요…')
     navigator.geolocation.getCurrentPosition(
       (g) => {
-        setPos({ lat: g.coords.latitude, lng: g.coords.longitude })
-        setByDistance(true)
+        onUi({ ...ui, pos: { lat: g.coords.latitude, lng: g.coords.longitude }, byDistance: true })
         setGeoMsg(null)
       },
       () => setGeoMsg('위치를 확인하지 못했어요. 브라우저의 위치 권한을 확인해 주세요.'),

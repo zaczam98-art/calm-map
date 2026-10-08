@@ -11,7 +11,7 @@ restore() {
   # data 브랜치가 아예 없는 첫 실행과, 있는데 못 읽은 경우를 구분한다.
   # 있는데 못 읽으면 실패시켜, 빈 이력으로 새로 시작해 강제 푸시로 덮어쓰는 일을 막는다.
   local rc=0
-  git ls-remote --exit-code --heads origin data >/dev/null || rc=$?
+  git ls-remote --exit-code --heads origin refs/heads/data >/dev/null || rc=$?
   if [ "$rc" -eq 2 ]; then
     echo "data branch does not exist yet (first run)"
   elif [ "$rc" -ne 0 ]; then

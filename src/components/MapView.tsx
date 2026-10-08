@@ -90,7 +90,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
         <span><i className="dot mid" />보통</span>
         <span><i className="dot busy" />붐빔</span>
         <span><i className="dot nodata" />데이터 부족</span>
-        <span><i className="dot ring" />공사·통제</span>
+        <span><i className="dot ring" />공사·통제 있음</span>
       </div>
     </div>
   )

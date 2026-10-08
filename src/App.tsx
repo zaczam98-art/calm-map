@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import placesRaw from './data/places.json'
 import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, NoiseData, Place, Snapshot, WeekPattern } from './types'
 import { loadProfile, loadOffsets, saveProfile } from './lib/profile'
@@ -11,7 +11,7 @@ import ChildProfileView from './components/ChildProfile'
 import Measure from './components/Measure'
 import Info from './components/Info'
 import Briefing from './components/Briefing'
-import Recommend from './components/Recommend'
+import Recommend, { type RecommendUi } from './components/Recommend'
 
 export const PLACES = (placesRaw as Place[]).filter((p) => p.tracked)
 const PLACE_NAMES = new Set(PLACES.map((p) => p.name))
@@ -31,10 +31,25 @@ export default function App() {
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [noise, setNoise] = useState<NoiseData | null>(null)
 
-  // 열어 둔 채 시간이 지나도 '지금'이 맞도록 1분마다 시각을 다시 보고, 10분마다 자료를 다시 읽는다
+  // 열어 둔 채 시간이 지나도 '지금'이 맞도록 1분마다 시각을 다시 보고, 화면에 돌아왔을 때 10분이 지났으면 자료를 다시 읽는다
   const [tick, setTick] = useState(0)
+  const loadedAt = useRef(0)
+  const refresh = () => {
+    loadedAt.current = Date.now()
+    void loadSnapshot()
+      // 다시 읽기가 실패해 데모로 떨어지거나 같은 자료면 이미 있는 실제 자료를 유지한다
+      .then((s) => setSnap((prev) => (prev && (s.source === 'demo' || prev.updatedAt === s.updatedAt) ? prev : s)))
+      .catch(() => {})
+    void loadPublicJson<WeekPattern>('pattern.json').then((v) => v && setPattern(v))
+    void loadPublicJson<ForecastMetrics>('metrics.json').then((v) => v && setMetrics(v))
+    void loadPublicJson<BriefingData>('briefing.json').then((v) => v && setBriefing(v))
+    void loadPublicJson<NoiseData>('noise.json').then((v) => v && setNoise(v))
+  }
   useEffect(() => {
-    const bump = () => setTick((t) => t + 1)
+    const bump = () => {
+      setTick((t) => t + 1)
+      if (document.visibilityState === 'visible' && Date.now() - loadedAt.current > 10 * 60_000) refresh()
+    }
     const id = setInterval(bump, 60_000)
     document.addEventListener('visibilitychange', bump)
     return () => {
@@ -43,17 +58,10 @@ export default function App() {
     }
   }, [])
   const nowKey = useMemo(() => nowKeyFor(snap), [snap, tick])
-  const reload = Math.floor(tick / 10)
   useEffect(() => {
-    if (reload > 0) void loadSnapshot().then(setSnap)
-  }, [reload])
-  useEffect(() => {
-    void loadSnapshot().then(setSnap)
-    void loadPublicJson<WeekPattern>('pattern.json').then(setPattern)
-    void loadPublicJson<ForecastMetrics>('metrics.json').then(setMetrics)
-    void loadPublicJson<BriefingData>('briefing.json').then(setBriefing)
-    void loadPublicJson<NoiseData>('noise.json').then(setNoise)
+    refresh()
   }, [])
+  const [recUi, setRecUi] = useState<RecommendUi>({ group: 0, pos: null, byDistance: false })
   useEffect(() => {
     void loadSoundStore().then(setSound)
   }, [soundVersion])
@@ -119,6 +127,8 @@ export default function App() {
             offsets={offsets}
             nowKey={nowKey}
             noise={noise}
+            ui={recUi}
+            onUi={setRecUi}
             onOpen={(name) => {
               setSelected(name)
               setView('map')
