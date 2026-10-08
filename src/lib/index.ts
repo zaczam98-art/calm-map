@@ -40,6 +40,30 @@ export function soundScore(b: SoundBucket | undefined, profile?: ChildProfile): 
   return clamp((num / den) * 100 * 1.4, 0, 100) // 1.4: 보통 측정값이 0.3~0.6에 몰려 있어 체감 범위로 늘림
 }
 
+/** 소음 실측이 있을 때 기본 지수에서 소음이 차지하는 비중. 혼잡은 실시간 예측이고 소음은 평소 패턴이라 혼잡에 조금 더 무게를 둔다. */
+export const NOISE_WEIGHT = 0.4
+export const NOISE_DB_LOW = 40 // 이 평균 소음(dB)이면 소음 점수 0: 조용한 주택가 수준
+export const NOISE_DB_HIGH = 75 // 이 평균 소음이면 100: 큰길가 수준
+export const NOISE_SPIKE_FROM = 3 // 시간 최대와 평균의 차이가 이보다 크면 '큰 소리' 가산
+export const NOISE_SPIKE_PER_DB = 4
+export const NOISE_SPIKE_MAX = 20
+
+/**
+ * 소음 점수 N: 주변 센서의 같은 요일·시간대 평균 소음을 0~100으로 바꾸고, 큰 소리 정도(최대-평균)를 더한다.
+ * 맞춤을 켜면 평균에는 '큰 소리' 민감도를, 가산에는 돌발음 민감도를 곱한다. 자료가 없으면 null.
+ */
+export function noiseScore(nz: { avg: number; max: number | null } | undefined, profile?: ChildProfile): number | null {
+  if (!nz) return null
+  let n = clamp(((nz.avg - NOISE_DB_LOW) / (NOISE_DB_HIGH - NOISE_DB_LOW)) * 100, 0, 100)
+  const gap = nz.max === null ? 0 : nz.max - nz.avg
+  let spike = clamp((gap - NOISE_SPIKE_FROM) * NOISE_SPIKE_PER_DB, 0, NOISE_SPIKE_MAX)
+  if (profile?.enabled) {
+    n = clamp(n * profile.loud, 0, 100)
+    spike = spike * profile.tags.sudden
+  }
+  return clamp(n + spike, 0, 100)
+}
+
 export function soundWeight(n: number): number {
   return n <= 0 ? 0 : Math.min(0.5, n / (n + 6))
 }
@@ -77,6 +101,7 @@ export function hourScores(
   profile: ChildProfile | null,
   offset = 0,
   nowKey?: string,
+  noise: (hour: number, dow: number) => { avg: number; max: number | null } | undefined = () => undefined,
 ): HourScore[] {
   if (!snap) return []
   type Pt = ForecastPoint & { forecast: boolean }
@@ -92,13 +117,17 @@ export function hourScores(
   const personal = profile?.enabled ? profile : null
   return pts.map((p) => {
     const h = hourOf(p.time)
+    const dow = dowOfTime(p.time)
     let c = congestScore(p, pts)
     if (personal) c = clamp(c * personal.crowd, 0, 100)
-    const b = sound(h, dowOfTime(p.time))
+    const nz = noise(h, dow)
+    const n = noiseScore(nz, personal ?? undefined)
+    const base = n === null ? c : (1 - NOISE_WEIGHT) * c + NOISE_WEIGHT * n
+    const b = sound(h, dow)
     const s = soundScore(b, personal ?? undefined)
     const w = s === null ? 0 : soundWeight(b?.n ?? 0)
-    const idx = clamp((1 - w) * c + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
-    return { time: p.time, hour: h, index: Math.round(idx), level: level3(idx), soundN: b?.n ?? 0, forecast: p.forecast }
+    const idx = clamp((1 - w) * base + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
+    return { time: p.time, hour: h, index: Math.round(idx), level: level3(idx), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null }
   })
 }
 

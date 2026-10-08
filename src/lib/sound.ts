@@ -23,6 +23,16 @@ export const CLASS_TAG: (SenseTag | null)[] = NAMES.map((n) => {
   return null
 })
 
+/**
+ * 태그 확률 집계 방식. 'sum'은 태그에 속한 분류의 확률을 더하고(앱 기본값), 'max'는 가장 큰 분류 하나만 쓴다.
+ * 평가 스크립트가 두 방식을 같은 자료로 비교할 때 바꾼다(FABLE_결정.md 13번).
+ */
+export type TagAgg = 'sum' | 'max'
+let tagAgg: TagAgg = 'sum'
+export function setTagAgg(m: TagAgg) {
+  tagAgg = m
+}
+
 let model: tf.GraphModel | null = null
 let loading: Promise<tf.GraphModel> | null = null
 
@@ -65,7 +75,7 @@ export async function classifyWindow(wave: Float32Array): Promise<WindowResult> 
   const tagProb = Object.fromEntries(SENSE_TAGS.map((t) => [t, 0])) as Record<SenseTag, number>
   for (let i = 0; i < probs.length; i++) {
     const t = CLASS_TAG[i]
-    if (t) tagProb[t] = Math.min(1, tagProb[t] + probs[i])
+    if (t) tagProb[t] = tagAgg === 'max' ? Math.max(tagProb[t], probs[i]) : Math.min(1, tagProb[t] + probs[i])
   }
   let sum = 0
   for (let i = 0; i < wave.length; i++) sum += wave[i] * wave[i]

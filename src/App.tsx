@@ -85,7 +85,7 @@ export default function App() {
       <main className="main">
         {view === 'map' && (
           <>
-            <MapView places={PLACES} snap={snap} sound={sound} profile={profile} offsets={offsets} nowKey={nowKey} onSelect={setSelected} />
+            <MapView places={PLACES} snap={snap} sound={sound} profile={profile} offsets={offsets} nowKey={nowKey} noise={noise} onSelect={setSelected} />
             {!selected && snap?.source === 'seoul' && <Briefing briefing={briefing} known={PLACE_NAMES} onSelect={setSelected} />}
             {selected && (
               <PlaceDetail
@@ -118,6 +118,7 @@ export default function App() {
             profile={profile}
             offsets={offsets}
             nowKey={nowKey}
+            noise={noise}
             onOpen={(name) => {
               setSelected(name)
               setView('map')

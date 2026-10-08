@@ -9,11 +9,12 @@ const OPTS: [Sensitivity, string][] = [
 ]
 
 export default function ChildProfileView({ profile, onChange }: { profile: ChildProfile; onChange: (p: ChildProfile) => void }) {
-  const set = (tag: SenseTag | 'crowd', v: Sensitivity) => {
+  const set = (tag: SenseTag | 'crowd' | 'loud', v: Sensitivity) => {
     if (tag === 'crowd') onChange({ ...profile, crowd: v })
+    else if (tag === 'loud') onChange({ ...profile, loud: v })
     else onChange({ ...profile, tags: { ...profile.tags, [tag]: v } })
   }
-  const Row = ({ label, value, k }: { label: string; value: Sensitivity; k: SenseTag | 'crowd' }) => (
+  const Row = ({ label, value, k }: { label: string; value: Sensitivity; k: SenseTag | 'crowd' | 'loud' }) => (
     <div className="sens-row">
       <span>{label}</span>
       <div className="seg" role="radiogroup" aria-label={label}>
@@ -37,6 +38,7 @@ export default function ChildProfileView({ profile, onChange }: { profile: Child
             <Row key={t} label={TAG_LABEL[t]} value={profile.tags[t]} k={t} />
           ))}
           <Row label="사람이 많은 혼잡" value={profile.crowd} k="crowd" />
+          <Row label="큰 소리(주변 소음의 크기)" value={profile.loud} k="loud" />
         </div>
       </div>
       <div className="card">

@@ -7,6 +7,7 @@ import { recordVisit } from '../lib/profile'
 import { getCard } from '../lib/cards'
 import { topTags } from '../lib/sound'
 import { calmerNearby, NEARBY_MAX_KM } from '../lib/nearby'
+import { noiseLookup } from '../lib/noise'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm from './NearbyCalm'
@@ -32,7 +33,7 @@ interface Props {
 
 export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
   const ps = snap?.places[place.name]
-  const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey), [ps, sound, profile, offsets, place.name, nowKey])
+  const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseLookup(noise, place.name)), [ps, sound, profile, offsets, place.name, nowKey, noise])
   const rec = recommend(scores)
   const now = scores[0]
   const nowBucket = now ? sound[place.name]?.[bucketKey(dowOfTime(now.time), now.hour)] : undefined
@@ -41,8 +42,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   // 지금 '보통' 이상일 때만, 가까운 곳 중 지수가 뚜렷이 낮은 곳을 찾는다
   const nearby = useMemo(() => {
     if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
-    return calmerNearby(place, now.level, places, (p) => hourScores(snap?.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)[0])
-  }, [now, place, places, snap, sound, profile, offsets, nowKey])
+    return calmerNearby(place, now.level, places, (p) => hourScores(snap?.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))[0])
+  }, [now, place, places, snap, sound, profile, offsets, nowKey, noise])
   const [card, setCard] = useState<{ card: Card; note: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [recorded, setRecorded] = useState<string | null>(null)
@@ -86,7 +87,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       <p><b>{rec.text}</b></p>
       <HourChart scores={scores} highlight={rec.from} />
       <p className="muted">
-        막대는 혼잡도 예측{totalN > 0 ? '과 소리 측정' : ''}으로 계산한 감각부하 지수예요. 점이 있는 시간대는 소리 측정 표본이 있어요.
+        막대는 혼잡도 예측{now?.noise ? '과 평소 소음 실측' : ''}{totalN > 0 ? '과 소리 종류 측정' : ''}으로 계산한 감각부하 지수예요. 점이 있는 시간대는 소리 종류 측정 표본이 있어요.
         {' '}소리 표본 {totalN}개{totalN === 0 ? ' (소리 미측정)' : tags.length ? `, 지금 시간대 주요 소리: ${tags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.
         {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
       </p>

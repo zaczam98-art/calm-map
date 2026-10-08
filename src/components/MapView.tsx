@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
-import type { ChildProfile, Level3, Place, Snapshot } from '../types'
+import type { ChildProfile, Level3, NoiseData, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { factorTags } from '../lib/factors'
+import { noiseLookup } from '../lib/noise'
 
 const FILL: Record<Level3, string> = { calm: '#d9e1ea', mid: '#8595ab', busy: '#34445a', nodata: '#c9cdd3' }
 
@@ -14,10 +15,11 @@ interface Props {
   profile: ChildProfile
   offsets: Record<string, number>
   nowKey: string | undefined
+  noise: NoiseData | null
   onSelect: (name: string) => void
 }
 
-export default function MapView({ places, snap, sound, profile, offsets, nowKey, onSelect }: Props) {
+export default function MapView({ places, snap, sound, profile, offsets, nowKey, noise, onSelect }: Props) {
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
 
@@ -62,7 +64,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     layer.clearLayers()
     for (const p of places) {
       const ps = snap?.places[p.name]
-      const scores = hourScores(ps, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)
+      const scores = hourScores(ps, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
       const now = scores[0]
       const level: Level3 = now?.level ?? 'nodata'
       const controls = factorTags(ps?.extra).filter((t) => t.key.startsWith('control'))
@@ -78,7 +80,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       m.on('click', () => onSelect(p.name))
       m.addTo(layer)
     }
-  }, [places, snap, sound, profile, offsets, nowKey, onSelect])
+  }, [places, snap, sound, profile, offsets, nowKey, noise, onSelect])
 
   return (
     <div className="map-wrap">

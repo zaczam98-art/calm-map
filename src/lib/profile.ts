@@ -7,7 +7,7 @@ const KEY_LOG = 'calmmap.log.v1'
 
 export function defaultProfile(): ChildProfile {
   const tags = Object.fromEntries(SENSE_TAGS.map((t) => [t, 1])) as Record<SenseTag, Sensitivity>
-  return { enabled: false, tags, crowd: 1 }
+  return { enabled: false, tags, crowd: 1, loud: 1 }
 }
 
 function read<T>(key: string, fallback: T): T {

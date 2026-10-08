@@ -76,7 +76,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
       <p className="muted">
         가까운 서울시 센서 {p.sensors}개(직선 {p.km[0]}~{p.km[1]}km)가 {noise.from}부터 {noise.to}까지 잰 값이에요({noise.days}일 치, 센서·시간 {p.n}건).
         {p.excluded ? ` 값이 변하지 않아 고장으로 보이는 센서 ${p.excluded}개는 뺐어요.` : ''}{' '}
-        센서는 길가에 있어서 장소 안쪽과 다를 수 있고, 소리의 크기만 재요. 소리의 종류는 현장 측정에서 분류하고, 이 값은 아직 지수 계산에 넣지 않았어요.
+        센서는 길가에 있어서 장소 안쪽과 다를 수 있고, 소리의 크기만 재요. 이 값은 지수의 소음 점수(기본 지수의 40%)로 들어가고, 소리의 종류는 현장 측정에서 분류해요.
       </p>
     </div>
   )

@@ -1,23 +1,26 @@
 name: collect-seoul-citydata
 
+# 수집 작업 하나가 최대 5시간 45분 동안 매시 6분에 한 바퀴(scripts/cycle.sh)를 돌고, 끝나기 전에 다음 작업을 스스로 실행한다.
+# GitHub의 예약 실행(cron)은 지연과 누락이 잦아서 사슬이 끊겼을 때의 예비로만 둔다.
+# 동시 실행 그룹이 겹침을 막고, 공개 저장소라 Actions 사용 시간에 제한이 없다(작업 하나의 상한은 6시간).
+
 on:
   schedule:
-    # GitHub 예약 실행은 지연과 누락이 잦다. 15분마다 시도하고, 스크립트가 직전 수집 후 50분 이내면 건너뛴다.
-    # 그래서 장소당 호출은 약 1시간에 한 번(하루 24~28회)으로 묶인다(121곳이면 하루 약 2,900~3,400회).
-    - cron: '*/15 * * * *'
+    - cron: '23 */2 * * *'
   workflow_dispatch:
     inputs:
       force_briefing:
-        description: '브리핑을 시간 조건과 무관하게 다시 만든다'
+        description: '브리핑을 시간 조건과 무관하게 다시 만든다(첫 바퀴에만)'
         type: boolean
         default: false
       sdot_days:
-        description: '소음 센서(S-DoT) 자료를 한 번에 며칠 치까지 받을지'
+        description: '소음 센서(S-DoT) 자료를 한 바퀴에 며칠 치까지 받을지'
         type: string
         default: '6'
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: collect-data-branch
@@ -26,67 +29,37 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 358
     steps:
       - uses: actions/checkout@v4
-      - name: restore files from data branch
-        run: |
-          # data 브랜치가 아예 없는 첫 실행과, 있는데 못 읽은 경우를 구분한다.
-          # 있는데 못 읽으면 여기서 실패시켜, 빈 이력으로 새로 시작해 강제 푸시로 덮어쓰는 일을 막는다.
-          rc=0
-          git ls-remote --exit-code --heads origin data >/dev/null || rc=$?
-          if [ "$rc" -eq 2 ]; then
-            echo "data branch does not exist yet (first run)"
-          elif [ "$rc" -ne 0 ]; then
-            echo "cannot reach origin (ls-remote exit $rc)"; exit 1
-          else
-            git fetch origin data:data
-            for f in snapshot.json history.json pattern.json metrics.json briefing.json noise_state.json noise.json; do
-              git show "data:$f" > "$f" 2>/dev/null || rm -f "$f"
-            done
-            test -s snapshot.json
-            test -s history.json
-          fi
-      - name: collect
-        id: collect
+      - name: hourly loop (up to 5h45m)
+        id: loop
         env:
           SEOUL_KEY: ${{ secrets.SEOUL_KEY }}
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
-        run: python3 scripts/collect_seoul.py snapshot.json history.json
-      - name: derive weekly pattern and forecast accuracy
-        if: steps.collect.outputs.changed == 'true'
-        continue-on-error: true
-        run: python3 scripts/derive_stats.py history.json pattern.json metrics.json
-      - name: daily briefing (generative AI + rule check)
-        if: steps.collect.outputs.changed == 'true'
-        continue-on-error: true
-        env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
           FORCE_BRIEFING: ${{ inputs.force_briefing && '1' || '' }}
-        run: python3 scripts/gen_briefing.py snapshot.json briefing.json
-      - name: noise and light from S-DoT sensors (daily data, incremental)
-        if: steps.collect.outputs.changed == 'true'
-        continue-on-error: true
-        env:
-          SEOUL_KEY: ${{ secrets.SEOUL_KEY }}
           SDOT_MAX_DAYS: ${{ inputs.sdot_days || '6' }}
-        run: python3 scripts/collect_sdot.py noise_state.json noise.json
-      - name: publish to data branch (single commit)
-        if: steps.collect.outputs.changed == 'true'
         run: |
-          mkdir -p /tmp/data
-          for f in snapshot.json history.json pattern.json metrics.json briefing.json noise_state.json noise.json; do
-            if [ -s "$f" ]; then cp "$f" /tmp/data/; fi
+          start=$(date +%s)
+          limit=$((5 * 3600 + 45 * 60))
+          while :; do
+            echo "=== cycle $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            bash scripts/cycle.sh || echo "cycle failed $(date -u +%H:%MZ)"
+            unset FORCE FORCE_BRIEFING
+            now=$(date +%s)
+            next=$(( (now / 3600 + 1) * 3600 + 6 * 60 ))   # 다음 정시 + 6분(서울시 자료가 정시 직후 갱신된다)
+            if [ $((next - start)) -ge "$limit" ]; then
+              echo "time budget reached; handing over"
+              echo "handover=true" >> "$GITHUB_OUTPUT"
+              break
+            fi
+            sleep $((next - now))
           done
-          test -s /tmp/data/snapshot.json && test -s /tmp/data/history.json
-          git config user.name "calm-map-bot"
-          git config user.email "bot@users.noreply.github.com"
-          # data 브랜치는 항상 커밋 1개만 둔다(누적 파일이 커밋마다 쌓여 저장소가 커지는 것을 막는다)
-          git checkout --orphan data-publish
-          git rm -rf . >/dev/null 2>&1 || true
-          cp /tmp/data/*.json .
-          for f in snapshot.json history.json pattern.json metrics.json briefing.json noise_state.json noise.json; do
-            if [ -f "$f" ]; then git add "$f"; fi
-          done
-          git commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push --force origin data-publish:data
+      - name: chain the next run
+        # 시간 예산을 다 쓴 경우에만 잇는다. 일찍 끝난(실패한) 작업이 곧바로 다음 작업을 띄워 빠르게 반복하는 일을 막는다.
+        if: steps.loop.outputs.handover == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run collect-seoul-citydata --repo "$GITHUB_REPOSITORY" || echo "could not dispatch the next run; the schedule will pick it up"

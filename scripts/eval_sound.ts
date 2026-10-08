@@ -9,12 +9,14 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { classifyWindow, resample, SAMPLE_RATE, summarize, WINDOW_SEC, type WindowResult } from '../src/lib/sound'
+import { classifyWindow, resample, SAMPLE_RATE, setTagAgg, summarize, WINDOW_SEC, type WindowResult } from '../src/lib/sound'
 import { SENSE_TAGS, type SenseTag } from '../src/types'
 import tagMap from './esc50_tag_map.json'
 
 const [audioDir, metaCsv, outPath, limitArg] = process.argv.slice(2)
 const limit = limitArg ? Number(limitArg) : Infinity
+const agg = process.env.TAG_AGG === 'max' ? 'max' : 'sum'
+setTagAgg(agg)
 
 const truthOf: Record<string, SenseTag> = {}
 for (const [tag, classes] of Object.entries(tagMap.tags)) for (const c of classes) truthOf[c] = tag as SenseTag
@@ -102,7 +104,8 @@ async function main() {
   const out = {
     dataset: tagMap.dataset,
     evaluatedAt: new Date().toISOString(),
-    method: '음원 하나를 0.975초 창으로 나눠 YAMNet으로 분류하고, 태그별 (확률×강도) 평균이 가장 큰 태그를 그 음원의 예측으로 본다. 정답은 scripts/esc50_tag_map.json의 정답표다.',
+    method: `음원 하나를 0.975초 창으로 나눠 YAMNet으로 분류하고, 태그별 (확률×강도) 평균이 가장 큰 태그를 그 음원의 예측으로 본다. 태그 확률 집계는 '${agg}'(sum: 분류 확률 합, max: 최대 분류 확률). 정답은 scripts/esc50_tag_map.json의 정답표다.`,
+    tagAgg: agg,
     limitPerClass: Number.isFinite(limit) ? limit : null,
     clips: n,
     windows: windowsTotal,

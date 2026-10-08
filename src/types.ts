@@ -65,6 +65,8 @@ export interface ChildProfile {
   enabled: boolean
   tags: Record<SenseTag, Sensitivity>
   crowd: Sensitivity
+  /** 소리의 크기(주변 소음 실측)에 대한 민감도 */
+  loud: Sensitivity
 }
 
 export type Level3 = 'calm' | 'mid' | 'busy' | 'nodata'
@@ -77,6 +79,8 @@ export interface HourScore {
   soundN: number
   /** 실시간 관측이 아니라 예측값으로 채운 시간대 */
   forecast: boolean
+  /** 주변 센서의 소음 실측이 지수에 들어간 시간대 */
+  noise: boolean
 }
 
 export interface Card {

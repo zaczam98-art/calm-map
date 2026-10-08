@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import type { ChildProfile, HourScore, Level3, Place, Snapshot } from '../types'
+import type { ChildProfile, HourScore, Level3, NoiseData, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL } from '../lib/index'
 import { distanceKm } from '../lib/nearby'
 import { factorTags } from '../lib/factors'
+import { noiseLookup } from '../lib/noise'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   profile: ChildProfile
   offsets: Record<string, number>
   nowKey: string | undefined
+  noise: NoiseData | null
   onOpen: (name: string) => void
 }
 
@@ -36,7 +38,7 @@ function calmLine(scores: HourScore[]): string {
   return next ? `${next.hour}시부터 무던해져요.` : '오늘 낮에는 무던한 시간대가 보이지 않아요.'
 }
 
-export default function Recommend({ places, snap, sound, profile, offsets, nowKey, onOpen }: Props) {
+export default function Recommend({ places, snap, sound, profile, offsets, nowKey, noise, onOpen }: Props) {
   const [group, setGroup] = useState(0)
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null)
   const [byDistance, setByDistance] = useState(false)
@@ -45,11 +47,11 @@ export default function Recommend({ places, snap, sound, profile, offsets, nowKe
   const rows = useMemo(() => {
     return places.map((p) => {
       const s = snap?.places[p.name]
-      const scores = hourScores(s, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)
+      const scores = hourScores(s, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
       const now = scores[0]
       return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: calmLine(scores), km: pos ? distanceKm(pos, p) : null, tags: factorTags(s?.extra).filter((t) => t.key.startsWith('control') || t.key === 'rain').slice(0, 2) }
     })
-  }, [places, snap, sound, profile, offsets, pos, nowKey])
+  }, [places, snap, sound, profile, offsets, pos, nowKey, noise])
 
   const cats = GROUPS[group][1]
   const shown = rows
