@@ -15,8 +15,8 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
   if (!p) {
     return (
       <div className="card" style={{ marginTop: 12 }}>
-        <h2>이 동네의 소리 크기</h2>
-        <p className="muted">가까운 곳(직선 1km 안)에 쓸 수 있는 서울시 소음 센서가 없어요. 센서가 없거나, 값이 변하지 않아 고장으로 보이는 센서만 있는 경우예요.</p>
+        <h3>이 동네의 소리 크기</h3>
+        <p className="muted">이 장소 가까이에는 쓸 수 있는 소음 센서가 없어요(직선 1km 안). 서울시 센서가 없거나, 값이 변하지 않아 고장으로 보이는 센서만 있는 경우예요.</p>
       </div>
     )
   }
@@ -25,34 +25,34 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
   const chosen = dow !== null && p.avg[String(dow)] ? dow : p.avg[String(now.dow)] ? now.dow : available[0]?.[0]
   if (chosen === undefined) return null
   const avg = p.avg[String(chosen)]
-  const max = p.max[String(chosen)]
+  const max = p.max?.[String(chosen)] ?? []
   const dowName = DOWS.find(([d]) => d === chosen)![1]
-  const cells = avg.map((v, i) => ({ hour: h0 + i, avg: v, max: max[i] })).filter((c): c is { hour: number; avg: number; max: number | null } => c.avg !== null)
+  const cells = avg.map((v, i) => ({ hour: h0 + i, avg: v, max: max[i] ?? null })).filter((c): c is { hour: number; avg: number; max: number | null } => c.avg !== null)
   const day = cells.filter((c) => c.hour >= 8 && c.hour <= 21)
   const quiet = day.length ? day.reduce((a, c) => (c.avg < a.avg ? c : a)) : null
   const loud = day.length ? day.reduce((a, c) => (c.avg > a.avg ? c : a)) : null
   const cur = chosen === now.dow ? cells.find((c) => c.hour === now.hour) : undefined
 
   const W = 360
-  const H = 120
+  const H = 130
   const padL = 26
   const padB = 20
   const bw = (W - padL - 4) / avg.length
-  const y = (db: number) => H - padB - ((Math.max(DB_MIN, Math.min(DB_MAX, db)) - DB_MIN) / (DB_MAX - DB_MIN)) * (H - padB - 6)
+  const y = (db: number) => H - padB - ((Math.max(DB_MIN, Math.min(DB_MAX, db)) - DB_MIN) / (DB_MAX - DB_MIN)) * (H - padB - 14)
 
   return (
     <div className="card" style={{ marginTop: 12 }}>
-      <h2>이 동네의 소리 크기</h2>
+      <h3>이 동네의 소리 크기</h3>
       <div className="row" role="group" aria-label="요일">
         {DOWS.map(([d, name]) => (
           <button key={d} className={`chip small${d === chosen ? ' on' : ''}`} onClick={() => setDow(d)} disabled={!p.avg[String(d)]} aria-pressed={d === chosen}>{name}</button>
         ))}
       </div>
-      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${place} 주변의 ${dowName}요일 시간대별 소음`} style={{ height: 120 }}>
+      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${place} 주변의 ${dowName}요일 시간대별 소음`} style={{ height: 'auto', aspectRatio: `${W} / ${H}` }}>
         {[40, 60, 80].map((db) => (
           <g key={db}>
             <line x1={padL} x2={W} y1={y(db)} y2={y(db)} stroke="#e3e7ec" strokeDasharray="3 3" />
-            <text x={0} y={y(db) + 4}>{db}</text>
+            <text x={0} y={y(db) + 5}>{db}</text>
           </g>
         ))}
         {avg.map((v, i) => {
@@ -62,7 +62,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
           return (
             <g key={hour}>
               {v !== null && <rect x={x} y={y(v)} width={bw - 4} height={H - padB - y(v)} rx={3} fill="#8595ab" stroke={isNow ? '#2f6f8f' : 'none'} strokeWidth={isNow ? 2 : 0} />}
-              {v !== null && max[i] !== null && <line x1={x} x2={x + bw - 4} y1={y(max[i] as number)} y2={y(max[i] as number)} stroke="#34445a" strokeWidth={2} />}
+              {v !== null && (max[i] ?? null) !== null && <line x1={x} x2={x + bw - 4} y1={y(max[i] as number)} y2={y(max[i] as number)} stroke="#34445a" strokeWidth={2} />}
               {hour % 3 === 0 && <text x={x + (bw - 4) / 2} y={H - 5} textAnchor="middle">{hour}시</text>}
             </g>
           )

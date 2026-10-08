@@ -1,5 +1,5 @@
 import type { PlaceExtra } from '../types'
-import { controlLabel, factorTags } from '../lib/factors'
+import { activeControls, controlLabel, factorTags } from '../lib/factors'
 import { kstNow } from '../lib/publicData'
 
 /** 혼잡도 외에 오늘 이 장소 주변에서 일어나는 일(공사·집회 통제, 행사, 날씨, 도로). 서울시 자료에 있는 사실만 옮긴다. */
@@ -8,13 +8,13 @@ export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
   const k = kstNow()
   const nowStr = `${k.date} ${String(k.hour).padStart(2, '0')}:00`
   // 해제 예정 시각이 지난 통제는 보여 주지 않는다(수집이 늦어 오래된 스냅샷일 때의 안전장치)
-  const controls = (extra.controls ?? []).filter((c) => !c.until || c.until >= nowStr)
-  const shown = { ...extra, controls, controlsN: controls.length ? extra.controlsN : 0 }
+  const shown = activeControls(extra, nowStr) ?? extra
+  const controls = shown.controls ?? []
   const tags = factorTags(shown)
   const w = extra.weather
   return (
     <div className="card" style={{ marginTop: 12 }}>
-      <h2>오늘 이 장소 주변</h2>
+      <h3>오늘 이 장소 주변</h3>
       {tags.length > 0 ? (
         <p className="factor-tags">
           {tags.map((t) => (
@@ -26,7 +26,7 @@ export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
       )}
       {controls.length > 0 && (
         <>
-          <h3 className="sub">공사·집회·통제 {extra.controlsN && extra.controlsN > controls.length ? `${extra.controlsN}건 중 ${controls.length}건` : `${controls.length}건`}</h3>
+          <h4 className="sub">공사·집회·통제 {extra.controlsN && extra.controlsN > controls.length ? `${extra.controlsN}건 중 ${controls.length}건` : `${controls.length}건`}</h4>
           <ul className="facts">
             {controls.map((c, i) => (
               <li key={i}>
@@ -40,7 +40,7 @@ export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
       )}
       {extra.events && extra.events.length > 0 && (
         <>
-          <h3 className="sub">근처 문화행사 {extra.eventsN && extra.eventsN > extra.events.length ? `${extra.eventsN}건 중 ${extra.events.length}건` : `${extra.events.length}건`}</h3>
+          <h4 className="sub">근처 문화행사 {extra.eventsN && extra.eventsN > extra.events.length ? `${extra.eventsN}건 중 ${extra.events.length}건` : `${extra.events.length}건`}</h4>
           <ul className="facts">
             {extra.events.map((e, i) => (
               <li key={i}>

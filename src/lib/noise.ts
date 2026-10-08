@@ -13,9 +13,9 @@ export function noiseLookup(noise: NoiseData | null, place: string): (hour: numb
   const h1 = noise!.hours[1]
   return (hour, dow) => {
     if (hour < h0 || hour > h1) return undefined
-    const avg = p.avg[String(dow)]?.[hour - h0]
+    const avg = p.avg?.[String(dow)]?.[hour - h0]
     if (avg === null || avg === undefined) return undefined
-    const max = p.max[String(dow)]?.[hour - h0] ?? null
+    const max = p.max?.[String(dow)]?.[hour - h0] ?? null
     return { avg, max }
   }
 }

@@ -1,0 +1,10 @@
+/* 장소 상세 시트(PlaceDetail, CardView, Factors 등) 전용 스타일 */
+.sheet:focus { outline: none; }
+.card h3:not(.sub) { font-size: 17px; }
+.card h3[tabindex='-1']:focus { outline: none; }
+h4.sub { font-size: 14px; margin: 10px 0 4px; }
+.share { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
+.btn[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+ol.story { list-style: none; margin: 0; padding: 0; }
+.story .step.speaking { background: #e3f0f6; outline: 3px solid var(--accent); outline-offset: 2px; }
+.sheet > h2 { padding-right: 40px; }

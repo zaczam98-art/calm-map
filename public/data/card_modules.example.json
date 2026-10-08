@@ -1,0 +1,8 @@
+[
+ { "id": "step_sudden", "kind": "step", "tag": "sudden", "text": "갑자기 큰 소리가 나면 헤드폰을 써요.", "icon": "headphone" },
+ { "id": "cope_sudden", "kind": "cope", "tag": "sudden", "text": "귀를 막고 같이 온 어른에게 말해요.", "icon": "hand" },
+ { "id": "step_music", "kind": "step", "tag": "music", "text": "안내방송이 나오면 귀를 살짝 막아도 돼요.", "icon": "quiet" },
+ { "id": "step_crowdSens", "kind": "step", "tag": "crowdSens", "text": "사람이 많으면 같이 온 어른 곁에 서요.", "icon": "hand" },
+ { "id": "step_loudHour", "kind": "step", "tag": "loudHour", "text": "소리가 클 때는 헤드폰을 먼저 써요.", "icon": "headphone" },
+ { "id": "cope_crowdedHour", "kind": "cope", "tag": "crowdedHour", "text": "사람이 많으면 한쪽에 서서 숨을 쉬어요.", "icon": "wait" }
+]

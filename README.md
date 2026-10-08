@@ -11,7 +11,7 @@
 |---|---|---|
 | 감각부하 지도 | 서울 121곳의 지금 지수(혼잡 0.6 + 주변 소음 0.4)와 12시간 예측을 3단계 농담으로 보여 줍니다. 공사·집회·사고 등 통제가 등록된 곳은 테두리로 표시합니다. 수집이 늦으면 현재 시각의 예측값을 쓰고 "(예측값)"이라고 표시합니다. | `src/lib/index.ts`, `src/components/MapView.tsx` |
 | 우리 아이 맞춤 | 민감 요인 7개(소리 종류 5개, 혼잡, 큰 소리. 각 3단계)로 지수를 다시 계산합니다. 이름과 진단명은 받지 않고 기기에만 저장합니다. | `src/lib/profile.ts` |
-| 소리 종류 분류 | YAMNet(AudioSet 521종)을 TensorFlow.js로 브라우저 안에서 실행합니다. 마이크, 오디오 파일, 내장 샘플 소리 6개로 해 볼 수 있습니다. | `src/lib/sound.ts`, `src/components/Measure.tsx` |
+| 소리 종류 분류 | YAMNet(AudioSet 521종)을 TensorFlow.js로 브라우저 안에서 실행합니다. 마이크, 오디오 파일, 내장 샘플 소리 6개로 해 볼 수 있습니다. 측정 결과는 소리 종류 점수 S = 100 × Σ(태그별 (확률×강도) 평균 × 태그 가중 × 민감도)를 0~100으로 제한한 값이 되어, 표본 수 n에 따라 w = min(0.5, n/(n+6))만큼 지수에 섞입니다. | `src/lib/sound.ts`, `src/components/Measure.tsx` |
 | 미리 보는 카드 | 사회적 이야기 형식의 카드를 Gemini 구조화 출력으로 미리 만들고 규칙 검사를 통과한 것만 싣습니다(121곳×3단계와 공용 3장, 366장). | `scripts/gen_cards.ts`, `shared/cardRules.ts` |
 | 오늘의 브리핑 | 규칙이 여유 구간 후보를 계산하고, Gemini가 그중에서 골라 문장을 쓰고, 규칙이 자료와 다시 대조합니다. 통과하지 못하면 규칙 기반 문장을 씁니다. | `scripts/gen_briefing.py`, `src/components/Briefing.tsx` |
 | 요일별 패턴 | 수집한 관측값을 요일과 시간대별로 평균해 보여 줍니다(표본 수 표시). | `scripts/derive_stats.py`, `src/components/WeekPattern.tsx` |
@@ -50,6 +50,10 @@ npm run build
 | `noise_state.json` | 센서별 누적 상태(소음 요약을 다시 만들 때 씁니다). |
 
 저장소 Secrets에 `SEOUL_KEY`(서울 열린데이터광장 일반 인증키)와 `GEMINI_KEY`(브리핑용, 없으면 규칙 기반 문장만 사용)가 필요합니다.
+
+## 투표 기간 운영 규칙
+
+투표 기간에는 배포를 하루 한 번 이하로 묶어서 하고, 긴급 수정만 예외로 합니다. main에 push할 때마다 `pages.yml`이 돌아 해시가 붙은 JS 파일 이름이 바뀌는데, `index.html`은 최대 10분 동안 캐시되어 이전 `index.html`을 가진 방문자가 삭제된 JS를 요청할 수 있기 때문입니다. 투표를 시작하기 전에는 게시 주소(https://zaczam98-art.github.io/calm-map/)에서 부하 시험을 한 번 하고, 첫 화면이 뜨는 시간과 실패 건수를 "측정 결과"에 적습니다. 수집 정체는 `watchdog.yml`이 3시간마다 `snapshot.json`의 `updatedAt`을 확인해서 180분을 넘으면 `[watchdog] 수집 정체: 마지막 갱신 …` 이슈를 한 건 여는 방식으로 알립니다. 투표 기간에는 하루 한 번 저장소 Issues에서 열린 watchdog 이슈가 있는지 확인하고, 있으면 Actions의 `collect-seoul-citydata`를 Run workflow로 실행합니다(정상으로 돌아오면 다음 점검에서 이슈가 자동으로 닫힙니다). 메일 알림을 받으려면 저장소의 Watch 설정에서 Issues를 켜야 하고, Issues 기능이 꺼져 있으면 watchdog이 실패합니다. 배포할 때마다 `data` 브랜치의 `snapshot.json`, `noise.json`, `pattern.json`, `metrics.json`, `briefing.json`이 `data-mirror/`에 복사되며, 앱은 raw.githubusercontent.com 요청이 실패한 경우에만 이 사본을 한 번 읽습니다. 사본은 마지막 배포 시점의 자료라서 오래될 수 있고, 그때도 화면의 갱신 시각 경고는 그대로 작동합니다.
 
 ## 측정 결과
 

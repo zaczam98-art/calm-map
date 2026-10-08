@@ -1,24 +1,74 @@
-import { useState } from 'react'
-import type { Briefing as BriefingData } from '../types'
+import { useMemo } from 'react'
+import type { Briefing as BriefingData, ChildProfile, NoiseData, Snapshot } from '../types'
 import { kstNow } from '../lib/publicData'
+import { hourScores } from '../lib/index'
+import { noiseLookup } from '../lib/noise'
+import { bucketKey, type SoundStore } from '../lib/snapshot'
 
-/** 오늘의 브리핑. 오늘 날짜의 것만, 아직 지나지 않은 시간대만 보여 준다. */
-export default function Briefing({ briefing, known, onSelect }: { briefing: BriefingData | null; known: Set<string>; onSelect: (name: string) => void }) {
-  const [open, setOpen] = useState(true)
-  if (!briefing) return null
+interface Props {
+  briefing: BriefingData | null
+  known: Set<string>
+  onSelect: (name: string) => void
+  /** 접힘 상태는 App이 보관한다(장소 시트를 여닫아도, 날짜가 같으면 다시 열어도 유지) */
+  collapsed: boolean
+  onToggle: () => void
+  /** 장소 시트가 열려 있으면 언마운트하지 않고 숨기기만 한다 */
+  hidden?: boolean
+  snap: Snapshot | null
+  sound: SoundStore
+  profile: ChildProfile
+  offsets: Record<string, number>
+  noise: NoiseData | null
+  nowKey: string | undefined
+}
+
+/** 오늘의 브리핑. 오늘 날짜의 것만, 아직 지나지 않은 시간대만, 장소 상세의 지수와 어긋나지 않는 항목만 보여 준다. */
+export default function Briefing({ briefing, known, onSelect, collapsed, onToggle, hidden, snap, sound, profile, offsets, noise, nowKey }: Props) {
   const now = kstNow()
-  if (briefing.date !== now.date) return null
-  const picks = briefing.picks.filter((p) => p.to > now.hour && known.has(p.place))
-  if (picks.length === 0) return null
-  const avoid = briefing.avoid.filter((p) => p.to > now.hour && known.has(p.place))
+  const { picks, avoid } = useMemo<{ picks: BriefingData['picks']; avoid: BriefingData['avoid'] }>(() => {
+    if (!briefing || briefing.date !== now.date) return { picks: [], avoid: [] }
+    // 브리핑 시간대([from, to))의 칸을 장소 상세와 같은 hourScores로 다시 계산해 단계가 맞는 항목만 남긴다
+    const levels = (place: string, from: number, to: number) =>
+      hourScores(snap?.places[place], (h, d) => sound[place]?.[bucketKey(d, h)], profile, offsets[place] ?? 0, nowKey, noiseLookup(noise, place))
+        .filter((s) => s.time.slice(0, 10) === briefing.date && s.hour >= Math.max(from, now.hour) && s.hour < to)
+        .map((s) => s.level)
+    const open = <T extends { place: string; to: number }>(list: T[]) => list.filter((p) => p.to > now.hour && known.has(p.place))
+    return {
+      picks: open(briefing.picks).filter((p) => {
+        const lv = levels(p.place, p.from, p.to)
+        return lv.length > 0 && lv.every((l) => l === 'calm')
+      }),
+      avoid: open(briefing.avoid).filter((p) => {
+        const lv = levels(p.place, p.from, p.to)
+        return lv.length > 0 && lv.every((l) => l === 'busy')
+      }),
+    }
+  }, [briefing, known, snap, sound, profile, offsets, noise, nowKey, now.date, now.hour])
+  if (!briefing || picks.length === 0) return null
   const range = (from: number, to: number) => `${Math.max(from, now.hour)}~${to}시`
+  const first = picks[0]
+  const start = Math.max(first.from, now.hour)
+  const part = start < 12 ? '오전' : start < 17 ? '오후' : '저녁'
   return (
-    <aside className="briefing" aria-label="오늘의 브리핑">
-      <button className="briefing-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <b>오늘의 브리핑</b>
-        <span className="muted">{open ? '접기' : '펼치기'}</span>
+    <aside className={collapsed ? 'briefing collapsed' : 'briefing'} aria-label="오늘의 브리핑" hidden={hidden} style={hidden ? { display: 'none' } : undefined}>
+      <button className="briefing-head" onClick={onToggle} aria-expanded={!collapsed}>
+        {collapsed ? (
+          <>
+            <span>
+              <span>오늘 {part}</span>
+              <b className="bf-place">{first.place}</b>
+              <span>{range(first.from, first.to)}</span>
+            </span>
+            <span aria-hidden>▾</span>
+          </>
+        ) : (
+          <>
+            <b>오늘의 브리핑</b>
+            <span className="muted">접기</span>
+          </>
+        )}
       </button>
-      {open && (
+      {!collapsed && (
         <>
           <p className="briefing-headline">{briefing.headline}</p>
           <ul className="briefing-picks">

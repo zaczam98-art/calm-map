@@ -1,12 +1,15 @@
 import type { SenseTag, Snapshot, SoundBucket } from '../types'
-import { HAS_API } from './publicData'
+import { HAS_API, loadPublicJson, timeoutSignal } from './publicData'
 
-const KEY_SOUND = 'calmmap.sound.v1'
+export const KEY_SOUND = 'calmmap.sound.v1'
+
+/** 응답이 없는 망에서 화면이 오래 멈추지 않게 하는 제한 시간 */
+const TIMEOUT_MS = 8000
 
 export async function loadSnapshot(): Promise<Snapshot> {
   if (HAS_API) {
     try {
-      const r = await fetch('/api/snapshot', { cache: 'no-store' })
+      const r = await fetch('/api/snapshot', { cache: 'no-store', signal: timeoutSignal(TIMEOUT_MS) })
       if (r.ok) {
         const s = (await r.json()) as Snapshot
         if (s && s.places && Object.keys(s.places).length > 0) return s
@@ -15,20 +18,10 @@ export async function loadSnapshot(): Promise<Snapshot> {
       /* 서버가 없거나 키가 없으면 데모 스냅샷으로 */
     }
   }
-  // Worker가 없는 정적 호스팅(GitHub Pages)에서는 data 브랜치의 공개 스냅샷을 직접 읽는다
-  const pub = import.meta.env.VITE_PUBLIC_SNAPSHOT_URL as string | undefined
-  if (pub) {
-    try {
-      const r = await fetch(pub, { cache: 'no-store' })
-      if (r.ok) {
-        const s = (await r.json()) as Snapshot
-        if (s && s.places && Object.keys(s.places).length > 0) return s
-      }
-    } catch {
-      /* 아래 데모로 */
-    }
-  }
-  const r = await fetch(`${import.meta.env.BASE_URL}data/snapshot-demo.json`)
+  // Worker가 없는 정적 호스팅(GitHub Pages)에서는 data 브랜치의 공개 스냅샷을 직접 읽는다(실패하면 Pages 사본으로 한 번 더)
+  const pub = await loadPublicJson<Snapshot>('snapshot.json')
+  if (pub && pub.places && Object.keys(pub.places).length > 0) return pub
+  const r = await fetch(`${import.meta.env.BASE_URL}data/snapshot-demo.json`, { signal: timeoutSignal(TIMEOUT_MS) })
   const s = (await r.json()) as Snapshot
   s.source = 'demo'
   return s
@@ -67,7 +60,7 @@ export async function loadSoundStore(): Promise<SoundStore> {
   let server: SoundStore = {}
   if (HAS_API) {
     try {
-      const r = await fetch('/api/sound', { cache: 'no-store' })
+      const r = await fetch('/api/sound', { cache: 'no-store', signal: timeoutSignal(TIMEOUT_MS) })
       if (r.ok) server = (await r.json()) as SoundStore
     } catch {
       /* 로컬만 */
@@ -98,6 +91,7 @@ export async function submitMeasurement(place: string, bucket: SoundBucket, dow:
     const r = await fetch('/api/measure', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
+      signal: timeoutSignal(TIMEOUT_MS),
       body: JSON.stringify({ place, dow, hour, n: bucket.n, tags: bucket.tags }),
     })
     if (r.ok) return 'server'

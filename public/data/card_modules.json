@@ -1,0 +1,128 @@
+[
+ {
+  "id": "step_sudden",
+  "kind": "step",
+  "tag": "sudden",
+  "text": "큰 소리가 나면 헤드폰을 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_sudden",
+  "kind": "cope",
+  "tag": "sudden",
+  "text": "깜짝 놀라면 어른 손을 잡고 숨을 쉬어요.",
+  "icon": "hand"
+ },
+ {
+  "id": "step_crowd",
+  "kind": "step",
+  "tag": "crowd",
+  "text": "사람 소리가 시끄러우면 귀마개를 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_crowd",
+  "kind": "cope",
+  "tag": "crowd",
+  "text": "시끄러우면 어른과 함께 옆으로 비켜요.",
+  "icon": "walk"
+ },
+ {
+  "id": "step_machine",
+  "kind": "step",
+  "tag": "machine",
+  "text": "차 소리가 크면 헤드폰을 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_machine",
+  "kind": "cope",
+  "tag": "machine",
+  "text": "기계 소리가 힘들면 멀리 떨어져 쉬어요.",
+  "icon": "sit"
+ },
+ {
+  "id": "step_music",
+  "kind": "step",
+  "tag": "music",
+  "text": "안내방송이 나오면 귀마개를 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_music",
+  "kind": "cope",
+  "tag": "music",
+  "text": "음악이 크면 잠시 밖에 나가 쉬어요.",
+  "icon": "walk"
+ },
+ {
+  "id": "step_speech",
+  "kind": "step",
+  "tag": "speech",
+  "text": "말소리가 많으면 헤드폰을 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_speech",
+  "kind": "cope",
+  "tag": "speech",
+  "text": "말소리가 겹쳐 힘들면 어른 손을 잡아요.",
+  "icon": "hand"
+ },
+ {
+  "id": "step_crowdSens",
+  "kind": "step",
+  "tag": "crowdSens",
+  "text": "사람이 많으면 어른 손을 잡고 걸어요.",
+  "icon": "hand"
+ },
+ {
+  "id": "cope_crowdSens",
+  "kind": "cope",
+  "tag": "crowdSens",
+  "text": "힘들면 벤치에 앉아 천천히 숨을 쉬어요.",
+  "icon": "sit"
+ },
+ {
+  "id": "step_loudSens",
+  "kind": "step",
+  "tag": "loudSens",
+  "text": "헤드폰을 챙겨서 가요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_loudSens",
+  "kind": "cope",
+  "tag": "loudSens",
+  "text": "소리가 크면 헤드폰을 쓰고 쉬어요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "step_loudHour",
+  "kind": "step",
+  "tag": "loudHour",
+  "text": "소리가 큰 시간이라 귀마개를 써요.",
+  "icon": "headphone"
+ },
+ {
+  "id": "cope_loudHour",
+  "kind": "cope",
+  "tag": "loudHour",
+  "text": "소리가 힘들면 어른과 밖으로 나가요.",
+  "icon": "walk"
+ },
+ {
+  "id": "step_crowdedHour",
+  "kind": "step",
+  "tag": "crowdedHour",
+  "text": "사람이 많은 시간이라 손을 잡고 가요.",
+  "icon": "hand"
+ },
+ {
+  "id": "cope_crowdedHour",
+  "kind": "cope",
+  "tag": "crowdedHour",
+  "text": "힘들면 조용한 곳에서 쉬어요.",
+  "icon": "sit"
+ }
+]

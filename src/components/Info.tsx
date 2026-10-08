@@ -3,6 +3,7 @@ import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
 import { HAS_API } from '../lib/publicData'
 import soundEval from '../data/sound_eval.json'
+import '../styles/child.css'
 
 const SAMPLES = samplesRaw.samples
 const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람', car_horn: '자동차 경적', laughing: '웃음소리', crickets: '귀뚜라미', clapping: '박수' }
@@ -15,12 +16,18 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
     <div className="page">
       <div className="card">
         <h2>무던한 지도란</h2>
+        <h3 className="sub">쉬운 설명</h3>
+        <ul className="easy">
+          <li>지도의 점은 지금 그 장소가 얼마나 붐비고 시끄러운지 보여 줘요.</li>
+          <li>연한 점일수록 무던해요.</li>
+          <li>가기 전에 무던한 시간을 골라 보세요.</li>
+        </ul>
         <p>발달장애 아동 가족이 외출 전에 "이 장소는 오늘 몇 시가 무던한가"를 보는 지도예요. 장소에 점수를 매기는 것이 아니라, 장소와 시간대의 조합을 보여 줘요.</p>
         <p className="muted">2026 AI 라이프 아이디어 챌린지 수상 후보작 "무던한 지도(Calm Map)"를 AI 라이프 솔루션 챌린지에서 구현한 시제품이에요.</p>
       </div>
       <div className="card">
         <h2>AI는 세 군데에서 일하고, 지수는 공개된 규칙으로 계산해요</h2>
-        <table className="simple">
+        <table className="simple def">
           <tbody>
             <tr><th>소리 종류 분류</th><td>YAMNet(AudioSet 521종)을 TensorFlow.js로 기기 안에서 실행해요. 소리의 크기가 아니라 종류(사이렌, 군중, 음악, 말소리…)를 알아내요. 원음은 서버로 보내지 않아요.</td></tr>
             <tr><th>감각부하 지수(규칙)</th><td>서울시 실시간 도시데이터의 12시간 혼잡도 예측, 주변 센서의 평소 소음, 소리 분류 결과를 아래 산식으로 합쳐 장소×시간대 지수(0~100)를 계산하고, 아이의 민감 요인과 다녀온 뒤 기록으로 다시 계산해요. 이 부분은 학습 모델이 아니라 누구나 확인할 수 있는 고정 규칙이에요.</td></tr>
@@ -31,11 +38,19 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
       </div>
       <div className="card">
         <h2>지수 산식(가설 v1)</h2>
-        <p className="muted">혼잡 점수 C는 혼잡도 단계(여유 15, 보통 40, 약간 붐빔 65, 붐빔 90)에, 그 장소의 12시간 예측 안에서 인구가 많은 편인지 적은 편인지에 따라 ±10을 더해요. 소음 점수 N은 주변 서울시 센서의 같은 요일·시간대 평균 소음을 40dB은 0, 75dB은 100으로 바꾼 값에, 큰 소리 정도(시간 최대와 평균의 차이)가 3dB을 넘는 만큼 4씩(최대 20) 더해요. 기본 지수 B는 소음 자료가 있으면 0.6·C + 0.4·N, 없으면 C예요. 소리 종류 점수 S는 태그 가중(돌발음 1.0, 군중 0.7, 기계·차량 0.5, 음악·안내방송 0.5, 말소리 0.3, 배경 0.1)과 강도의 가중평균에 1.4를 곱해 0~100으로 제한하고, 표본이 n개면 w = min(0.5, n/(n+6))으로 지수 = (1-w)·B + w·S예요. 맞춤을 켜면 혼잡 점수에 혼잡 민감도를, 소음 점수에 큰 소리 민감도를, 큰 소리 가산에 돌발음 민감도를, 태그 가중에 태그별 민감도(0.5, 1, 1.5)를 곱하고 다녀온 뒤 기록의 보정(±20 이내)을 더해요. 무던함 35 미만, 보통 35~64, 붐빔 65 이상이에요. 이 산식과 숫자는 검증 전 가설이에요. 공사·행사 정보는 지수에 넣지 않고 따로 보여 줘요.</p>
+        <ol className="formula">
+          <li>혼잡 점수 C는 혼잡도 단계(여유 15, 보통 40, 약간 붐빔 65, 붐빔 90)에, 그 장소의 12시간 예측 안에서 인구가 많은 편인지 적은 편인지에 따라 ±10을 더해요.</li>
+          <li>소음 점수 N은 주변 서울시 센서의 같은 요일·시간대 평균 소음을 40dB은 0, 75dB은 100으로 바꾼 값에, 큰 소리 정도(시간 최대와 평균의 차이)가 3dB을 넘는 만큼 4씩(최대 20) 더해요.</li>
+          <li>기본 지수 B는 소음 자료가 있으면 0.6·C + 0.4·N, 없으면 C예요.</li>
+          <li>소리 종류 점수 S는 측정에 잡힌 태그마다 (확률×강도)의 평균에 태그 가중(돌발음 1.0, 군중 0.7, 기계·차량 0.5, 음악·안내방송 0.5, 말소리 0.3, 배경 0.1)과 민감도(맞춤을 켠 때만 0.5, 1, 1.5)를 곱해 모두 더하고, 100을 곱해 0~100으로 제한해요.</li>
+          <li>최종 지수와 단계는 표본이 n개면 w = min(0.5, n/(n+6))으로 지수 = (1-w)·B + w·S예요. 무던함은 35 미만, 보통은 35~64, 붐빔은 65 이상이에요.</li>
+        </ol>
+        <p className="muted">맞춤을 켜면 혼잡 점수에 혼잡 민감도를, 소음 점수에 큰 소리 민감도를, 큰 소리 가산에 돌발음 민감도를, 태그 가중에 태그별 민감도(0.5, 1, 1.5)를 곱하고 다녀온 뒤 기록의 보정(±20 이내)을 더해요. 이 산식과 숫자는 검증 전 가설이에요. 공사·행사 정보는 지수에 넣지 않고 따로 보여 줘요.</p>
       </div>
       <div className="card">
         <h2>개인정보</h2>
-        <p className="muted">아이의 이름, 진단명, 행동 기록을 받지 않아요. 프로필(민감 요인 7개의 3단계 값)과 다녀온 뒤 기록, 소리 측정 요약은 이 기기의 저장소에만 있어요. {HAS_API ? '소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달돼요.' : '이 사이트에는 받는 서버가 없어서 프로필, 기록, 소리 측정 요약, 내 위치는 이 기기 밖으로 나가지 않아요. 지도 타일, 자료 파일, 소리 분류 모델을 받을 때는 접속 정보(IP 주소)가 OpenStreetMap, GitHub, unpkg, TF Hub에 전달돼요.'} 생성형 AI에는 자료 수집 단계에서 장소 이름과 혼잡도 예측만 전달돼요. 위치를 허용하면 거리 계산에만 쓰고 저장하지 않아요.</p>
+        <p className="muted">아이의 이름, 진단명, 행동 기록을 받지 않아요. 프로필(민감 요인 7개의 3단계 값)과 다녀온 뒤 기록, 소리 측정 요약은 이 기기의 저장소에만 있어요. {HAS_API ? '소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달돼요.' : '이 사이트에는 받는 서버가 없어서 프로필, 기록, 소리 측정 요약, 내 위치는 이 기기 밖으로 나가지 않아요. 지도 타일, 자료 파일, 소리 분류 모델을 받을 때는 접속 정보(IP 주소)가 OpenStreetMap, GitHub, TF Hub(Kaggle, Google Cloud Storage로 연결)에 전달돼요.'} 생성형 AI에는 자료 수집 단계에서 장소 이름과 혼잡도 예측만 전달돼요. 위치를 허용하면 거리 계산에만 쓰고 저장하지 않아요.</p>
+        <p className="muted">카드 읽어 주기는 이 기기의 음성 합성 기능을 써요.</p>
       </div>
       <div className="card">
         <h2>데이터 출처</h2>
@@ -72,7 +87,7 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
       </div>
       <div className="card">
         <h2>소리 분류를 공개 음원으로 시험한 결과</h2>
-        <table className="simple">
+        <table className="simple fit">
           <thead>
             <tr><th>태그</th><th>음원 수</th><th>맞은 수</th><th>일치율</th></tr>
           </thead>

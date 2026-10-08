@@ -4,7 +4,7 @@ import { LEVEL3_LABEL } from '../lib/index'
 export default function NearbyCalm({ items, maxKm, onSelect }: { items: NearbyItem[]; maxKm: number; onSelect: (name: string) => void }) {
   return (
     <div className="card" style={{ marginTop: 12 }}>
-      <h2>가까운 곳 중 지금 더 무던한 곳</h2>
+      <h3>가까운 곳 중 지금 더 무던한 곳</h3>
       {items.length === 0 ? (
         <p className="muted">직선 거리 {maxKm}km 안에는 지금 더 무던한 곳이 없어요. 위 그래프에서 무던한 시간대를 살펴보세요.</p>
       ) : (

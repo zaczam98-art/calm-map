@@ -1,0 +1,29 @@
+{
+ "total": 18,
+ "firstTryOk": 16,
+ "ok": 18,
+ "retried": 0,
+ "generated": 18,
+ "failed": [],
+ "reasons": {},
+ "attempts": {
+  "step_sudden": 1,
+  "cope_sudden": 1,
+  "step_crowd": 1,
+  "cope_crowd": 1,
+  "step_machine": 1,
+  "cope_machine": 1,
+  "step_music": 1,
+  "cope_music": 1,
+  "step_speech": 1,
+  "cope_speech": 1,
+  "step_crowdSens": 1,
+  "cope_crowdSens": 1,
+  "step_loudSens": 1,
+  "cope_loudSens": 1,
+  "step_loudHour": 1,
+  "cope_loudHour": 1,
+  "step_crowdedHour": 1,
+  "cope_crowdedHour": 1
+ }
+}

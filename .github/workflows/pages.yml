@@ -24,11 +24,44 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: fetch data mirror (copies of data-branch json for the same-origin fallback)
+        # raw.githubusercontent.com이 실패할 때 앱이 한 번 쓰는 사본이다. 없거나 받지 못하면 사본 없이 배포한다.
+        run: |
+          mirror="$RUNNER_TEMP/data-mirror"
+          mkdir -p "$mirror"
+          rc=0
+          git ls-remote --exit-code --heads origin refs/heads/data >/dev/null || rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "data branch does not exist; skipping the mirror"
+            exit 0
+          elif [ "$rc" -ne 0 ]; then
+            echo "::warning::cannot reach origin (ls-remote exit $rc); skipping the mirror"
+            exit 0
+          fi
+          git fetch -q --depth=1 origin data:data || { echo "::warning::fetch of data branch failed; skipping the mirror"; exit 0; }
+          for f in snapshot.json noise.json pattern.json metrics.json briefing.json; do
+            if git show "data:$f" > "$mirror/$f" 2>/dev/null && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$mirror/$f" 2>/dev/null; then
+              echo "mirrored $f ($(wc -c < "$mirror/$f") bytes)"
+            else
+              rm -f "$mirror/$f"
+              echo "::warning::$f not mirrored (missing or invalid json)"
+            fi
+          done
       - name: build (project pages base path, public snapshot url)
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_PUBLIC_SNAPSHOT_URL: https://raw.githubusercontent.com/${{ github.repository }}/data/snapshot.json
         run: npm run build
+      - name: copy data mirror into dist
+        # vite build가 dist를 비우므로 빌드 뒤에 넣는다.
+        run: |
+          if ls "$RUNNER_TEMP"/data-mirror/*.json >/dev/null 2>&1; then
+            mkdir -p dist/data-mirror
+            cp "$RUNNER_TEMP"/data-mirror/*.json dist/data-mirror/
+            ls -l dist/data-mirror
+          else
+            echo "no mirror files; dist/data-mirror not created"
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

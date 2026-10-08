@@ -1,0 +1,110 @@
+name: watchdog-collect-stall
+
+# 수집이 멈추면 저장소 이슈로 알린다(이슈가 열리면 GitHub 알림 메일이 간다).
+# 3시간마다 data 브랜치의 snapshot.json을 받아 updatedAt(KST)이 기준보다 오래됐는지 본다.
+#  - 오래됐고 '[watchdog] 수집 정체'로 시작하는 열린 이슈가 없으면 새로 연다. 이미 있으면 새로 열지 않는다.
+#  - 정상이고 그런 열린 이슈가 있으면 댓글을 달고 닫는다.
+# 시험: Actions에서 Run workflow로 stale_minutes에 0을 넣으면 정상 상태에서도 정체로 판정한다.
+#       두 번 실행해도 이슈는 한 건만 열려야 한다. 이어서 stale_minutes를 비우고 실행하면 그 이슈를 닫는다.
+# 동시 실행 그룹이 collect.yml의 collect-data-branch와 달라서, 수집을 막지도 기다리지도 않는다.
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      stale_minutes:
+        description: '정체로 보는 기준(분). 비우면 180. 시험할 때만 0'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watchdog-collect-stall
+  cancel-in-progress: false
+
+env:
+  STALE_MINUTES: '180'
+  TITLE_PREFIX: '[watchdog] 수집 정체'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: compare snapshot.json updatedAt with now (KST)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STALE_OVERRIDE: ${{ inputs.stale_minutes }}
+        run: |
+          set -euo pipefail
+          limit_min="${STALE_OVERRIDE:-$STALE_MINUTES}"
+          case "$limit_min" in
+            ''|*[!0-9]*) echo "::error::stale_minutes must be a non-negative integer: '$limit_min'"; exit 1 ;;
+          esac
+          limit_min=$((10#$limit_min))
+
+          url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/data/snapshot.json"
+          code=$(curl -sS -o snap.json -w '%{http_code}' --retry 3 --retry-delay 5 --retry-all-errors --max-time 30 -H 'Cache-Control: no-cache' "$url") || code=000
+
+          now=$(date +%s)
+          now_kst=$(date -u -d "@$((now + 32400))" '+%Y-%m-%d %H:%M')
+
+          case "$code" in
+            200)
+              if ! updated=$(python3 -c "import json; print(json.load(open('snap.json')).get('updatedAt') or '')"); then
+                echo "::error::snapshot.json is not valid JSON; cannot judge"; exit 1
+              fi ;;
+            404) updated='' ;;   # data 브랜치나 snapshot.json이 없다(수집이 한 번도 안 됐거나 지워졌다)
+            *) echo "::error::cannot fetch snapshot.json (HTTP $code); not judging"; exit 1 ;;
+          esac
+
+          re='^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$'
+          if [ -n "$updated" ] && ! [[ "$updated" =~ $re ]]; then
+            echo "::error::unexpected updatedAt format: $updated"; exit 1
+          fi
+
+          if [ -n "$updated" ]; then
+            last="$updated"
+            last_txt="$updated (KST)"
+            age_sec=$((now - $(date -d "$updated +0900" +%s)))
+            stale=$(( age_sec > limit_min * 60 ? 1 : 0 ))
+            age_txt="$((age_sec / 60))분"
+          else
+            last='없음'
+            last_txt='없음'
+            stale=1
+            age_txt='알 수 없음'
+          fi
+          echo "updatedAt=$last now_kst=$now_kst age=$age_txt limit_min=$limit_min stale=$stale"
+
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title \
+            --jq ".[] | select(.title | startswith(\"$TITLE_PREFIX\")) | .number")
+
+          if [ "$stale" = 1 ]; then
+            if [ -n "$open" ]; then
+              echo "open watchdog issue exists (#$(echo $open | tr ' ' ',')); not opening another"
+            else
+              body=$(printf '%s\n' \
+                '수집이 멈춘 것으로 보입니다.' \
+                '' \
+                "- data 브랜치 snapshot.json의 마지막 갱신: ${last_txt}" \
+                "- 이 점검 시각: ${now_kst} (KST), 경과 ${age_txt}, 기준 ${limit_min}분" \
+                "- 점검 실행: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+                '' \
+                '확인 순서' \
+                '1. Actions의 collect-seoul-citydata 실행 목록에서 진행 중인 작업이 있는지, 마지막 실행이 실패했는지 봅니다.' \
+                '2. 진행 중인 작업이 없으면 Run workflow로 collect-seoul-citydata를 한 번 실행합니다.' \
+                '3. 정상으로 돌아오면 다음 점검(최대 3시간 뒤)에서 이 이슈를 자동으로 닫습니다.')
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "${TITLE_PREFIX}: 마지막 갱신 ${last}" --body "$body"
+            fi
+          else
+            for n in $open; do
+              gh issue close "$n" --repo "$GITHUB_REPOSITORY" \
+                --comment "수집이 다시 정상입니다. snapshot.json 마지막 갱신 ${last_txt}, 점검 시각 ${now_kst} (KST), 경과 ${age_txt}입니다. 이슈를 닫습니다."
+            done
+          fi

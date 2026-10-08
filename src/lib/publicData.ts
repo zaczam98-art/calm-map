@@ -7,15 +7,39 @@ export function publicDataUrl(file: string): string | null {
   return pub ? pub.replace(/snapshot\.json$/, file) : null
 }
 
-export async function loadPublicJson<T>(file: string): Promise<T | null> {
-  const url = publicDataUrl(file)
-  if (!url) return null
+/** 응답이 없는 망에서 화면이 오래 멈추지 않게 하는 제한 시간(snapshot.ts와 같은 값) */
+const TIMEOUT_MS = 8000
+
+/** AbortSignal.timeout이 없는 브라우저(iOS 15 Safari 등)에서도 동작하는 제한 시간 신호 */
+export function timeoutSignal(ms: number): AbortSignal | undefined {
+  if (typeof AbortSignal === 'undefined') return undefined
+  if (typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms)
+  const c = new AbortController()
+  setTimeout(() => c.abort(), ms)
+  return c.signal
+}
+
+async function fetchJson<T>(url: string): Promise<T | null> {
   try {
-    const r = await fetch(url, { cache: 'no-store' })
+    const r = await fetch(url, { cache: 'no-store', signal: timeoutSignal(TIMEOUT_MS) })
     return r.ok ? ((await r.json()) as T) : null
   } catch {
     return null
   }
+}
+
+/**
+ * raw 주소가 실패하면(네트워크 오류, 4xx/5xx, 8초 초과, 본문이 JSON이 아님) 한 번만 같은 출처의 Pages 사본(data-mirror/)으로 다시 받는다.
+ * 사본은 마지막 배포 시점의 자료라서 묵을 수 있으므로 실패했을 때만 쓰고, 화면의 갱신 시각 경과 경고는 그대로 작동한다.
+ */
+export async function loadPublicJson<T>(file: string): Promise<T | null> {
+  const url = publicDataUrl(file)
+  if (!url) return null
+  const live = await fetchJson<T>(url)
+  if (live) return live
+  const mirror = await fetchJson<T>(`${import.meta.env.BASE_URL}data-mirror/${file}`)
+  if (mirror) console.warn(`[calm-map] ${file}: raw 주소 실패, Pages 사본으로 대체`)
+  return mirror
 }
 
 /**

@@ -1,5 +1,14 @@
 export type CongestLevel = '여유' | '보통' | '약간 붐빔' | '붐빔'
 
+/** 화면에 보이는 장소 분류 이름(원자료의 분류 이름을 가족이 알아보기 쉬운 말로) */
+export const CATEGORY_LABEL: Record<string, string> = {
+  인구밀집지역: '역·번화가',
+  발달상권: '상권',
+  관광특구: '관광특구',
+  '고궁·문화유산': '궁궐·유적',
+  공원: '공원',
+}
+
 export interface Place {
   id: string
   name: string
@@ -81,6 +90,8 @@ export interface HourScore {
   forecast: boolean
   /** 주변 센서의 소음 실측이 지수에 들어간 시간대 */
   noise: boolean
+  /** 현재 시각 칸을 직전 실시간 관측으로 채웠을 때 그 관측 시각('HH:MM') */
+  obs?: string
 }
 
 export interface Card {
