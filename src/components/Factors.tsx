@@ -53,7 +53,7 @@ export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
       {w && (
         <p className="muted">
           날씨: 기온 {w.temp ?? '?'}도, 강수 {w.pcp ?? '정보 없음'}, 자외선 {w.uv ?? '정보 없음'}, 초미세먼지 {w.pm25 ?? '정보 없음'}, 미세먼지 {w.pm10 ?? '정보 없음'}이에요.
-          {extra.road ? ` 주변 도로 소통은 ${extra.road.idx}이에요.` : ''}
+          {extra.road ? ` 주변 도로는 ${extra.road.idx} 상태예요.` : ''}
         </p>
       )}
       <p className="muted">서울시 실시간 도시데이터에 등록된 내용을 그대로 옮긴 것이에요. 등록되지 않은 공사나 행사는 나오지 않아요.</p>
