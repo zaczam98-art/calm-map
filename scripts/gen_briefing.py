@@ -1,7 +1,7 @@
 """오늘의 브리핑을 만든다.
 
-최신 snapshot.json의 예측에서 '오늘 남은 시간에 무던한 곳'을 생성형 AI(Gemini)가 문장으로 쓰고,
-규칙 검사(형식, 금지 표현, 자료와의 사실 일치)를 통과한 것만 briefing.json에 싣는다.
+최신 snapshot.json의 예측에서 규칙이 '여유 구간'과 '붐비는 구간' 후보를 계산하고, 생성형 AI(Gemini)가 그중에서 골라 문장을 쓴다.
+답은 규칙 검사(형식, 금지 표현, 자료와의 사실 일치)를 통과한 것만 briefing.json에 싣는다. 반려되면 이유를 알려 주고 다시 쓰게 한다.
 세 번 안에 통과하지 못하거나 키가 없으면 같은 자료로 규칙 기반 문장을 만든다.
 
 사용: GEMINI_KEY=... python scripts/gen_briefing.py snapshot.json briefing.json
@@ -23,7 +23,8 @@ DAY_START, DAY_END = 8, 21  # 권고 대상 시간대(8시부터 21시 시작 �
 MIN_GAP_MIN = 170
 MAX_LEN = 40
 FORBIDDEN = ['장애', '자폐', '진단', '증상', '치료', '환자', '위험', '절대', '금지', '경고', '사고', '못 가', '못가',
-             '행사', '축제', '공사', '주차', '할인', '세일', '날씨', '비가', '눈이', '입장료', '무료']
+             '행사', '축제', '공사', '주차', '할인', '세일', '날씨', '비가', '눈이', '입장료', '무료',
+             '조용', '소음', '시끄']  # 혼잡도 예측만으로 소리의 크기를 단정하지 않는다
 
 snap = json.load(open(SNAP, encoding='utf-8'))
 prev = {}
@@ -168,23 +169,27 @@ def clean(d):
     }
 
 
-def ask_gemini():
-    rows = []
-    for name, lv in table.items():
-        rows.append(f"- {name} ({cats.get(name, '')}): " + ', '.join(f"{h}시 {LEVELS[lv[h]]}" for h in sorted(lv)))
-    prompt = '\n'.join([
+def ask_gemini(feedback=None):
+    """규칙이 계산한 후보 구간을 주고, AI는 그중에서 고르고 문장을 쓴다. 답은 validate()가 자료와 다시 대조한다."""
+    def line(w):
+        return f"- {w['place']} ({cats.get(w['place'], '')}): {w['from']}시부터 {w['to']}시 전까지"
+    prompt_lines = [
         '당신은 발달장애 아동 가족의 외출을 돕는 안내 문장을 쓰는 사람입니다.',
-        f'아래는 서울 {len(table)}곳의 오늘({today}) 남은 시간대 혼잡도 예측입니다. 단계는 여유 < 보통 < 약간 붐빔 < 붐빔 순서입니다.',
-        '이 자료만 근거로 오늘의 브리핑을 JSON으로 쓰세요.',
+        f'아래는 서울시 혼잡도 예측에서 뽑은 오늘({today}) 남은 시간의 후보 구간입니다.',
+        '이 후보만 근거로 오늘의 브리핑을 JSON으로 쓰세요.',
         '규칙:',
-        "- picks: 2시간 이상 연속으로 '여유'인 장소와 시간대를 1~3개 고릅니다. from과 to는 시(정수)이고, from시부터 to시 전까지 모든 시간대가 자료에서 '여유'여야 합니다.",
-        "- avoid: 2시간 이상 연속으로 '약간 붐빔' 이상인 장소와 시간대를 0~2개 고릅니다. 같은 규칙으로 from, to를 씁니다.",
-        '- place는 자료에 있는 이름을 글자 그대로 씁니다.',
+        "- picks: '여유 구간 후보'에서 1~3개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 분류가 서로 다른 장소가 섞이면 좋습니다.",
+        "- avoid: '붐비는 구간 후보'에서 0~2개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 후보가 없으면 빈 배열로 둡니다.",
         f"- headline, 각 pick의 reason, tip은 각각 {MAX_LEN}자 이내의 쉬운 말로 쓰고 '~요'로 끝냅니다.",
-        '- 자료에 없는 사실(행사, 공사, 날씨, 주차, 가격, 시설)은 쓰지 않습니다. 진단이나 판정, 금지 표현을 쓰지 않고 권고만 합니다.',
-        '자료:',
-        *rows,
-    ])
+        '- 후보에 없는 사실(행사, 공사, 날씨, 주차, 가격, 시설)은 쓰지 않습니다. 진단이나 판정, 금지 표현을 쓰지 않고 권고만 합니다.',
+        '여유 구간 후보:',
+        *[line(w) for w in calm[:12]],
+        '붐비는 구간 후보:',
+        *([line(w) for w in busy[:6]] or ['- 없음']),
+    ]
+    if feedback:
+        prompt_lines += ['이전 답은 다음 이유로 반려되었습니다. 같은 실수를 반복하지 마세요:', *[f'- {r}' for r in feedback[:5]]]
+    prompt = '\n'.join(prompt_lines)
     window = {'type': 'OBJECT', 'properties': {'place': {'type': 'STRING'}, 'from': {'type': 'INTEGER'}, 'to': {'type': 'INTEGER'}}, 'required': ['place', 'from', 'to']}
     pick = {'type': 'OBJECT', 'properties': {**window['properties'], 'reason': {'type': 'STRING'}}, 'required': ['place', 'from', 'to', 'reason']}
     body = {
@@ -229,7 +234,7 @@ if KEY and calm:
     for attempt in range(1, 4):
         attempts_used = attempt
         try:
-            draft = ask_gemini()
+            draft = ask_gemini(last_reasons)
         except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, TimeoutError, KeyError) as e:
             stats['apiErrors'] += 1
             print(f'attempt {attempt}: api error {type(e).__name__}')
