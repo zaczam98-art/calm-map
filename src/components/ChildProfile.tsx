@@ -3,6 +3,7 @@ import type { ChildProfile, SenseTag, Sensitivity } from '../types'
 import { SENSE_TAGS, TAG_LABEL } from '../types'
 import { clearAll, defaultProfile, loadLog, removeVisit } from '../lib/profile'
 import '../styles/child.css'
+import '../styles/onboarding.css'
 
 const OPTS: [Sensitivity, string][] = [
   [0.5, '덜 예민'],
@@ -58,6 +59,9 @@ interface Props {
 export default function ChildProfileView({ profile, onChange, onCleared, onOffsetsChange }: Props) {
   const [log, setLog] = useState(loadLog)
   const recent = log.slice(-SHOWN_LOG).reverse()
+  // 프리셋을 누르기 전 값. 프리셋이 바꾼 값 그대로일 때만 되돌릴 수 있다(그 뒤에 직접 바꾸면 사라진다).
+  const [undo, setUndo] = useState<{ before: ChildProfile; applied: ChildProfile; label: string } | null>(null)
+  const canUndo = undo !== null && same(profile, undo.applied)
   return (
     <div className="page">
       <div className="card">
@@ -74,9 +78,36 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
         <div className="child-presets" role="group" aria-labelledby="child-preset-hint">
           {PRESETS.map(([label, p]) => {
             const on = same(profile, p)
-            return <button key={label} className={on ? 'chip on' : 'chip'} aria-pressed={on} onClick={() => onChange(p)}>{label}</button>
+            return (
+              <button
+                key={label}
+                className={on ? 'chip on' : 'chip'}
+                aria-pressed={on}
+                onClick={() => {
+                  if (!on) setUndo({ before: canUndo ? undo.before : profile, applied: p, label })
+                  onChange(p)
+                }}
+              >
+                {label}
+              </button>
+            )
           })}
         </div>
+        <p className="muted child-preset-note">프리셋을 누르면 직접 고른 값이 바뀌어요</p>
+        {canUndo && (
+          <div className="child-undo">
+            <span className="muted" role="status">"{undo.label}"로 값을 바꿨어요</span>
+            <button
+              className="btn"
+              onClick={() => {
+                onChange(undo.before)
+                setUndo(null)
+              }}
+            >
+              되돌리기
+            </button>
+          </div>
+        )}
         <div className="sens">
           {SENSE_TAGS.filter((t) => t !== 'ambient').map((t) => (
             <Row key={t} label={TAG_LABEL[t]} value={profile.tags[t]} onPick={(v) => onChange({ ...profile, tags: { ...profile.tags, [t]: v } })} />

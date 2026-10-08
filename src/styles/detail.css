@@ -8,3 +8,25 @@ h4.sub { font-size: 14px; margin: 10px 0 4px; }
 ol.story { list-style: none; margin: 0; padding: 0; }
 .story .step.speaking { background: #e3f0f6; outline: 3px solid var(--accent); outline-offset: 2px; }
 .sheet > h2 { padding-right: 40px; }
+/* 시간 선택: HourChart 막대 단추, PlaceDetail 선택 줄과 맞춤 전후 줄, WhyIndex 카드 */
+.chart-wrap { position: relative; }
+.chart-bars { position: absolute; top: 0; bottom: 0; left: 1.667%; right: 1.111%; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.chart-bars button { margin: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; -webkit-tap-highlight-color: transparent; }
+.chart-bars button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.chart-bars button:disabled { cursor: default; }
+.chart-step { display: flex; gap: 8px; margin: 4px 0 8px; }
+.chart-step .btn { flex: 1; }
+.sel-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; margin: 0 0 4px; }
+.adapt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.why h3 { font-size: 17px; }
+.why-rows { list-style: none; margin: 0 0 8px; padding: 0; }
+.why-rows li { display: grid; grid-template-columns: 7.5em minmax(24px, 1fr) 3.2em 3em; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; }
+.why-bar { height: 10px; border-radius: 5px; background: #eef2f6; overflow: hidden; }
+.why-bar:empty { background: transparent; }
+.why-bar i { display: block; height: 100%; background: var(--accent); }
+.why-bar i.calm { background: var(--calm); }
+.why-bar i.mid { background: var(--mid); }
+.why-bar i.busy { background: var(--busy); }
+.why-v { text-align: right; }
+.why-d { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.why-sum { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); }

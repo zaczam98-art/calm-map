@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Place, SoundBucket } from '../types'
 import { TAG_LABEL } from '../types'
-import { classifyWindow, decodeFile, loadModel, startMic, summarize, windowsFromBuffer, type WindowResult } from '../lib/sound'
+import { cancelModelDispose, classifyWindow, decodeFile, loadModel, loudLevel, scheduleModelDispose, startMic, summarize, tagPrecision, windowsFromBuffer, type WindowResult } from '../lib/sound'
 import { bestTag } from '../lib/tags'
 import samplesRaw from '../data/samples.json'
+import soundEval from '../data/sound_eval.json'
 import { submitMeasurement } from '../lib/snapshot'
 import { HAS_API, kstNow } from '../lib/publicData'
 import '../styles/measure.css'
@@ -16,6 +17,9 @@ interface Sample {
 const SAMPLES = (samplesRaw as { samples: Sample[] }).samples
 const MIN_WINDOWS = 5 // 창 1개가 약 1초라서, 이보다 짧은 측정은 장소에 반영하지 않는다
 const DOW = ['일', '월', '화', '수', '목', '금', '토']
+const SILENT_DBFS = -100 // 이보다 작으면 마이크나 파일에서 소리가 한 조각도 들어오지 않은 것(숫자 0만 이어진 신호)
+// 공개 음원 평가의 혼동행렬이 sound_eval.json에 있으면 태그별 '이 태그로 분류됐을 때 실제로 그 태그였던 비율'을 만든다. 없으면 표시를 생략한다.
+const TAG_PRECISION = tagPrecision((soundEval as unknown as { confusion?: Record<string, Record<string, number>> }).confusion)
 
 /** 브라우저와 라이브러리가 던지는 영어 오류를 가족이 따라 할 수 있는 한국어 안내로 바꾼다. */
 function whyFailed(e: unknown, decodeMsg = '이 파일 형식은 읽을 수 없어요. wav나 mp3 파일을 써 주세요.'): string {
@@ -26,19 +30,20 @@ function whyFailed(e: unknown, decodeMsg = '이 파일 형식은 읽을 수 없�
   if (name === 'NotReadableError') return '마이크를 쓸 수 없어요. 마이크를 쓰는 다른 앱을 닫고 다시 눌러 주세요.'
   if (name === 'AudioNotRunning') return '소리를 받을 준비가 되지 않았어요. 다른 앱의 소리를 멈추고 다시 눌러 주세요. 계속 안 되면 샘플 소리나 오디오 파일로 체험할 수 있어요.'
   if (name === 'EncodingError') return decodeMsg
+  if (name === 'ModelDownloadFailed') return '모델을 받는 서버에 연결하지 못했어요. 잠시 뒤 다시 눌러 주세요.'
   if (name === 'NetworkError' || /fetch|network|load failed|failed with status|request for/i.test(err.message ?? '')) return '인터넷 연결을 확인하고 다시 눌러 주세요.'
   return '잠시 뒤 다시 해 보세요.'
 }
 
 interface Props {
   places: Place[]
-  defaultPlace: string
+  defaultPlace?: string // 없으면 장소를 비워 두고 고르게 한다(장소 상세에서 들어온 경우에만 채운다)
   onSubmitted: () => void
   onRunningChange?: (running: boolean) => void
 }
 
 export default function Measure({ places, defaultPlace, onSubmitted, onRunningChange }: Props) {
-  const [place, setPlace] = useState(defaultPlace)
+  const [place, setPlace] = useState(defaultPlace ?? '')
   const [status, setStatus] = useState('마이크 또는 오디오 파일로 소리 종류를 분류해요. 원음은 이 기기 밖으로 나가지 않아요.')
   const [isErr, setIsErr] = useState(false) // 상태 문구가 오류면 스크린리더에 바로 읽히게 role='alert'로 보여 준다
   const [running, setRunning] = useState(false)
@@ -69,11 +74,25 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
   const stopRef = useRef<(() => void) | null>(null)
   const busy = useRef(false)
 
-  useEffect(() => () => {
-    playToken.current++
-    stopRef.current?.()
-    void playRef.current?.close()
+  useEffect(() => {
+    cancelModelDispose() // 60초 안에 다시 들어오면 모델을 그대로 쓴다
+    return () => {
+      playToken.current++
+      stopRef.current?.()
+      void playRef.current?.close()
+      scheduleModelDispose()
+    }
   }, [])
+  useEffect(() => {
+    // 측정 중에 탭을 닫거나 새로고침하면 지금까지의 측정이 사라지므로 브라우저 확인창을 띄운다
+    if (!running) return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [running])
   useEffect(() => {
     // 측정 중에는 앱이 탭을 옮기기 전에 확인을 받을 수 있게 알린다. 측정 중에 화면이 사라져도 알림을 풀어 둔다.
     onRunningChange?.(running)
@@ -92,7 +111,7 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
       await loadModel(say)
       say(`모델 준비 완료 (${((performance.now() - t0) / 1000).toFixed(1)}초). 이제 마이크로 시작할 수 있어요.`)
     } catch (e) {
-      fail(`모델을 내려받지 못했어요. ${whyFailed(e)}`)
+      fail((e as { name?: string })?.name === 'ModelDownloadFailed' ? whyFailed(e) : `모델을 준비하지 못했어요. ${whyFailed(e)}`)
     }
   }
 
@@ -159,6 +178,11 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
       fail('소리가 잡히지 않았어요. 1초 이상 측정하고, 마이크 권한과 마이크까지의 거리를 확인해 주세요.')
       return
     }
+    if (windows.every((w) => w.dbfs < SILENT_DBFS)) {
+      setSummary(null)
+      fail('마이크에서 소리가 들어오지 않았어요. 마이크 권한을 확인하고, 마이크를 쓰는 다른 앱이 있으면 닫아 주세요.')
+      return
+    }
     setSummary(summarize(windows))
     say('측정을 멈췄어요. 아래 요약을 이 장소에 반영할 수 있어요.')
   }
@@ -184,6 +208,13 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
       for (const w of ws) {
         results.push(await classifyWindow(w))
         if (my !== playToken.current) return
+      }
+      if (results.every((r) => r.dbfs < SILENT_DBFS)) {
+        setWindows([])
+        setLast(null)
+        setSummary(null)
+        fail('이 파일에는 소리가 들어 있지 않아요. 소리가 있는 파일을 써 주세요.')
+        return
       }
       setWindows(results)
       setLast(results[results.length - 1] ?? null)
@@ -236,22 +267,24 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
       setSent(null)
       setSample(s.label)
       setFromFile(null)
-      say(tag ? `'${s.label}' 샘플 ${results.length}초 분량을 분류했어요. 가장 큰 태그로 '${TAG_LABEL[tag]}' 태그가 나왔어요.` : `'${s.label}' 샘플 ${results.length}초 분량을 분류했지만 뚜렷한 태그가 나오지 않았어요.`)
+      say(tag ? `'${s.label}' 샘플 ${results.length}초 분량을 분류했어요. 가장 크게 잡힌 소리 종류는 '${TAG_LABEL[tag]}' 쪽이에요.` : `'${s.label}' 샘플 ${results.length}초 분량을 분류했지만 뚜렷한 소리 종류가 나오지 않았어요.`)
     } catch (e) {
       if (my !== playToken.current) return // 다른 동작이 이 재생을 취소한 경우
       fail(`샘플을 재생하지 못했어요. ${whyFailed(e, '샘플 소리를 읽지 못했어요. 잠시 뒤 다시 해 보세요.')}`)
     }
   }
   const submit = async () => {
-    if (!summary || summary.n < MIN_WINDOWS) return
+    if (!summary || summary.n < MIN_WINDOWS || !place) return
     const k = kstNow() // 기기 시간대와 무관하게 한국 시각의 요일·시 칸에 반영한다
     if (fromFile && !confirm(`이 파일의 소리를 ${place} ${DOW[k.dow]}요일 ${k.hour}시 칸에 반영할까요? 현장에서 잰 소리가 아니라 시연용 파일이에요.`)) return
     const where = await submitMeasurement(place, summary, k.dow, k.hour)
-    setSent(where === 'server' ? '서버에 라벨·강도·시각만 보냈어요(원음 없음).' : '이 기기에만 저장했어요.')
+    setSent(where === 'server' ? '서버에 장소, 소리 종류별 크기 값, 요일·시각만 보냈어요(원음 없음).' : '이 기기에만 저장했어요.')
     onSubmitted()
   }
 
   const pct = Math.round((last?.intensity ?? 0) * 100)
+  const topTag = last?.top[0]?.tag ?? null
+  const prec = topTag ? TAG_PRECISION[topTag] : undefined
   return (
     <div className="page">
       <div className="card">
@@ -259,7 +292,7 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
         <p className="muted m-status" role="status">{isErr ? '' : status}</p>
         {isErr && <p className="m-err" role="alert">{status}</p>}
         <div className="row" style={{ marginBottom: 10 }}>
-          <label>장소 <select value={place} onChange={(e) => setPlace(e.target.value)}>{places.map((p) => <option key={p.name}>{p.name}</option>)}</select></label>
+          <label>장소 <select value={place} onChange={(e) => setPlace(e.target.value)}>{!place && <option value="" disabled>장소를 골라 주세요</option>}{places.map((p) => <option key={p.name}>{p.name}</option>)}</select></label>
         </div>
         <div className="row">
           {!running ? <button className="btn primary" onClick={start} disabled={starting}>{starting ? '준비 중…' : '🎙️ 마이크로 시작'}</button> : <button className="btn" onClick={stop}>⏹ 멈추기</button>}
@@ -275,14 +308,17 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
             <button key={s.id} className="btn" onClick={() => void playSample(s)} disabled={running || starting}>🔊 {s.label}</button>
           ))}
         </div>
-        <p className="muted" style={{ marginTop: 8 }}>분류 창 {windows.length}개 {last && `· 강도 ${last.dbfs.toFixed(0)} dBFS`}</p>
-        <div className="meter" role="progressbar" aria-label="소리 강도" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><div style={{ width: `${pct}%` }} /></div>
+        <p className="muted" style={{ marginTop: 8 }}>들은 시간 약 {windows.length}초{last && ` · 소리 크기 ${loudLevel(last.dbfs)} (기기 기준 ${last.dbfs.toFixed(0)})`}</p>
+        <div className="meter" role="progressbar" aria-label="소리 크기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-valuetext={last ? loudLevel(last.dbfs) : undefined}><div style={{ width: `${pct}%` }} /></div>
         {last && (
-          <ul className="labels" aria-label="상위 분류">
+          <ul className="labels m-labels" aria-label="잡힌 소리 종류 순위">
             {last.top.map((t) => (
               <li key={t.name}><span>{t.tag ? TAG_LABEL[t.tag] : '그 밖의 소리'} <span lang="en" className="muted">{t.name}</span></span><span>{(t.prob * 100).toFixed(0)}%</span></li>
             ))}
           </ul>
+        )}
+        {topTag && prec && (
+          <p className="muted m-prec">{TAG_LABEL[topTag]} 쪽으로 분류된 공개 음원 {prec.n}개 중 {prec.hit}개가 실제로 그 종류였어요({Math.round((prec.hit / prec.n) * 100)}%). 실제 장소에서는 달라질 수 있어요.</p>
         )}
       </div>
       {summary && (
@@ -293,7 +329,7 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
               {(Object.entries(summary.tags) as [keyof typeof TAG_LABEL, number][]).map(([t, v]) => (
                 <tr key={t}><th>{TAG_LABEL[t]}</th><td>{(v * 100).toFixed(0)}</td></tr>
               ))}
-              <tr><th>창 수</th><td>{summary.n}</td></tr>
+              <tr><th>들은 시간</th><td>약 {summary.n}초</td></tr>
             </tbody>
           </table>
           {sample ? (
@@ -302,8 +338,9 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
             <>
               <p className="muted">{HAS_API ? '서버로 보내는 것은 장소 이름과 이 표의 숫자, 요일·시각뿐이에요.' : '이 사이트에는 받는 서버가 없어서 아무것도 보내지 않고 이 기기에만 저장해요.'}</p>
               {fromFile && <p className="muted">시연용 파일 결과라서, 반영하기 전에 한 번 더 물어봐요.</p>}
-              {summary.n < MIN_WINDOWS && <p className="muted">표본이 {MIN_WINDOWS}개보다 적어서 장소에 반영할 수 없어요. {MIN_WINDOWS}초 이상 측정해 주세요.</p>}
-              <button className="btn primary" onClick={submit} disabled={!!sent || summary.n < MIN_WINDOWS}>이 장소에 반영</button>
+              {summary.n < MIN_WINDOWS && <p className="muted">들은 시간이 {MIN_WINDOWS}초보다 짧아서 장소에 반영할 수 없어요. {MIN_WINDOWS}초 이상 측정해 주세요.</p>}
+              {summary.n >= MIN_WINDOWS && !place && <p className="muted">반영하려면 위에서 장소를 먼저 골라 주세요.</p>}
+              <button className="btn primary" onClick={submit} disabled={!!sent || summary.n < MIN_WINDOWS || !place}>이 장소에 반영</button>
             </>
           )}
           {sent && <p className="muted" style={{ marginTop: 8 }}>{sent}</p>}

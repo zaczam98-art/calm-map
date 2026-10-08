@@ -142,10 +142,16 @@ export function hourScores(
     const b = sound(h, dow)
     const s = soundScore(b, personal ?? undefined)
     const w = s === null ? 0 : soundWeight(b?.n ?? 0)
-    const idx = clamp((1 - w) * base + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
+    const off = personal ? offset : 0
+    const idx = clamp((1 - w) * base + w * (s ?? 0) + off, 0, 100)
     const index = Math.round(idx) // 화면에 보이는 정수와 단계가 어긋나지 않게 반올림한 값으로 단계를 정한다
-    return { time: p.time, hour: h, index, level: level3(index), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null, obs: p.obs }
+    return { time: p.time, hour: h, index, level: level3(index), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null, obs: p.obs, parts: { c, n, s, w, offset: off, base } }
   })
+}
+
+/** 시계열에서 해당 시(0~23)의 칸. 예측이 빠진 시각이면 undefined(배열 인덱스로 짐작하지 않는다). */
+export function scoreAt(scores: HourScore[], hour: number): HourScore | undefined {
+  return scores.find((s) => s.hour === hour)
 }
 
 /** 'YYYY-MM-DD HH:MM' 문자열의 요일(일요일=0). 기기 시간대와 무관하게 날짜만으로 계산한다. */

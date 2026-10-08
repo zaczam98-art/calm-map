@@ -1,6 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import placesRaw from './data/places.json'
-import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, NoiseData, Place, Snapshot, WeekPattern } from './types'
+import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, NoiseData, Place, SenseTag, Snapshot, WeekPattern } from './types'
+import { SENSE_TAGS } from './types'
 import { loadProfile, loadOffsets, saveProfile } from './lib/profile'
 import { loadSnapshot, loadSoundStore, type SoundStore } from './lib/snapshot'
 import { kstNow, loadPublicJson } from './lib/publicData'
@@ -11,6 +12,8 @@ import ChildProfileView from './components/ChildProfile'
 import Briefing from './components/Briefing'
 import Recommend, { type RecommendUi } from './components/Recommend'
 import LazyBoundary from './components/LazyBoundary'
+import Onboarding, { shouldShowIntro } from './components/Onboarding'
+import './styles/nav.css'
 
 // 소리 측정(TensorFlow.js)과 정보 화면은 처음 화면에 필요 없으므로 열 때 내려받는다
 const Measure = lazy(() => import('./components/Measure'))
@@ -21,16 +24,66 @@ const PLACE_NAMES = new Set(PLACES.map((p) => p.name))
 
 type View = 'map' | 'recommend' | 'child' | 'measure' | 'info'
 
-const NAV: [View, string, string][] = [
-  ['map', '🗺️', '지도'],
-  ['recommend', '⭐', '추천'],
-  ['child', '🧒', '우리 아이'],
-  ['measure', '🎙️', '현장 측정'],
-  ['info', 'ℹ️', '정보'],
+const NAV: [View, string][] = [
+  ['map', '지도'],
+  ['recommend', '추천'],
+  ['child', '우리 아이'],
+  ['measure', '현장 측정'],
+  ['info', '정보'],
 ]
 const VIEWS = NAV.map(([v]) => v)
-const VIEW_LABEL = Object.fromEntries(NAV.map(([v, , label]) => [v, label])) as Record<View, string>
+const VIEW_LABEL = Object.fromEntries(NAV) as Record<View, string>
 
+/** 하단 탭 아이콘(24x24 선 아이콘). 선 굵기와 색은 nav.css가 정한다. */
+const NAV_ICON: Record<View, ReactNode> = {
+  map: (
+    <>
+      <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" />
+      <path d="M9 4v13.5M15 6.5V20" />
+    </>
+  ),
+  recommend: <path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" />,
+  child: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" />
+    </>
+  ),
+  measure: (
+    <>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5.5M12 7.5h.01" />
+    </>
+  ),
+}
+
+/** 헤더 '적용 중' 칩에 나열할 이름. 민감도를 예민(1.5)으로 고른 항목만 보여 준다. */
+const APPLIED_TAG: Partial<Record<SenseTag, string>> = {
+  sudden: '사이렌',
+  crowd: '군중 소리',
+  machine: '기계 소리',
+  music: '안내방송·음악',
+  speech: '말소리',
+  ambient: '배경음',
+}
+
+/** 칩 글자를 앞머리('적용 중: ')와 나머지로 나눈다. 아주 좁은 화면에서는 앞머리를 감추고 항목 이름을 보여 준다. */
+function appliedParts(p: ChildProfile): { lead: string; rest: string } {
+  const items: string[] = []
+  for (const t of SENSE_TAGS) if (p.tags[t] === 1.5 && APPLIED_TAG[t]) items.push(APPLIED_TAG[t]!)
+  if (p.crowd === 1.5) items.push('사람 많은 곳')
+  if (p.loud === 1.5) items.push('큰 소리')
+  if (items.length) return { lead: '적용 중: ', rest: items.join(', ') }
+  return isDefaultSens(p) ? { lead: '', rest: '아직 고르지 않았어요' } : { lead: '적용 중: ', rest: '직접 고른 값' }
+}
+
+const MEASURE_LEAVE_MSG = '측정 중이에요. 나가면 지금까지 결과가 사라져요. 나갈까요?'
 const BRIEFING_KEY = 'calmmap.briefing.v1'
 const TIP_KEY = 'calmmap.tip.v1'
 const STALE_MIN = 120 // 이만큼 지난 자료에는 '몇 시간 전 자료'를 붙인다
@@ -111,12 +164,17 @@ export default function App() {
   const [noise, setNoise] = useState<NoiseData | null>(null)
   const [loading, setLoading] = useState(true)
   const [briefingCollapsed, setBriefingCollapsedState] = useState(initialBriefingCollapsed)
-  const [tipOpen, setTipOpen] = useState(() => lsGet(TIP_KEY) === null)
+  const [introOpen, setIntroOpen] = useState(shouldShowIntro)
+  // 첫 방문 안내 시트가 뜨는 방문에서는 같은 내용의 막대를 띄우지 않는다(시트를 닫을 때 TIP_KEY도 기록한다)
+  const [tipOpen, setTipOpen] = useState(() => lsGet(TIP_KEY) === null && !introOpen)
   const [tileErr, setTileErr] = useState(0) // 0 없음, 1 안내 중, 2 닫음
   const [measureRunning, setMeasureRunning] = useState(false)
 
   const viewRef = useRef(view)
   viewRef.current = view
+  const measureRunningRef = useRef(measureRunning)
+  measureRunningRef.current = measureRunning
+  const ignorePop = useRef(false) // 뒤로 가기를 되돌리느라 일어난 popstate는 건너뛴다
   const snapRef = useRef(snap)
   snapRef.current = snap
   // 주소로 들어온 장소는 자료가 도착한 뒤에 연다
@@ -142,14 +200,24 @@ export default function App() {
   const go = (v: View) => {
     if (v === view) return
     if (view === 'measure' && measureRunning) {
-      if (!window.confirm('측정 중이에요. 나가면 지금까지 결과가 사라져요. 나갈까요?')) return
+      if (!window.confirm(MEASURE_LEAVE_MSG)) return
     }
     navigate(v, v === 'recommend' || (v === 'map' && view === 'recommend') ? null : selected)
   }
 
   useEffect(() => {
     const onPop = () => {
+      if (ignorePop.current) {
+        ignorePop.current = false
+        return
+      }
       const loc = readLocation()
+      // 측정 중에 브라우저 뒤로 가기로 나가려 하면 탭을 누를 때와 같은 확인을 거친다. 취소하면 한 칸 앞으로 돌아온다.
+      if (viewRef.current === 'measure' && measureRunningRef.current && loc.view !== 'measure' && !window.confirm(MEASURE_LEAVE_MSG)) {
+        ignorePop.current = true
+        history.go(1)
+        return
+      }
       pendingPlace.current = null
       setView(loc.view)
       setSelected(loc.selected)
@@ -254,9 +322,12 @@ export default function App() {
   const showData = view === 'map' || view === 'recommend'
   const lazyFallback = <p className="page muted" role="status">불러오는 중이에요</p>
 
+  const chip = personalOn ? appliedParts(profile) : null
+  const chipLabel = chip ? chip.lead + chip.rest : ''
+
   return (
     <div className="app">
-      <header className="topbar">
+      <header className={personalOn ? 'topbar has-chip' : 'topbar'}>
         <h1>무던한 지도</h1>
         {loadState === 'loading' && <span className="badge">자료 불러오는 중…</span>}
         {loadState === 'demo' && <span className="badge demo">데모 데이터</span>}
@@ -274,8 +345,16 @@ export default function App() {
           ))}
         <label className="toggle">
           <input type="checkbox" checked={personalOn} onChange={(e) => updateProfile({ ...profile, enabled: e.target.checked })} />
-          우리 아이 맞춤
+          <span className="toggle-lead">우리 아이 </span>맞춤
         </label>
+        {chip && (
+          <button className="applied-chip" onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
+            <span>
+              {chip.lead && <span className="applied-lead">{chip.lead}</span>}
+              {chip.rest}
+            </span>
+          </button>
+        )}
       </header>
       {view === 'map' && tipOpen && !selected && (
         <div className="tip">
@@ -298,12 +377,6 @@ export default function App() {
         <div className="banner warn" role="status">
           <span>지도 이미지를 불러오지 못했어요. 연결을 확인해 주세요</span>
           <button onClick={() => setTileErr(2)}>닫기</button>
-        </div>
-      )}
-      {personalOn && isDefaultSens(profile) && view !== 'child' && (
-        <div className="banner" role="status">
-          <span>아직 아이가 예민한 소리를 고르지 않았어요</span>
-          <button onClick={() => go('child')}>고르러 가기</button>
         </div>
       )}
       <main className="main" ref={mainRef}>
@@ -376,6 +449,7 @@ export default function App() {
               setProfile(p)
             }}
             onMeasure={() => go('measure')}
+            onGoChild={() => go('child')}
           />
         )}
         {view === 'recommend' && (
@@ -409,7 +483,7 @@ export default function App() {
             <Suspense fallback={lazyFallback}>
               <Measure
                 places={PLACES}
-                defaultPlace={selected ?? PLACES[0].name}
+                defaultPlace={selected ?? undefined}
                 onSubmitted={() => setSoundVersion((v) => v + 1)}
                 onRunningChange={setMeasureRunning}
               />
@@ -419,19 +493,36 @@ export default function App() {
         {view === 'info' && (
           <LazyBoundary onBack={() => go('map')}>
             <Suspense fallback={lazyFallback}>
-              <Info snap={snap} metrics={metrics} noise={noise} placeCount={PLACES.length} />
+              <Info snap={snap} metrics={metrics} noise={noise} pattern={pattern} placeCount={PLACES.length} />
             </Suspense>
           </LazyBoundary>
         )}
       </main>
       <nav className="nav" aria-label="주 메뉴">
-        {NAV.map(([v, ico, label]) => (
+        {NAV.map(([v, label]) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => go(v)} aria-label={label} aria-current={view === v ? 'page' : undefined}>
-            <span aria-hidden>{ico}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              {NAV_ICON[v]}
+            </svg>
             {label}
           </button>
         ))}
       </nav>
+      {introOpen && (
+        <Onboarding
+          places={PLACES}
+          snap={snap}
+          sound={sound}
+          offsets={offsets}
+          noise={noise}
+          nowKey={nowKey}
+          onFinish={(applied) => {
+            if (applied) setProfile(applied) // 저장은 Onboarding이 마쳤다
+            lsSet(TIP_KEY, '1') // 안내 시트가 같은 내용을 알렸으므로 지도 위 안내 막대는 띄우지 않는다
+            setIntroOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }

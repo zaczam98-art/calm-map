@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Card, ChildProfile, NoiseData, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
-import { CATEGORY_LABEL, TAG_LABEL } from '../types'
-import { dowOfTime, hourScores, LEVEL3_LABEL, noiseScore, recommend } from '../lib/index'
+import type { Card, ChildProfile, HourScore, NoiseData, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
+import { placeLabel, TAG_LABEL } from '../types'
+import { dowOfTime, hourScores, LEVEL3_LABEL, noiseScore, recommend, scoreAt } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
-import { recordVisit, undoVisit } from '../lib/profile'
+import { loadLog, recordVisit, undoVisit } from '../lib/profile'
 import { assembleCard, getCard, loadCardModules, type CardModule } from '../lib/cards'
+import { HAS_API } from '../lib/publicData'
 import { topTags } from '../lib/tags'
 import { calmerNearby, NEARBY_MAX_KM } from '../lib/nearby'
 import { noiseLookup } from '../lib/noise'
@@ -14,6 +15,7 @@ import NearbyCalm from './NearbyCalm'
 import WeekPattern from './WeekPattern'
 import Factors from './Factors'
 import NoiseCard from './NoiseCard'
+import WhyIndex from './WhyIndex'
 import '../styles/detail.css'
 
 const UNDO_MS = 10 * 60 * 1000 // 방금 기록을 취소할 수 있는 시간
@@ -37,29 +39,53 @@ interface Props {
   onClose: () => void
   onRecorded: (offsets: Record<string, number>, profile: ChildProfile) => void
   onMeasure: () => void
+  /** 우리 아이 탭으로 이동(맞춤 전후가 같을 때 민감도를 고르러 가는 단추) */
+  onGoChild?: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild }: Props) {
   const ps = snap?.places[place.name]
-  const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseLookup(noise, place.name)), [ps, sound, profile, offsets, place.name, nowKey, noise])
+  const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
+  const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
+  // 맞춤 전후 비교용: 맞춤을 끈 같은 시계열
+  const plainScores = useMemo(() => (profile.enabled ? hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], null, 0, nowKey, noiseAt) : []), [ps, sound, profile.enabled, place.name, nowKey, noiseAt])
+  // 막대를 눌러 고른 시각(null이면 선택 없음: 머리 줄은 지금, 카드는 권고 시각 기준). 예측이 있는 칸만 고를 수 있다.
+  const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const rec = recommend(scores, nowKey)
   const now = scores[0]
+  const sel = selectedHour !== null ? scoreAt(scores, selectedHour) : undefined
+  const shown = sel ?? now // 머리 줄, 소리 종류, '왜 이 지수인가'가 설명하는 칸
+  const today = (nowKey ?? now?.time ?? '').slice(0, 10)
+  const hourName = (c: HourScore) => `${c.time.slice(0, 10) === today ? '' : '내일 '}${c.hour}시`
   // '지금'이라고 부르는 것은 첫 칸이 현재 시각일 때만(nowKey가 없는 데모는 첫 칸을 지금으로 본다)
   const nowIsCurrent = !nowKey || now?.time.slice(0, 13) === nowKey
-  const nowBucket = now ? sound[place.name]?.[bucketKey(dowOfTime(now.time), now.hour)] : undefined
-  const tags: SenseTag[] = nowBucket ? topTags(nowBucket) : []
+  const shortLabel = sel ? hourName(sel) : nowIsCurrent || !now ? '지금' : hourName(now)
+  const shownLabel = sel ? hourName(sel) : nowIsCurrent ? (now?.obs ? `지금(관측 ${now.obs} 기준)` : '지금') : now ? hourName(now) : ''
+  const tagsOf = (c: HourScore | undefined): SenseTag[] => {
+    const b = c ? sound[place.name]?.[bucketKey(dowOfTime(c.time), c.hour)] : undefined
+    return b ? topTags(b) : []
+  }
+  const shownTags = tagsOf(shown)
+  const nowTags = tagsOf(now) // 방문 기록은 지금 있었던 시간대의 소리로 남긴다
+  const plain = profile.enabled && shown ? scoreAt(plainScores, shown.hour) : undefined
+  const chosen = profile.crowd !== 1 || profile.loud !== 1 || Object.values(profile.tags).some((v) => v !== 1)
   const totalN = Object.values(sound[place.name] ?? {}).reduce((a, b) => a + b.n, 0)
+  // 기록을 남기거나 취소하면 offsets가 새 객체로 바뀌므로 그때 이 장소의 기록 건수를 다시 센다
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const visitN = useMemo(() => loadLog().filter((l) => l.place === place.name).length, [place.name, offsets])
   // 지금 '보통' 이상일 때만, 가까운 곳 중 지수가 뚜렷이 낮은 곳을 찾는다
   const nearby = useMemo(() => {
     if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
     return calmerNearby(place, now.level, places, (p) => hourScores(snap?.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))[0])
   }, [now, place, places, snap, sound, profile, offsets, nowKey, noise])
-  const [card, setCard] = useState<{ card: Card; note: string } | null>(null)
+  const [card, setCard] = useState<{ card: Card; note: string; key: string } | null>(null)
   const [modules, setModules] = useState<CardModule[]>([])
   const [loading, setLoading] = useState(false)
   const [recorded, setRecorded] = useState<string | null>(null)
   const [undoable, setUndoable] = useState<{ prev: VisitPrev } | null>(null)
   const [shareMsg, setShareMsg] = useState('')
+  const cardReq = useRef(0)
+  const [cardFocus, setCardFocus] = useState(0) // 카드 만들기를 눌러 만든 경우에만 올라가고, CardView가 제목으로 포커스를 옮기는 신호가 된다
   const sheet = useRef<HTMLElement>(null)
   const opener = useRef<Element | null>(document.activeElement?.closest('.sheet') && lastOpener?.isConnected ? lastOpener : document.activeElement)
 
@@ -81,31 +107,49 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
 
   const childTags = (Object.entries(profile.tags) as [SenseTag, number][]).filter(([, v]) => v > 1).map(([t]) => t)
 
-  // 카드를 맞출 시각의 칸: 권고 시각이 있으면 그 칸, 없으면 첫 칸
-  const cell = scores.find((s) => s.hour === rec.from) ?? now
-  const loudHour = !!cell && (noiseScore(noiseLookup(noise, place.name)(cell.hour, dowOfTime(cell.time))) ?? 0) >= 60
-  const point = cell && ps ? [...ps.fcst, ...(ps.live ? [ps.live] : [])].find((f) => f.time.slice(0, 13) === cell.time.slice(0, 13)) ?? (cell.forecast ? undefined : ps.live ?? undefined) : undefined
-  const crowdedHour = point?.level === '약간 붐빔' || point?.level === '붐빔'
+  // 카드를 맞출 시각의 칸: 고른 시각이 있으면 그 칸, 없으면 권고 시각, 그것도 없으면 첫 칸
+  const cell = sel ?? scores.find((s) => s.hour === rec.from) ?? now
+  const pointAt = (c: HourScore | undefined) => (c && ps ? [...ps.fcst, ...(ps.live ? [ps.live] : [])].find((f) => f.time.slice(0, 13) === c.time.slice(0, 13)) ?? (c.forecast ? undefined : ps.live ?? undefined) : undefined)
+  const loudHour = !!cell && (noiseScore(noiseAt(cell.hour, dowOfTime(cell.time))) ?? 0) >= 60
+  const crowdedHour = pointAt(cell)?.level === '약간 붐빔' || pointAt(cell)?.level === '붐빔'
+  const cellKey = cell ? `${cell.level}${HAS_API ? `|${cell.hour}` : ''}` : ''
   // 프로필이나 요인이 바뀌면 이미 만든 카드도 다시 조립한다
   const assembled = useMemo(() => (card ? assembleCard(card.card, profile, { loudHour, crowdedHour }, modules) : null), [card, profile, loudHour, crowdedHour, modules])
 
-  const makeCard = async () => {
+  // 요인 카드의 비 예보는 고른 시각 이후만 본다(비 예보 시각은 오늘 자료라 내일 칸에는 적용하지 않는다)
+  const baseExtra = ps?.stale ? undefined : ps?.extra
+  const selToday = !!sel && sel.time.slice(0, 10) === today
+  const factorsExtra = baseExtra?.weather && sel && selToday ? { ...baseExtra, weather: { ...baseExtra.weather, rainHours: baseExtra.weather.rainHours.filter((r) => r >= sel.hour) } } : baseExtra
+  const factorsNote = sel && baseExtra && !selToday ? '날씨, 통제, 행사는 오늘 자료예요. 내일 자료는 서울시에서 받지 못해요.' : ''
+
+  const makeCard = async (focus = false) => {
+    const id = ++cardReq.current
     setLoading(true)
     const [r, mods] = await Promise.all([getCard({
       place: place.name,
       category: place.category,
       level: cell?.level ?? 'mid',
-      hourLabel: rec.from !== null ? `${rec.from}시` : '오늘',
-      tags,
+      hourLabel: cell ? hourName(cell) : '오늘',
+      tags: tagsOf(cell),
       childTags: profile.enabled ? childTags : [],
     }), loadCardModules()])
+    if (id !== cardReq.current) return // 그 사이 다른 시각을 골랐으면 늦게 온 결과는 버린다
     setModules(mods)
-    setCard(r)
+    setCard({ ...r, key: cellKey })
+    if (focus) setCardFocus((n) => n + 1)
     setLoading(false)
   }
 
+  // 카드를 만든 뒤 시각을 바꾸면 그 시각의 단계로 카드를 다시 만든다
+  useEffect(() => {
+    if (card && card.key !== cellKey) void makeCard()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cellKey])
+
+  const pickHour = (h: number | null) => setSelectedHour(h)
+
   const record = (ok: boolean) => {
-    const r = recordVisit(place.name, ok, tags)
+    const r = recordVisit(place.name, ok, nowTags)
     if (r.duplicate && !window.confirm('이미 기록했어요. 한 번 더 더할까요?')) {
       undoVisit(place.name, r.prev)
       return
@@ -118,7 +162,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     setRecorded(
       ok
         ? `고마워요. 이 장소의 맞춤 보정을 조금 낮췄어요.${offsetText}${applied}`
-        : `기록했어요. 이 장소의 맞춤 보정을 조금 올렸어요.${offsetText}${tags.length ? ' 그 시간에 측정된 소리 요인의 민감도도 올렸어요.' : ''}${applied}`,
+        : `기록했어요. 이 장소의 맞춤 보정을 조금 올렸어요.${offsetText}${nowTags.length ? ' 그 시간에 측정된 소리 요인의 민감도도 올렸어요.' : ''}${applied}`,
     )
   }
 
@@ -165,29 +209,54 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     >
       <div className="handle" />
       <button className="close" onClick={onClose} aria-label="닫기">×</button>
-      <h2>{place.name} <span className="muted">{CATEGORY_LABEL[place.category] ?? place.category}</span></h2>
+      <h2>{place.name}{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
       <p>
-        <span className={`pill ${now?.level ?? 'nodata'}`}>{LEVEL3_LABEL[now?.level ?? 'nodata']}</span>{' '}
-        {now?.index != null && <span className="muted">{nowIsCurrent ? (now.obs ? `지금(관측 ${now.obs} 기준)` : '지금') : `${now.hour}시`} 지수 {now.index}{now.forecast ? ' (예측값)' : ''}{profile.enabled ? ' (우리 아이 맞춤)' : ''}</span>}
+        <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
+        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 {shown.index}점(0~100, 낮을수록 편안)</span>}
       </p>
+      {plain?.index != null && shown?.index != null && (
+        <div className="adapt">
+          <span className="muted">
+            {plain.index !== shown.index
+              ? `맞춤 전 ${plain.index}점 → 후 ${shown.index}점${plain.level !== shown.level ? ` (${LEVEL3_LABEL[plain.level]} → ${LEVEL3_LABEL[shown.level]})` : ''}`
+              : chosen ? `이 시간은 맞춤 전후가 같아요(${shown.index}점).` : '민감도를 고르면 달라져요.'}
+          </span>
+          {plain.index === shown.index && !chosen && onGoChild && <button className="btn" onClick={onGoChild}>우리 아이에서 고르기</button>}
+        </div>
+      )}
       <p><b>{rec.text}</b></p>
+      <div className="sel-row">
+        {sel ? <b role="status">{hourName(sel)} 기준</b> : <span className="muted">막대를 누르거나 아래 단추로 시각을 바꿔 볼 수 있어요.</span>}
+        {sel && <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>}
+      </div>
       <div className="share">
         <button className="btn" onClick={share}>링크 복사</button>
         <div role="status" className="muted">{shareMsg}</div>
       </div>
-      <HourChart scores={scores} highlight={rec.from} />
+      <HourChart scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
       <p className="muted">
-        막대는 혼잡도 예측{now?.noise ? '과 평소 소음 실측' : ''}{totalN > 0 ? '과 소리 종류 측정' : ''}으로 계산한 감각부하 지수예요. 점이 있는 시간대는 소리 종류 측정 표본이 있어요.
-        {' '}소리 표본 {totalN}개{totalN === 0 ? ' (소리 미측정)' : tags.length ? `, 지금 시간대 주요 소리: ${tags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.
+        막대는 혼잡도 예측{shown?.noise ? '과 평소 소음 실측' : ''}{totalN > 0 ? '과 소리 종류 측정' : ''}으로 계산한 감각부하 지수예요. 점이 있는 시간대는 소리 종류 측정 표본이 있어요.
+        {' '}소리 표본 {totalN}개{totalN === 0 ? ' (소리 미측정)' : shownTags.length ? `, ${shortLabel} 시간대 주요 소리: ${shownTags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.
         {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
       </p>
+      {shown && (
+        <WhyIndex
+          cell={shown}
+          label={shortLabel}
+          crowdLevel={pointAt(shown)?.level}
+          noiseAvg={noiseAt(shown.hour, dowOfTime(shown.time))?.avg}
+          personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud } : null}
+          visits={visitN}
+        />
+      )}
       <div className="row">
-        <button className="btn primary" onClick={makeCard} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>
+        <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
-      {card && assembled && <CardView card={assembled.card} note={card.note} place={place.name} />}
+      {card && assembled && <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />}
       {assembled?.reason && <p className="muted">{assembled.reason}</p>}
-      <Factors extra={ps?.stale ? undefined : ps?.extra} />
+      {factorsNote && <p className="muted">{factorsNote}</p>}
+      <Factors extra={factorsExtra} fromHour={sel && selToday ? sel.hour : undefined} />
       <NoiseCard noise={noise} place={place.name} />
       {nearby && <NearbyCalm items={nearby} maxKm={NEARBY_MAX_KM} onSelect={onSelect} />}
       <WeekPattern pattern={pattern} place={place.name} />

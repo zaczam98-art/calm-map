@@ -3,3 +3,6 @@
 .m-err { color: #9b1c1c; font-size: 14px; }
 .m-check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--muted); }
 .m-check input { width: 20px; height: 20px; flex: none; }
+.m-prec { font-size: 13px; margin: 8px 0 0; }
+.m-labels li { gap: 8px; }
+.m-labels li > span:last-child { flex: none; white-space: nowrap; }

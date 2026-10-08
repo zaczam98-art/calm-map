@@ -3,7 +3,7 @@ import { activeControls, controlLabel, factorTags } from '../lib/factors'
 import { kstNow } from '../lib/publicData'
 
 /** 혼잡도 외에 오늘 이 장소 주변에서 일어나는 일(공사·집회 통제, 행사, 날씨, 도로). 서울시 자료에 있는 사실만 옮긴다. */
-export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
+export default function Factors({ extra, fromHour }: { extra: PlaceExtra | undefined; fromHour?: number }) {
   if (!extra) return null
   const k = kstNow()
   const nowStr = `${k.date} ${String(k.hour).padStart(2, '0')}:00`
@@ -22,7 +22,11 @@ export default function Factors({ extra }: { extra: PlaceExtra | undefined }) {
           ))}
         </p>
       ) : (
-        <p className="muted">서울시 자료에 오늘 등록된 공사·집회 통제나 행사, 비 예보가 없어요.</p>
+        <p className="muted">
+          {fromHour === undefined
+            ? '서울시 자료에 오늘 등록된 공사·집회 통제나 행사, 비 예보가 없어요.'
+            : `서울시 자료에 오늘 등록된 공사·집회 통제나 행사가 없고, ${fromHour}시 이후 비 예보도 없어요.`}
+        </p>
       )}
       {controls.length > 0 && (
         <>

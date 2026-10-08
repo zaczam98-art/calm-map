@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { NoiseData } from '../types'
 import { kstNow } from '../lib/publicData'
+import '../styles/info.css'
 
 const DOWS: [number, string][] = [[1, '월'], [2, '화'], [3, '수'], [4, '목'], [5, '금'], [6, '토'], [0, '일']]
 const DB_MIN = 30
@@ -33,10 +34,11 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
   const loud = day.length ? day.reduce((a, c) => (c.avg > a.avg ? c : a)) : null
   const cur = chosen === now.dow ? cells.find((c) => c.hour === now.hour) : undefined
 
-  const W = 360
-  const H = 130
+  // 폭 280 기준: 시트 안에서 320px 화면(그래프 폭 약 238px)에서도 축 글자(14.5px)가 12px 이상으로 보이게 한다(styles/info.css)
+  const W = 280
+  const H = 134
   const padL = 26
-  const padB = 20
+  const padB = 24
   const bw = (W - padL - 4) / avg.length
   const y = (db: number) => H - padB - ((Math.max(DB_MIN, Math.min(DB_MAX, db)) - DB_MIN) / (DB_MAX - DB_MIN)) * (H - padB - 14)
 
@@ -48,7 +50,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
           <button key={d} className={`chip small${d === chosen ? ' on' : ''}`} onClick={() => setDow(d)} disabled={!p.avg[String(d)]} aria-pressed={d === chosen}>{name}</button>
         ))}
       </div>
-      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${place} 주변의 ${dowName}요일 시간대별 소음`} style={{ height: 'auto', aspectRatio: `${W} / ${H}` }}>
+      <svg className="chart noise-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${place} 주변의 ${dowName}요일 시간대별 소음`} style={{ height: 'auto', aspectRatio: `${W} / ${H}` }}>
         {[40, 60, 80].map((db) => (
           <g key={db}>
             <line x1={padL} x2={W} y1={y(db)} y2={y(db)} stroke="#e3e7ec" strokeDasharray="3 3" />

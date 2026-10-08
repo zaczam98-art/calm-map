@@ -47,7 +47,12 @@ async function prepareModel(onProgress?: (msg: string) => void): Promise<tf.Grap
   } catch {
     // 이 기기에 저장된 모델이 없으면 내려받아 저장한다
     onProgress?.('처음 한 번 약 16MB를 내려받아요')
-    m = await tf.loadGraphModel(YAMNET_URL, { fromTFHub: true })
+    try {
+      m = await tf.loadGraphModel(YAMNET_URL, { fromTFHub: true })
+    } catch {
+      // 원인(네트워크, 주소 변경, 차단)은 여기서 가려내지 못하므로 화면 문구가 원인을 단정하지 않게 이름만 붙인다
+      throw Object.assign(new Error('model download failed'), { name: 'ModelDownloadFailed' })
+    }
     try {
       await m.save(MODEL_STORE)
     } catch {
@@ -75,6 +80,58 @@ export async function loadModel(onProgress?: (msg: string) => void): Promise<tf.
   const m = await loading
   onProgress?.('모델 준비 완료')
   return m
+}
+
+/**
+ * 측정 탭을 떠난 뒤 이 시간(밀리초)이 지나면 모델을 메모리에서 내린다. 0이면 끈다.
+ * 다시 쓸 때는 기기에 저장된 모델(IndexedDB)을 읽어 오므로 다시 내려받지 않는다.
+ */
+export const IDLE_DISPOSE_MS = 60_000
+let disposeTimer: ReturnType<typeof setTimeout> | undefined
+
+export function cancelModelDispose() {
+  clearTimeout(disposeTimer)
+  disposeTimer = undefined
+}
+
+export function scheduleModelDispose() {
+  cancelModelDispose()
+  if (IDLE_DISPOSE_MS <= 0) return
+  const tick = () => {
+    if (loading && !model) {
+      disposeTimer = setTimeout(tick, IDLE_DISPOSE_MS) // 아직 받는 중이면 끝난 뒤로 미룬다
+      return
+    }
+    model?.dispose()
+    model = null
+    loading = null
+    disposeTimer = undefined
+  }
+  disposeTimer = setTimeout(tick, IDLE_DISPOSE_MS)
+}
+
+/** 소리 크기(dBFS)를 보호자가 읽을 말로 바꾼다. 마이크마다 감도가 달라 기기 기준의 대략적인 구분이다. */
+export type LoudLevel = '작음' | '보통' | '큼'
+export function loudLevel(dbfs: number): LoudLevel {
+  if (dbfs < -45) return '작음'
+  if (dbfs < -25) return '보통'
+  return '큼'
+}
+
+/**
+ * 평가 혼동행렬(행=정답 태그, 열=예측 태그)에서 '이 태그로 분류된 음원 중 실제로 그 태그였던 수'를 태그별로 구한다.
+ * 정답 행이 없는 태그(말소리 등)와 행렬이 없을 때는 비워 둔다.
+ */
+export function tagPrecision(confusion: Record<string, Record<string, number>> | undefined): Partial<Record<SenseTag, { hit: number; n: number }>> {
+  const out: Partial<Record<SenseTag, { hit: number; n: number }>> = {}
+  if (!confusion) return out
+  for (const t of SENSE_TAGS) {
+    if (!confusion[t]) continue
+    let n = 0
+    for (const row of Object.values(confusion)) n += row[t] ?? 0
+    if (n > 0) out[t] = { hit: confusion[t][t] ?? 0, n }
+  }
+  return out
 }
 
 export interface WindowResult {

@@ -1,0 +1,33 @@
+/* 첫 방문 안내 시트: 모바일은 아래에서 올라온 시트, 넓은 화면은 가운데 카드 */
+.ob-back { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: flex-end; justify-content: center; background: rgba(31, 41, 51, .5); }
+.ob-sheet { display: flex; flex-direction: column; width: 100%; max-width: 480px; max-height: 100%; overflow: hidden; border-radius: 18px 18px 0 0; background: var(--card); box-shadow: 0 -2px 20px rgba(0, 0, 0, .2); outline: none; }
+.ob-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 18px 16px 4px; }
+.ob-guide { margin: 0 0 6px; font-size: 17px; line-height: 1.55; }
+.ob-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.ob-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ob-legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--ink); }
+.ob-legend i.calm { background: var(--calm); }
+.ob-legend i.mid { background: var(--mid); }
+.ob-legend i.busy { background: var(--busy); }
+.ob-sheet h2 { margin: 0 0 2px; font-size: 18px; }
+.ob-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 8px; }
+/* 고른 항목에 따라 아래 내용의 높이가 변하면 방금 누른 칩이 손가락 밑에서 움직이므로 미리 자리를 잡아 둔다 */
+.ob-preview { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-height: 92px; padding: 8px 12px; margin: 0 0 8px; border-radius: 12px; background: #eaf3f8; }
+.ob-pv-place { font-size: 13px; color: var(--muted); }
+.ob-pv-num { font-size: 17px; }
+.ob-pv-num b { font-size: 20px; }
+.ob-pv-note { font-size: 13px; color: var(--muted); }
+.ob-note { margin: 0 0 12px; font-size: 13px; }
+/* 작은 화면에서 내용이 길어도 버튼은 시트 아래에 고정해 항상 보이게 한다 */
+.ob-actions { flex: none; display: flex; gap: 8px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card); }
+.ob-actions .btn { flex: 1; font-size: 16px; }
+@media (min-width: 600px) {
+  .ob-back { align-items: center; }
+  .ob-sheet { border-radius: 18px; }
+  .ob-actions { padding-bottom: 14px; }
+}
+
+/* 우리 아이 탭: 프리셋 설명과 되돌리기 */
+.child-preset-note { margin: -4px 0 8px; font-size: 13px; }
+.child-undo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 12px; }
+.child-undo .muted { flex: 1 1 200px; margin: 0; }

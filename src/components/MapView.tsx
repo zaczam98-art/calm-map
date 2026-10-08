@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import L from 'leaflet'
 import type { ChildProfile, Level3, NoiseData, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL } from '../lib/index'
@@ -6,6 +6,8 @@ import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { activeControls, factorTags } from '../lib/factors'
 import { kstNow } from '../lib/publicData'
 import { noiseLookup } from '../lib/noise'
+import SearchBox from './SearchBox'
+import '../styles/map.css'
 
 const FILL: Record<Level3, string> = { calm: '#9ddbc8', mid: '#46739e', busy: '#2e2a5e', nodata: '#ffffff' }
 const OUTLINE = '#1f2933' // 어두운 테두리: 무던함(연한 채움)이 밝은 지도 배경에서도 모양으로 보이게 한다
@@ -47,11 +49,14 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
   const layerRef = useRef<L.LayerGroup | null>(null)
   const markersRef = useRef(new Map<string, { m: L.CircleMarker; base: L.CircleMarkerOptions; level: Level3 }>())
   const [pick, setPick] = useState<{ x: number; y: number; names: string[] } | null>(null) // 겹친 마커 중 고르는 목록
+  const [levels, setLevels] = useState<Record<string, Level3> | null>(null) // 지금 시각의 장소별 단계(범례 개수와 검색 결과 표시용)
+  const [searchHost, setSearchHost] = useState<HTMLElement | null>(null) // 줌 버튼 아래 검색 단추 자리
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
   const styledRef = useRef<string | null>(null) // 선택 강조가 입혀진 마커 이름
   const pendingRef = useRef<string | null>(null) // 지도가 숨겨져 있어 아직 옮기지 못한 선택
   const movedRef = useRef(false)
+  const refocusUntilRef = useRef(0) // 검색으로 고른 직후 이 시각까지는 크기가 바뀔 때 선택 장소를 다시 시트 위로 맞춘다(키보드가 내려가며 지도가 커지는 경우)
   const reducedRef = useRef(false)
   const placesRef = useRef(places)
   const selectedRef = useRef(selected)
@@ -74,6 +79,17 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     const target = map.unproject(map.project([p.lat, p.lng], z).add([0, map.getSize().y * 0.3]), z)
     movedRef.current = true
     map.flyTo(target, z, { animate: !reducedRef.current, duration: 0.5 })
+  }
+
+  // 검색 결과를 골랐을 때: 새 장소면 선택 효과가 옮기고, 이미 선택된 장소면 직접 옮긴다
+  const searchPick = (name: string) => {
+    refocusUntilRef.current = Date.now() + 1500
+    if (name === selectedRef.current) {
+      pendingRef.current = name
+      focusPending()
+    } else {
+      onSelectRef.current(name)
+    }
   }
 
   // 누른 곳 가까이(PICK_PX)의 마커가 하나면 바로 열고, 둘 이상이면 가까운 순으로 고르게 한다. 마커 밖을 눌러도 가까우면 같게 다룬다.
@@ -118,6 +134,16 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       if (tileErrors === 5) tileErrorRef.current?.()
     })
     L.control.zoom({ position: 'topright', zoomInTitle: '확대', zoomOutTitle: '축소' }).addTo(map)
+    // 검색 단추는 줌 버튼 바로 아래에 쌓이도록 같은 모서리의 Leaflet 컨트롤로 둔다(React가 이 상자에 단추를 그린다)
+    const searchCtl = new L.Control({ position: 'topright' })
+    searchCtl.onAdd = () => {
+      const box = L.DomUtil.create('div', 'sbx-host')
+      L.DomEvent.disableClickPropagation(box)
+      L.DomEvent.disableScrollPropagation(box)
+      return box
+    }
+    searchCtl.addTo(map)
+    setSearchHost(searchCtl.getContainer() ?? null)
     layerRef.current = L.layerGroup().addTo(map)
     mapRef.current = map
     // 컨테이너 크기가 마운트 뒤(또는 숨겨진 탭이 보일 때) 정해지므로, 사용자가 지도를 움직이기 전까지는
@@ -132,6 +158,10 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       if (!el.clientWidth || !el.clientHeight) return
       map.invalidateSize({ animate: false })
       if (!movedRef.current) map.setView(CENTER, map.getZoom(), { animate: false })
+      else if (Date.now() < refocusUntilRef.current && selectedRef.current) {
+        pendingRef.current = selectedRef.current
+        focusPending()
+      }
     }
     const timers = [50, 300, 1000, 2500].map((ms) => setTimeout(fix, ms))
     const ro = new ResizeObserver(fix)
@@ -146,6 +176,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       map.off('dragstart zoomstart', markMoved)
       map.off('movestart zoomstart', closePick)
       map.off('click', onMapClick)
+      setSearchHost(null)
       map.remove()
       mapRef.current = null
       layerRef.current = null
@@ -162,7 +193,11 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     markersRef.current.clear()
     styledRef.current = null
     setPick(null)
-    if (!snap) return // 자료가 오기 전에는 마커를 그리지 않는다
+    if (!snap) {
+      setLevels(null)
+      return // 자료가 오기 전에는 마커를 그리지 않는다
+    }
+    const nowLevels: Record<string, Level3> = {}
     const k = kstNow()
     const nowStr = `${k.date} ${String(k.hour).padStart(2, '0')}:00`
     for (const p of places) {
@@ -170,6 +205,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       const scores = hourScores(ps, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
       const now = scores[0]
       const level: Level3 = now?.level ?? 'nodata'
+      nowLevels[p.name] = level
       const controls = factorTags(activeControls(ps?.extra, nowStr)).filter((t) => t.key.startsWith('control'))
       const base = baseStyle(level, controls.length > 0)
       const m = L.circleMarker([p.lat, p.lng], { ...base, className: `mk ${level}`, bubblingMouseEvents: false })
@@ -182,6 +218,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       el?.setAttribute('aria-hidden', 'true')
       markersRef.current.set(p.name, { m, base, level })
     }
+    setLevels(nowLevels)
     applySelection(selectedRef.current)
   }, [places, snap, sound, profile, offsets, nowKey, noise])
 
@@ -201,15 +238,32 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     return () => clearTimeout(t)
   }, [active])
 
+  const counts = useMemo(() => {
+    if (!levels) return null
+    const c: Record<Level3, number> = { calm: 0, mid: 0, busy: 0, nodata: 0 }
+    for (const lv of Object.values(levels)) c[lv] += 1
+    return c
+  }, [levels])
+
   return (
     <div className="map-wrap">
       <div ref={containerRef} id="map" role="application" aria-label={`서울 장소 ${places.length}곳의 감각부하 지도`} />
+      <SearchBox
+        places={places}
+        levels={levels}
+        host={searchHost}
+        onPick={searchPick}
+        onFocus={() => {
+          movedRef.current = true // 입력하는 동안 키보드로 크기가 바뀌어도 지도를 서울 중심으로 되돌리지 않는다
+          setPick(null)
+        }}
+      />
       {pick && <PickList pick={pick} box={containerRef.current} levels={markersRef.current} onPick={(name) => onSelect(name)} onClose={() => setPick(null)} />}
       <div className="legend" role="group" aria-label="범례">
-        <span><i className="dot calm" />무던함</span>
-        <span><i className="dot mid" />보통</span>
-        <span><i className="dot busy" />붐빔</span>
-        <span><i className="dot nodata" />자료 없음</span>
+        <span><i className="dot calm" />무던함{counts && <b>{counts.calm}</b>}</span>
+        <span><i className="dot mid" />보통{counts && <b>{counts.mid}</b>}</span>
+        <span><i className="dot busy" />붐빔{counts && <b>{counts.busy}</b>}</span>
+        <span><i className="dot nodata" />자료 없음{counts && <b>{counts.nodata}</b>}</span>
         <span><i className="dot ring" />공사·통제</span>
       </div>
     </div>

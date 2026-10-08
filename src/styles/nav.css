@@ -1,0 +1,21 @@
+/* 하단 탭: 24px 선 아이콘과 글자를 세로로 놓고, 활성 탭은 윗선 3px로도 표시한다(색만으로 구분하지 않는다) */
+nav.nav button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+nav.nav button svg { display: block; flex: none; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+nav.nav button.on::before { content: ''; position: absolute; top: -1px; left: 18%; right: 18%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
+
+/* 헤더 '적용 중' 칩: 누르면 우리 아이 탭. 버튼은 44px 높이를 지키고 눈에 보이는 알약만 작게 그린다. */
+.applied-chip { flex: 0 3 auto; min-width: 56px; max-width: 240px; min-height: 44px; display: inline-flex; align-items: center; padding: 0; border: 0; background: transparent; color: var(--ink); }
+.applied-chip > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 8px; border: 1px solid var(--accent); border-radius: 999px; background: #e4f0f6; font-size: 12px; line-height: 1.4; }
+.applied-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+
+/* 좁은 화면에서는 '우리 아이' 글자를 화면에서만 감춘다(스크린 리더에는 '우리 아이 맞춤'으로 읽힌다) */
+@media (max-width: 520px) {
+  .topbar.has-chip .toggle-lead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* 칩이 있으면 자료 시각 배지는 줄이지 않고 칩이 먼저 말줄임된다 */
+.topbar.has-chip .badge { flex-shrink: 0; }
+
+@media (max-width: 340px) {
+  .applied-lead { display: none; }
+}

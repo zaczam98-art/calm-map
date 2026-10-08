@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CATEGORY_LABEL, type ChildProfile, type Level3, type NoiseData, type Place, type Snapshot } from '../types'
+import { CATEGORY_LABEL, placeLabel, type ChildProfile, type Level3, type NoiseData, type Place, type Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL, recommend } from '../lib/index'
 import { distanceKm } from '../lib/nearby'
 import { activeControls, factorTags } from '../lib/factors'
@@ -110,6 +110,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
         <p className="muted">
           서울 {places.length}곳을 지금 무던한 순서로 보여 줘요{profile.enabled ? '(우리 아이 맞춤 적용)' : ''}. {sourceNote(snap, loading)}
         </p>
+        {snap !== null && <p className="muted">각 줄 오른쪽의 점수가 지수예요. 지수는 0~100이고 낮을수록 편안해요.</p>}
         <div className="search">
           <label>
             이름으로 찾기{' '}
@@ -143,7 +144,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
             <button className="rec-item" onClick={() => onOpen(r.place.name)}>
               <span className={`pill ${r.level}`}>{LEVEL3_LABEL[r.level]}</span>
               <span className="rec-main">
-                <b>{r.place.name}</b> <span className="muted">{CATEGORY_LABEL[r.place.category] ?? r.place.category}{r.km !== null ? ` · 직선 ${r.km.toFixed(1)}km` : ''}</span>
+                <b>{r.place.name}</b> <span className="muted">{[placeLabel(r.place), r.km !== null ? `직선 ${r.km.toFixed(1)}km` : ''].filter(Boolean).join(' · ')}</span>
                 <br />
                 <span>{r.line}</span>
                 {r.tags.map((t) => (

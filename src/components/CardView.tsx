@@ -21,16 +21,20 @@ function useKoreanVoice(): boolean {
   return ok
 }
 
-export default function CardView({ card, note, place }: { card: Card; note: string; place: string }) {
+export default function CardView({ card, note, place, focusToken }: { card: Card; note: string; place: string; focusToken: number }) {
   const [big, setBig] = useState(false)
   const [reading, setReading] = useState<number | null>(null)
   const token = useRef(0)
   const head = useRef<HTMLHeadingElement>(null)
   const hasVoice = useKoreanVoice()
 
-  // 카드가 새로 만들어지면 제목으로 포커스를 옮겨 스크린리더가 결과를 알리게 한다. 카드가 바뀌거나 사라지면 읽기를 멈춘다.
+  // 사용자가 카드 만들기를 눌러 카드가 만들어졌을 때만(focusToken이 바뀔 때만) 제목으로 포커스를 옮겨 스크린리더가 결과를 알린다.
+  // 시각을 바꾸거나 프로필이 바뀌어 카드가 다시 조립될 때는 사용자가 누르던 곳에 포커스를 둔다.
   useEffect(() => {
     head.current?.focus()
+  }, [focusToken])
+  // 카드가 바뀌거나 사라지면 읽기를 멈춘다
+  useEffect(() => {
     return () => {
       token.current++
       if (canSpeak) window.speechSynthesis.cancel()

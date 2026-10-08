@@ -18,6 +18,13 @@ export interface Place {
   tracked: boolean
 }
 
+/** 이름 옆에 붙일 분류 라벨. 이름에 이미 '관광특구'가 있거나 역이 아닌 인구밀집지역(숭례문, 시의회 앞)이면 빈 문자열이다. 카드 조회 키는 place.category 원본을 쓴다. */
+export function placeLabel(place: Pick<Place, 'name' | 'category'>): string {
+  if (place.name.includes('관광특구')) return ''
+  if (place.category === '인구밀집지역' && !place.name.includes('역')) return ''
+  return CATEGORY_LABEL[place.category] ?? place.category
+}
+
 export interface ForecastPoint {
   time: string // 'YYYY-MM-DD HH:00'
   level: CongestLevel
@@ -80,6 +87,20 @@ export interface ChildProfile {
 
 export type Level3 = 'calm' | 'mid' | 'busy' | 'nodata'
 
+/**
+ * 지수를 이루는 단계별 값(반올림하지 않은 값). 지수 = clamp((1-w)·base + w·(s ?? 0) + offset, 0, 100).
+ * c: 혼잡 점수(맞춤 곱 적용 후), n: 소음 점수(자료 없으면 null), base: n이 있으면 0.6c+0.4n, 없으면 c,
+ * s: 소리 점수(표본 없으면 null), w: 소리 가중, offset: 장소별 기록 보정(맞춤을 껐으면 0).
+ */
+export interface ScoreParts {
+  c: number
+  n: number | null
+  s: number | null
+  w: number
+  offset: number
+  base: number
+}
+
 export interface HourScore {
   time: string
   hour: number
@@ -92,6 +113,8 @@ export interface HourScore {
   noise: boolean
   /** 현재 시각 칸을 직전 실시간 관측으로 채웠을 때 그 관측 시각('HH:MM') */
   obs?: string
+  /** 지수의 단계별 구성(왜 이 지수인가 화면용) */
+  parts?: ScoreParts
 }
 
 export interface Card {

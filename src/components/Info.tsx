@@ -1,17 +1,69 @@
-import type { ForecastMetrics, NoiseData, SenseTag, Snapshot } from '../types'
+import { useEffect, useMemo, useState } from 'react'
+import type { ForecastMetrics, NoiseData, SenseTag, Snapshot, WeekPattern } from '../types'
 import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
-import { HAS_API } from '../lib/publicData'
+import { HAS_API, loadPublicJson } from '../lib/publicData'
+import { level3, noiseScore, NOISE_WEIGHT } from '../lib/index'
+import { noiseLookup } from '../lib/noise'
 import soundEval from '../data/sound_eval.json'
 import '../styles/child.css'
+import '../styles/info.css'
 
 const SAMPLES = samplesRaw.samples
 const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람', car_horn: '자동차 경적', laughing: '웃음소리', crickets: '귀뚜라미', clapping: '박수' }
 
 const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
+const LEADS = ['1', '3', '6', '12']
 
-export default function Info({ snap, metrics, noise, placeCount }: { snap: Snapshot | null; metrics: ForecastMetrics | null; noise: NoiseData | null; placeCount: number }) {
-  const leads = ['1', '3', '6', '12']
+/** 서울시 예측의 단계 일치율이 '그대로 유지 가정'보다 낮은 시차(표에 보이는 정수 %로 비교)를 'N시간 전(예측 a%, 유지 가정 b%)' 꼴로 돌려준다. */
+function lowerThanPersist(metrics: ForecastMetrics): string[] {
+  return LEADS.flatMap((k) => {
+    const m = metrics.byLead[k]
+    if (!m || m.n <= 0 || m.persistN <= 0) return []
+    const a = Math.round((m.exact / m.n) * 100)
+    const b = Math.round((m.persistExact / m.persistN) * 100)
+    return a < b ? [`${k}시간 전(예측 ${a}%, 유지 가정 ${b}%)`] : []
+  })
+}
+
+/**
+ * 요일×시간대 평균 혼잡 단계(pattern.json)만으로 정한 단계와, 같은 칸에 주변 소음(noise.json)을 더한 지수의 단계를 견줘 달라지는 칸을 센다.
+ * 한 칸은 장소·요일·시간 한 조합이고 8~21시만 본다. 혼잡 점수는 단계 기준값(15, 40, 65, 90)만 쓰고(±10 보정 제외), 소리 측정과 맞춤은 넣지 않는다.
+ */
+function noiseShift(pattern: WeekPattern, noise: NoiseData): { cells: number; changed: number; up: number; down: number } | null {
+  let cells = 0
+  let up = 0
+  let down = 0
+  for (const [place, byKey] of Object.entries(pattern.places)) {
+    const look = noiseLookup(noise, place)
+    for (const [key, cell] of Object.entries(byKey)) {
+      const [dow, hour] = key.split('-').map(Number)
+      if (hour < 8 || hour > 21) continue
+      const n = noiseScore(look(hour, dow))
+      if (n === null) continue
+      const c = 15 + 25 * Math.max(0, Math.min(3, Math.round(cell[0])))
+      const index = Math.round((1 - NOISE_WEIGHT) * c + NOISE_WEIGHT * n)
+      cells++
+      if (level3(index) !== level3(c)) index > c ? up++ : down++
+    }
+  }
+  return cells > 0 ? { cells, changed: up + down, up, down } : null
+}
+
+export default function Info({ snap, metrics, noise, placeCount, pattern: patternProp }: { snap: Snapshot | null; metrics: ForecastMetrics | null; noise: NoiseData | null; placeCount: number; pattern?: WeekPattern | null }) {
+  // 부모가 pattern을 넘기지 않으면(undefined) 이 화면이 직접 받는다
+  const [fetched, setFetched] = useState<WeekPattern | null>(null)
+  useEffect(() => {
+    if (patternProp !== undefined) return
+    let alive = true
+    void loadPublicJson<WeekPattern>('pattern.json').then((v) => alive && setFetched(v))
+    return () => {
+      alive = false
+    }
+  }, [patternProp])
+  const pattern = patternProp === undefined ? fetched : patternProp
+  const shift = useMemo(() => (pattern && noise ? noiseShift(pattern, noise) : null), [pattern, noise])
+  const lower = metrics ? lowerThanPersist(metrics) : []
   return (
     <div className="page">
       <div className="card">
@@ -38,14 +90,60 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
       </div>
       <div className="card">
         <h2>지수 산식(가설 v1)</h2>
+        <p>지수는 0~100이고 낮을수록 편안해요. 장소와 시간대마다 아래 순서로 계산해요.</p>
         <ol className="formula">
-          <li>혼잡 점수 C는 혼잡도 단계(여유 15, 보통 40, 약간 붐빔 65, 붐빔 90)에, 그 장소의 12시간 예측 안에서 인구가 많은 편인지 적은 편인지에 따라 ±10을 더해요.</li>
-          <li>소음 점수 N은 주변 서울시 센서의 같은 요일·시간대 평균 소음을 40dB은 0, 75dB은 100으로 바꾼 값에, 큰 소리 정도(시간 최대와 평균의 차이)가 3dB을 넘는 만큼 4씩(최대 20) 더해요.</li>
-          <li>기본 지수 B는 소음 자료가 있으면 0.6·C + 0.4·N, 없으면 C예요.</li>
-          <li>소리 종류 점수 S는 측정에 잡힌 태그마다 (확률×강도)의 평균에 태그 가중(돌발음 1.0, 군중 0.7, 기계·차량 0.5, 음악·안내방송 0.5, 말소리 0.3, 배경 0.1)과 민감도(맞춤을 켠 때만 0.5, 1, 1.5)를 곱해 모두 더하고, 100을 곱해 0~100으로 제한해요.</li>
-          <li>최종 지수와 단계는 표본이 n개면 w = min(0.5, n/(n+6))으로 지수 = (1-w)·B + w·S예요. 무던함은 35 미만, 보통은 35~64, 붐빔은 65 이상이에요.</li>
+          <li>
+            혼잡 점수 C는 서울시 혼잡도 단계의 기준값에서 시작해요.
+            <ul>
+              <li>기준값은 여유 15, 보통 40, 약간 붐빔 65, 붐빔 90이에요.</li>
+              <li>그 장소의 12시간 예측 안에서 예상 인구가 많은 시간은 최대 10점을 더하고, 적은 시간은 최대 10점을 빼요.</li>
+            </ul>
+          </li>
+          <li>
+            소음 점수 N은 주변 서울시 센서가 같은 요일·시간대에 잰 평균 소음을 점수로 바꾼 값이에요.
+            <ul>
+              <li>평균 40dB은 0점이고 75dB은 100점이에요.</li>
+              <li>그 시간의 최대 소음이 평균보다 3dB을 넘게 높으면, 넘은 1dB마다 4점씩 최대 20점을 더해요.</li>
+            </ul>
+          </li>
+          <li>기본 지수 B는 소음 자료가 있으면 0.6 × C + 0.4 × N이고, 없으면 C와 같아요.</li>
+          <li>
+            소리 점수 S는 현장 측정을 반영한 장소·요일·시간대에만 있어요.
+            <ul>
+              <li>S = 100 × Σ(태그별 (확률×강도) 평균 × 태그 가중 × 민감도)이고, 0~100으로 제한해요.</li>
+              <li>태그 가중은 돌발음 1.0, 군중 0.7, 기계·차량 0.5, 음악·안내방송 0.5, 말소리 0.3, 배경 0.1이에요.</li>
+              <li>민감도는 맞춤을 켠 때만 0.5, 1, 1.5 중에서 쓰고, 끄면 모두 1이에요.</li>
+            </ul>
+          </li>
+          <li>
+            최종 지수는 (1 − w) × B + w × S이고, 소리 표본이 n개일 때 w = min(0.5, n / (n + 6))이에요.
+            <ul>
+              <li>소리 표본이 없으면 w는 0이라서 지수는 B와 같아요.</li>
+              <li>맞춤을 켠 때만 다녀온 뒤 기록으로 정한 장소별 보정값(-20~+20)을 더해요.</li>
+              <li>지수는 반올림한 정수이고, 35 미만은 무던함, 35 이상 65 미만은 보통, 65 이상은 붐빔이에요.</li>
+            </ul>
+          </li>
         </ol>
-        <p className="muted">맞춤을 켜면 혼잡 점수에 혼잡 민감도를, 소음 점수에 큰 소리 민감도를, 큰 소리 가산에 돌발음 민감도를, 태그 가중에 태그별 민감도(0.5, 1, 1.5)를 곱하고 다녀온 뒤 기록의 보정(±20 이내)을 더해요. 이 산식과 숫자는 검증 전 가설이에요. 공사·행사 정보는 지수에 넣지 않고 따로 보여 줘요.</p>
+        <p className="muted">맞춤을 켜면 아래 값이 달라져요.</p>
+        <ul className="apply">
+          <li>혼잡 점수 C에 혼잡 민감도를 곱해요.</li>
+          <li>소음 점수 N의 평균 부분에는 큰 소리 민감도를, 큰 소리 가산에는 돌발음 민감도를 곱해요.</li>
+          <li>소리 점수 S의 태그마다 그 태그의 민감도를 곱해요.</li>
+          <li>최종 지수에 다녀온 뒤 기록의 보정값을 더해요.</li>
+        </ul>
+        <p className="muted">이 산식과 숫자는 검증 전 가설이에요. 공사·행사 정보는 지수에 넣지 않고 따로 보여 줘요.</p>
+        {shift && pattern && (
+          <div className="stat">
+            <h3 className="sub">소음을 더하면 단계가 달라지는 칸</h3>
+            <p>
+              혼잡 평균과 소음 평균이 모두 있는 8~21시 {shift.cells}칸 가운데 {shift.changed}칸({Math.round((shift.changed / shift.cells) * 1000) / 10}%)은 소음까지 더한 지수의 단계가 혼잡만으로 정한 단계와 달랐어요.
+              더 편안한 단계로 바뀐 칸은 {shift.down}칸, 더 붐비는 단계로 바뀐 칸은 {shift.up}칸이에요.
+            </p>
+            <p className="muted">
+              칸은 장소·요일·시간대 한 조합이에요. 혼잡 평균은 {pattern.days}일 동안 관측한 값이라서 참고치로만 봐 주세요. 혼잡 점수는 단계 기준값만 써서(±10 보정 제외) 소리 측정과 맞춤 없이 계산했어요.
+            </p>
+          </div>
+        )}
       </div>
       <div className="card">
         <h2>개인정보</h2>
@@ -61,25 +159,31 @@ export default function Info({ snap, metrics, noise, placeCount }: { snap: Snaps
         <h2>예측이 얼마나 맞았나</h2>
         {metrics && metrics.overall.n >= 100 ? (
           <>
-            <table className="simple">
+            <table className="simple metrics">
               <thead>
-                <tr><th>몇 시간 전 예측</th><th>비교 건수</th><th>단계 일치</th><th>한 단계 이내</th><th>그대로 유지 가정</th></tr>
+                <tr><th>예측 시차</th><th>비교 건수</th><th>단계 일치</th><th>한 단계 이내</th><th>유지 가정</th></tr>
               </thead>
               <tbody>
-                {leads.map((k) => {
+                {LEADS.map((k) => {
                   const m = metrics.byLead[k]
                   return m ? (
                     <tr key={k}><th>{k}시간 전</th><td>{m.n}</td><td>{pct(m.exact, m.n)}</td><td>{pct(m.within1, m.n)}</td><td>{pct(m.persistExact, m.persistN)}</td></tr>
                   ) : null
                 })}
-                <tr><th>전체(위 네 시차 합)</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
+                <tr><th>네 시차 합</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
               </tbody>
             </table>
             <p className="muted">
               서울시가 준 혼잡도 예측(4단계)을 그 시각의 실제 관측과 비교한 값이에요. 무던한 지도의 지수는 이 예측을 입력으로 쓰기 때문에 예측이 맞은 정도를 그대로 공개해요.
-              "그대로 유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율이에요. {metrics.firstObs?.slice(0, 10)}부터 관측한 날 {metrics.days}일 동안 관측 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
+              "유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율이에요. {metrics.firstObs?.slice(0, 10)}부터 관측한 날 {metrics.days}일 동안 관측 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
               기간이 짧은 동안에는 참고용으로만 봐 주세요.
             </p>
+            {lower.length > 0 && (
+              <p className="muted">
+                서울시 예측의 단계 일치율이 "유지 가정"보다 낮은 시차는 {lower.join(', ')}이에요. 이 시차에서는 지금 단계가 이어진다고 본 쪽이 더 자주 맞았어요.
+                지수는 이 예측을 입력으로 쓰기 때문에, 이 시차의 예측으로 계산한 칸은 참고용으로만 봐 주세요.
+              </p>
+            )}
           </>
         ) : (
           <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중이에요(지금 {metrics?.overall.n ?? 0}건). 비교가 100건을 넘으면 여기에 일치율이 표시돼요.</p>

@@ -29,6 +29,39 @@
    "correct": 40
   }
  },
+ "confusion": {
+  "sudden": {
+   "sudden": 282,
+   "machine": 61,
+   "speech": 2,
+   "crowd": 2,
+   "ambient": 7,
+   "music": 6
+  },
+  "ambient": {
+   "sudden": 10,
+   "ambient": 148,
+   "machine": 40,
+   "music": 2
+  },
+  "machine": {
+   "machine": 225,
+   "music": 4,
+   "ambient": 6,
+   "sudden": 5
+  },
+  "crowd": {
+   "crowd": 50,
+   "speech": 21,
+   "sudden": 5,
+   "ambient": 2,
+   "music": 1,
+   "machine": 1
+  },
+  "music": {
+   "music": 40
+  }
+ },
  "weakest": [
   {
    "category": "chainsaw",

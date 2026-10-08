@@ -37,6 +37,15 @@ export function saveProfile(p: ChildProfile) {
   write(KEY_PROFILE, p)
 }
 
+/** 이 기기에 저장된 프로필이 있는지(첫 방문 안내를 보여 줄지 정하는 데 쓴다). 저장소를 읽을 수 없으면 있는 것으로 본다. */
+export function hasSavedProfile(): boolean {
+  try {
+    return localStorage.getItem(KEY_PROFILE) !== null
+  } catch {
+    return true
+  }
+}
+
 export function loadOffsets(): Record<string, number> {
   return read<Record<string, number>>(KEY_OFFSET, {})
 }
