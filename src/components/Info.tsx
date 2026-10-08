@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { ForecastMetrics, NoiseData, SenseTag, Snapshot, WeekPattern } from '../types'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import type { ForecastMetrics, LeadMetric, NoiseData, SenseTag, Snapshot, WeekPattern } from '../types'
 import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
 import { HAS_API, loadPublicJson } from '../lib/publicData'
@@ -13,7 +13,10 @@ const SAMPLES = samplesRaw.samples
 const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람', car_horn: '자동차 경적', laughing: '웃음소리', crickets: '귀뚜라미', clapping: '박수' }
 
 const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
-const LEADS = ['1', '3', '6', '12']
+const LEADS = ['1', '2', '3', '6', '12']
+const NO_PAIRS: LeadMetric = { n: 0, exact: 0, within1: 0, persistN: 0, persistExact: 0 }
+/** 적중률 계산이 나중에 더한 필드. 옛 metrics.json에는 없어서 선택 필드로 읽는다. */
+type LeadExtra = LeadMetric & { over?: number; biasSum?: number; popHit?: number; persistPopHit?: number }
 
 /** 서울시 예측의 단계 일치율이 '그대로 유지 가정'보다 낮은 시차(표에 보이는 정수 %로 비교)를 'N시간 전(예측 a%, 유지 가정 b%)' 꼴로 돌려준다. */
 function lowerThanPersist(metrics: ForecastMetrics): string[] {
@@ -23,6 +26,23 @@ function lowerThanPersist(metrics: ForecastMetrics): string[] {
     const a = Math.round((m.exact / m.n) * 100)
     const b = Math.round((m.persistExact / m.persistN) * 100)
     return a < b ? [`${k}시간 전(예측 ${a}%, 유지 가정 ${b}%)`] : []
+  })
+}
+
+/** 예측 단계가 실제 관측 단계보다 높았던 비교의 비율과 평균 차이를 한 문장으로 돌려준다. 값이 없는 옛 metrics.json에서는 null이다. */
+function biasSentence(metrics: ForecastMetrics): string | null {
+  const o: LeadExtra = metrics.overall
+  if (o.n <= 0 || o.over === undefined || o.biasSum === undefined) return null
+  const mean = o.biasSum / o.n
+  return `예측 단계가 실제 관측 단계보다 높았던 비교는 전체의 ${pct(o.over, o.n)}이고, 예측 단계는 관측 단계보다 평균 ${Math.abs(mean).toFixed(2)}단계 ${mean >= 0 ? '높아요' : '낮아요'}.`
+}
+
+/** 예측한 인구(중앙값)와 유지 가정(그 시간 전 관측의 인구 중앙값)이 실제 관측의 인구 범위 안에 든 비율을 시차별 한 줄로 돌려준다. 값이 없는 시차는 뺀다. */
+function populationLines(metrics: ForecastMetrics): string[] {
+  return LEADS.flatMap((k) => {
+    const m: LeadExtra | undefined = metrics.byLead[k]
+    if (!m || m.n <= 0 || m.persistN <= 0 || m.popHit === undefined || m.persistPopHit === undefined) return []
+    return [`${k}시간 전: 예측 ${pct(m.popHit, m.n)}(${m.popHit}/${m.n}), 유지 가정 ${pct(m.persistPopHit, m.persistN)}(${m.persistPopHit}/${m.persistN})`]
   })
 }
 
@@ -64,6 +84,8 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
   const pattern = patternProp === undefined ? fetched : patternProp
   const shift = useMemo(() => (pattern && noise ? noiseShift(pattern, noise) : null), [pattern, noise])
   const lower = metrics ? lowerThanPersist(metrics) : []
+  const bias = metrics ? biasSentence(metrics) : null
+  const popLines = metrics ? populationLines(metrics) : []
   return (
     <div className="page">
       <div className="card">
@@ -165,23 +187,41 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
               </thead>
               <tbody>
                 {LEADS.map((k) => {
-                  const m = metrics.byLead[k]
-                  return m ? (
+                  const m = metrics.byLead[k] ?? NO_PAIRS
+                  return (
                     <tr key={k}><th>{k}시간 전</th><td>{m.n}</td><td>{pct(m.exact, m.n)}</td><td>{pct(m.within1, m.n)}</td><td>{pct(m.persistExact, m.persistN)}</td></tr>
-                  ) : null
+                  )
                 })}
-                <tr><th>네 시차 합</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
+                <tr><th>시차 합</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
               </tbody>
             </table>
             <p className="muted">
               서울시가 준 혼잡도 예측(4단계)을 그 시각의 실제 관측과 비교한 값이에요. 무던한 지도의 지수는 이 예측을 입력으로 쓰기 때문에 예측이 맞은 정도를 그대로 공개해요.
-              "유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율이에요. {metrics.firstObs?.slice(0, 10)}부터 관측한 날 {metrics.days}일 동안 관측 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
+              "유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율이에요.
+              "N시간 전"은 서울시 실시간 값이 속한 정시(19시 35분 값이면 19시)에서 N시간 뒤를 맞힌 예측이에요. 값에 적힌 시각이 받은 시각보다 이르기 때문에, 받은 시각부터 재면 한 시간쯤 짧아요.
+              같은 시각의 장소들은 함께 오르내려서 비교 건수만큼 서로 독립적인 확인은 아니에요. {metrics.firstObs?.slice(0, 10)}부터 관측한 날 {metrics.days}일 동안 관측 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
               기간이 짧은 동안에는 참고용으로만 봐 주세요.
             </p>
             {lower.length > 0 && (
               <p className="muted">
                 서울시 예측의 단계 일치율이 "유지 가정"보다 낮은 시차는 {lower.join(', ')}이에요. 이 시차에서는 지금 단계가 이어진다고 본 쪽이 더 자주 맞았어요.
                 지수는 이 예측을 입력으로 쓰기 때문에, 이 시차의 예측으로 계산한 칸은 참고용으로만 봐 주세요.
+              </p>
+            )}
+            {bias && (
+              <p className="muted">
+                {bias} 예측과 실시간 값은 서울시가 따로 매기는 단계라서 기준이 같지 않을 수 있고, 다르면 그 차이가 "단계 일치"에 그대로 들어가요.
+              </p>
+            )}
+            {popLines.length > 0 && (
+              <p className="muted">
+                단계 이름 대신 인구 범위로 보면, 예측한 인구(중앙값)가 실제 관측의 인구 범위 안에 든 비율과 "유지 가정"(그 시간 전 관측의 인구 중앙값)이 같은 범위 안에 든 비율은 아래와 같아요.
+                {popLines.map((line) => (
+                  <Fragment key={line}>
+                    <br />
+                    {line}
+                  </Fragment>
+                ))}
               </p>
             )}
           </>

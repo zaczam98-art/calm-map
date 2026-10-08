@@ -27,3 +27,4 @@ dist-ssr
 *.sw?
 public/data/snapshot-live.json
 .tmp
+__pycache__/

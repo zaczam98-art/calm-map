@@ -9,6 +9,12 @@
   exact는 단계가 같은 건수, within1은 한 단계 이내인 건수(같은 경우 포함)다.
 - 비교 기준(persist): 예측 대신 k시간 전의 관측 단계가 그대로 이어진다고 가정했을 때 단계가 같은 건수다.
   예측이 이 기준보다 나은지 볼 때 쓴다.
+- 단계 눈금 차이: 서울시의 예측 단계와 실시간 단계는 같은 인구에도 다른 단계가 붙을 수 있어서 단계 일치만으로는 예측을 평가하기 어렵다.
+  over는 예측 단계가 실제 단계보다 높은 건수, biasSum은 (예측 단계 - 실제 단계)의 합이다(분모는 n, 평균은 biasSum / n).
+- 인구 범위 적중: popHit은 예측 인구(중앙값)가 실제 관측의 인구 범위(최소 이상 최대 이하) 안에 든 건수이고 분모는 n이다.
+  persistPopHit은 k시간 전 관측 인구(중앙값)가 같은 범위 안에 든 건수이고 분모는 persistN이다. 인구 중앙값은 (최소 + 최대) // 2다.
+- 시차(k)는 서울시 실시간 값이 속한 정시에서 예측 대상 시각까지의 시간이다. 매시 수집에서는 첫 예측 칸이 시차 2다.
+- obs 값은 [단계, 인구 최소, 인구 최대] 뒤에 실시간 값 시각의 분이 붙을 수 있다(옛 항목은 3원소). 이 스크립트는 앞의 세 값만 읽는다.
 """
 import datetime, json, sys, zoneinfo
 
@@ -38,14 +44,15 @@ for name, obs in obs_all.items():
             first = hour_key
     pattern[name] = {k: [round(s / n, 2), n] for k, (s, n) in cells.items()}
 
-LEADS = (1, 3, 6, 12)  # 수집 스크립트가 남기는 시차와 같다
-by_lead = {str(k): {'n': 0, 'exact': 0, 'within1': 0, 'persistN': 0, 'persistExact': 0} for k in LEADS}
+LEADS = (1, 2, 3, 6, 12)  # 수집 스크립트가 남기는 시차와 같다
+KEYS = ('n', 'exact', 'within1', 'persistN', 'persistExact', 'over', 'biasSum', 'popHit', 'persistPopHit')
+by_lead = {str(k): dict.fromkeys(KEYS, 0) for k in LEADS}
 for name, fc in fc_all.items():
     obs = obs_all.get(name, {})
     for target, leads in fc.items():
         if target not in obs or obs[target][0] < 0:
             continue
-        actual = obs[target][0]
+        actual, lo, hi = obs[target][:3]
         t = datetime.datetime.strptime(target, FMT)
         for lead, val in leads.items():
             if lead not in by_lead or val[0] < 0:
@@ -56,13 +63,20 @@ for name, fc in fc_all.items():
                 m['exact'] += 1
             if abs(val[0] - actual) <= 1:
                 m['within1'] += 1
+            if val[0] > actual:
+                m['over'] += 1
+            m['biasSum'] += val[0] - actual
+            if lo <= val[1] <= hi:
+                m['popHit'] += 1
             earlier = (t - datetime.timedelta(hours=int(lead))).strftime(FMT)
             if earlier in obs and obs[earlier][0] >= 0:
                 m['persistN'] += 1
                 if obs[earlier][0] == actual:
                     m['persistExact'] += 1
+                if lo <= (obs[earlier][1] + obs[earlier][2]) // 2 <= hi:
+                    m['persistPopHit'] += 1
 
-overall = {k: sum(m[k] for m in by_lead.values()) for k in ('n', 'exact', 'within1', 'persistN', 'persistExact')}
+overall = {k: sum(m[k] for m in by_lead.values()) for k in KEYS}
 meta = {'updatedAt': now, 'firstObs': first, 'days': len(dates)}
 json.dump({**meta, 'places': pattern}, open(sys.argv[2], 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 json.dump({**meta, 'nObs': n_obs, 'runs': len(hist.get('runs', [])), 'byLead': by_lead, 'overall': overall},

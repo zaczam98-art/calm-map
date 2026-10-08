@@ -138,6 +138,14 @@ export interface LeadMetric {
   within1: number
   persistN: number
   persistExact: number
+  /** 예측 단계가 실측보다 높은 건수(선택, 2026-10-09 이후 집계) */
+  over?: number
+  /** (예측 단계 - 실측 단계)의 합(선택) */
+  biasSum?: number
+  /** 예측 인구 중앙값이 실측 인구 범위 안에 든 건수(선택) */
+  popHit?: number
+  /** k시간 전 관측 인구 중앙값이 실측 인구 범위 안에 든 건수(선택, 분모 persistN) */
+  persistPopHit?: number
 }
 
 /** 서울시 혼잡도 예측과 실제 관측의 비교(몇 시간 전 예측인지별) */

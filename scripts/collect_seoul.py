@@ -21,7 +21,7 @@ TODAY = NOW.strftime('%Y-%m-%d')
 MIN_GAP_MIN = 50
 LEVELS = ['여유', '보통', '약간 붐빔', '붐빔']
 KEEP_DAYS = 45
-KEEP_LEADS = (1, 3, 6, 12)  # 예측 검증에 쓰는 시차만 남겨 이력 파일 크기를 줄인다
+KEEP_LEADS = (1, 2, 3, 6, 12)  # 예측 검증에 쓰는 시차만 남겨 이력 파일 크기를 줄인다. 매시 수집에서는 첫 예측 칸이 시차 2라 2도 남긴다
 SHORT_EVENT_DAYS = 7  # 기간이 이보다 짧은 행사는 축제·공연처럼 사람이 몰리기 쉬운 행사로 표시한다
 
 
@@ -203,9 +203,11 @@ if HIST:
             continue
         ohour = ps['live']['time'][:13]
         obs = hist['obs'].setdefault(name, {})
-        # obs[시각] = [혼잡 단계(0~3), 인구 최소, 인구 최대]
-        obs[ohour] = [lvl(ps['live']['level']), ps['live']['min'], ps['live']['max']]
-        added += 1
+        # obs[시각] = [혼잡 단계(0~3), 인구 최소, 인구 최대, 실시간 값 시각(PPLTN_TIME)의 분]. 분은 이 변경 뒤에 쌓은 항목에만 있고 옛 항목은 3원소다.
+        # 같은 시간대를 다시 받아도 유효한 기존 값은 덮어쓰지 않는다(강제 재수집이 적중률 집계를 바꾸지 않게 한다).
+        if obs.get(ohour, [-1])[0] < 0:
+            obs[ohour] = [lvl(ps['live']['level']), ps['live']['min'], ps['live']['max'], int(ps['live']['time'][14:16])]
+            added += 1
         fc = hist['fc'].setdefault(name, {})
         for f in ps.get('fcst') or []:
             target = f['time'][:13]
