@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Card, ChildProfile, NoiseData, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
 import { TAG_LABEL } from '../types'
-import { hourScores, LEVEL3_LABEL, nowKeyFor, recommend } from '../lib/index'
+import { dowOfTime, hourScores, LEVEL3_LABEL, recommend } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { recordVisit } from '../lib/profile'
 import { getCard } from '../lib/cards'
@@ -20,6 +20,7 @@ interface Props {
   pattern: WeekPatternData | null
   noise: NoiseData | null
   onSelect: (name: string) => void
+  nowKey: string | undefined
   snap: Snapshot | null
   sound: SoundStore
   profile: ChildProfile
@@ -29,25 +30,19 @@ interface Props {
   onMeasure: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
   const ps = snap?.places[place.name]
-  const dow = ps?.live ? new Date(ps.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
-  const scores = useMemo(() => hourScores(ps, (h) => sound[place.name]?.[bucketKey(dow, h)], profile, offsets[place.name] ?? 0, nowKeyFor(snap)), [ps, sound, profile, offsets, place.name, dow, snap])
+  const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey), [ps, sound, profile, offsets, place.name, nowKey])
   const rec = recommend(scores)
   const now = scores[0]
-  const nowBucket = sound[place.name]?.[bucketKey(dow, now?.hour ?? new Date().getHours())]
+  const nowBucket = now ? sound[place.name]?.[bucketKey(dowOfTime(now.time), now.hour)] : undefined
   const tags: SenseTag[] = nowBucket ? topTags(nowBucket) : []
   const totalN = Object.values(sound[place.name] ?? {}).reduce((a, b) => a + b.n, 0)
   // 지금 '보통' 이상일 때만, 가까운 곳 중 지수가 뚜렷이 낮은 곳을 찾는다
   const nearby = useMemo(() => {
     if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
-    const nowKey = nowKeyFor(snap)
-    return calmerNearby(place, now.level, places, (p) => {
-      const s = snap?.places[p.name]
-      const d = s?.live ? new Date(s.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
-      return hourScores(s, (h) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)[0]
-    })
-  }, [now, place, places, snap, sound, profile, offsets])
+    return calmerNearby(place, now.level, places, (p) => hourScores(snap?.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)[0])
+  }, [now, place, places, snap, sound, profile, offsets, nowKey])
   const [card, setCard] = useState<{ card: Card; note: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [recorded, setRecorded] = useState<string | null>(null)
@@ -71,7 +66,12 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, s
   const record = (ok: boolean) => {
     const r = recordVisit(place.name, ok, tags)
     onRecorded(r.offsets, r.profile)
-    setRecorded(ok ? '고마워요. 이 장소의 맞춤 지수를 조금 낮췄어요.' : '기록했어요. 이 장소의 맞춤 지수를 조금 올리고, 그 시간의 소리 요인 민감도를 올렸어요.')
+    const applied = profile.enabled ? '' : ' 맞춤을 켜면 이 기록이 지수에 반영돼요.'
+    setRecorded(
+      ok
+        ? `고마워요. 이 장소의 맞춤 보정을 조금 낮췄어요.${applied}`
+        : `기록했어요. 이 장소의 맞춤 보정을 조금 올렸어요.${tags.length ? ' 그 시간에 측정된 소리 요인의 민감도도 올렸어요.' : ''}${applied}`,
+    )
   }
 
   return (

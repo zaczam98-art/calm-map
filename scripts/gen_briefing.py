@@ -24,7 +24,8 @@ MIN_GAP_MIN = 170
 MAX_LEN = 40
 FORBIDDEN = ['장애', '자폐', '진단', '증상', '치료', '환자', '위험', '절대', '금지', '경고', '사고', '못 가', '못가',
              '행사', '축제', '공사', '주차', '할인', '세일', '날씨', '비가', '눈이', '입장료', '무료',
-             '조용', '소음', '시끄']  # 혼잡도 예측만으로 소리의 크기를 단정하지 않는다
+             '조용', '소음', '시끄', '고요', '소리', '잔잔', '차분',  # 혼잡도 예측만으로 소리를 단정하지 않는다
+             '내내', '종일', '거의 없', '사람이 없', '아무도']  # 자료가 뒷받침하지 않는 단정
 
 snap = json.load(open(SNAP, encoding='utf-8'))
 prev = {}
@@ -114,6 +115,8 @@ def check_text(label, s, reasons):
         reasons.append(f'{label} 글자 수 초과')
     if not ends_politely(s):
         reasons.append(f"{label}이 '~요'로 끝나지 않음")
+    if re.search(r'\d', s):
+        reasons.append(f'{label} 숫자 포함')  # 시각은 앱이 from, to로 따로 보여 주므로 문장에는 쓰지 않게 한다
     for w in FORBIDDEN:
         if w in s:
             reasons.append(f"{label} 금지 표현 '{w}'")
@@ -157,6 +160,9 @@ def validate(d):
     names = [w.get('place') for w in picks if isinstance(w, dict)]
     if len(names) != len(set(names)):
         reasons.append('picks 장소 중복')
+    anames = [w.get('place') for w in avoid if isinstance(w, dict)]
+    if len(anames) != len(set(anames)) or set(anames) & set(names):
+        reasons.append('avoid 장소 중복')
     return reasons
 
 
@@ -180,7 +186,8 @@ def ask_gemini(feedback=None):
         '규칙:',
         "- picks: '여유 구간 후보'에서 1~3개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 분류가 서로 다른 장소가 섞이면 좋습니다.",
         "- avoid: '붐비는 구간 후보'에서 0~2개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 후보가 없으면 빈 배열로 둡니다.",
-        f"- headline, 각 pick의 reason, tip은 각각 {MAX_LEN}자 이내의 쉬운 말로 쓰고 '~요'로 끝냅니다.",
+        f"- headline, 각 pick의 reason, tip은 각각 {MAX_LEN}자 이내의 쉬운 말로 쓰고 '~요'로 끝냅니다. 이 문장들에는 숫자와 시각을 쓰지 않습니다(시각은 from, to로만 전달).",
+        "- 소리의 크기(조용하다, 시끄럽다)나 '내내', '종일', '사람이 없다' 같은 단정은 쓰지 않습니다. 사람이 적은 편이라는 정도로만 말합니다.",
         '- 후보에 없는 사실(행사, 공사, 날씨, 주차, 가격, 시설)은 쓰지 않습니다. 진단이나 판정, 금지 표현을 쓰지 않고 권고만 합니다.',
         '여유 구간 후보:',
         *[line(w) for w in calm[:12]],
@@ -225,7 +232,8 @@ def rule_based():
         mild = best_windows(lambda v: v <= 1)
         picks = [{**w, 'reason': "예측 혼잡도가 '보통' 이하예요."} for w in mild[:3]]
         headline = '오늘은 여유로운 곳이 드물어요. 덜 붐비는 곳이에요.'
-    return {'headline': headline, 'picks': picks, 'avoid': busy[:2], 'tip': '출발 전에 지도를 한 번 더 확인해요.'}
+    chosen = {w['place'] for w in picks}
+    return {'headline': headline, 'picks': picks, 'avoid': [w for w in busy if w['place'] not in chosen][:2], 'tip': '출발 전에 지도를 한 번 더 확인해요.'}
 
 
 stats['runs'] += 1
@@ -235,7 +243,7 @@ if KEY and calm:
         attempts_used = attempt
         try:
             draft = ask_gemini(last_reasons)
-        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, TimeoutError, KeyError) as e:
+        except Exception as e:  # 연결 끊김 같은 예외도 여기서 받아, 규칙 기반 문장과 통계 저장까지 이어지게 한다
             stats['apiErrors'] += 1
             print(f'attempt {attempt}: api error {type(e).__name__}')
             time.sleep(8)

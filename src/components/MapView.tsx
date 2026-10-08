@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import type { ChildProfile, Level3, Place, Snapshot } from '../types'
-import { hourScores, LEVEL3_LABEL, nowKeyFor } from '../lib/index'
+import { hourScores, LEVEL3_LABEL } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { factorTags } from '../lib/factors'
 
@@ -13,10 +13,11 @@ interface Props {
   sound: SoundStore
   profile: ChildProfile
   offsets: Record<string, number>
+  nowKey: string | undefined
   onSelect: (name: string) => void
 }
 
-export default function MapView({ places, snap, sound, profile, offsets, onSelect }: Props) {
+export default function MapView({ places, snap, sound, profile, offsets, nowKey, onSelect }: Props) {
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
 
@@ -61,8 +62,7 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
     layer.clearLayers()
     for (const p of places) {
       const ps = snap?.places[p.name]
-      const dowOf = (t: string) => new Date(t.replace(' ', 'T') + ':00').getDay()
-      const scores = hourScores(ps, (h) => sound[p.name]?.[bucketKey(ps?.live ? dowOf(ps.live.time) : new Date().getDay(), h)], profile, offsets[p.name] ?? 0, nowKeyFor(snap))
+      const scores = hourScores(ps, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)
       const now = scores[0]
       const level: Level3 = now?.level ?? 'nodata'
       const controls = factorTags(ps?.extra).filter((t) => t.key.startsWith('control'))
@@ -78,7 +78,7 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
       m.on('click', () => onSelect(p.name))
       m.addTo(layer)
     }
-  }, [places, snap, sound, profile, offsets, onSelect])
+  }, [places, snap, sound, profile, offsets, nowKey, onSelect])
 
   return (
     <div className="map-wrap">

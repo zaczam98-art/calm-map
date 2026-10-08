@@ -73,7 +73,7 @@ export function hourOf(time: string): number {
  */
 export function hourScores(
   snap: PlaceSnapshot | undefined,
-  sound: (hour: number) => SoundBucket | undefined,
+  sound: (hour: number, dow: number) => SoundBucket | undefined,
   profile: ChildProfile | null,
   offset = 0,
   nowKey?: string,
@@ -94,7 +94,7 @@ export function hourScores(
     const h = hourOf(p.time)
     let c = congestScore(p, pts)
     if (personal) c = clamp(c * personal.crowd, 0, 100)
-    const b = sound(h)
+    const b = sound(h, dowOfTime(p.time))
     const s = soundScore(b, personal ?? undefined)
     const w = s === null ? 0 : soundWeight(b?.n ?? 0)
     const idx = clamp((1 - w) * c + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
@@ -102,7 +102,16 @@ export function hourScores(
   })
 }
 
-/** 권고 시간대: 남은 시간대 중 지수가 가장 낮은 연속 구간의 시작 */
+/** 'YYYY-MM-DD HH:MM' 문자열의 요일(일요일=0). 기기 시간대와 무관하게 날짜만으로 계산한다. */
+export function dowOfTime(time: string): number {
+  const [y, m, d] = time.slice(0, 10).split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+/**
+ * 권고 문장. 외출 시간대(8~21시)에서 지수가 가장 낮은 칸을 고르고, 그 칸의 단계에 맞는 말로 안내한다.
+ * 무던한 칸이면 앞뒤로 이어지는 무던한 구간을 함께 말하고, 붐비는 칸이면 무던하다고 말하지 않는다.
+ */
 export function recommend(scores: HourScore[]): { text: string; from: number | null } {
   const all = scores.filter((s) => s.index !== null)
   if (all.length === 0) return { text: '예측 자료가 아직 없어서 권고 시간대를 만들지 못했어요.', from: null }
@@ -112,10 +121,23 @@ export function recommend(scores: HourScore[]): { text: string; from: number | n
   const minIdx = Math.min(...valid.map((s) => s.index as number))
   const best = valid.find((s) => s.index === minIdx)!
   const now = all[0]
-  const dayLabel = best.hour < now.hour ? '내일' : '오늘'
-  if (best === now) {
-    return { text: `지금(${now.hour}시)이 오늘 남은 시간 중 가장 무던한 편이에요.`, from: now.hour }
+  const label = (s: HourScore) => (s.time.slice(0, 10) === now.time.slice(0, 10) ? '오늘' : '내일')
+  const when = best === now ? `지금(${now.hour}시)` : `${label(best)} ${best.hour}시 무렵`
+  if (best.level === 'busy') return { text: `남은 시간은 대체로 붐벼요. 그중에서는 ${when}이 덜 붐벼요.`, from: best.hour }
+  if (best.level !== 'calm') return { text: `${when}이 남은 시간 중 가장 덜 붐벼요(보통 수준).`, from: best.hour }
+  // 무던한 칸: 앞뒤로 이어지는 무던한 구간을 찾는다
+  const i = all.indexOf(best)
+  let a = i
+  let b = i
+  while (a - 1 >= 0 && all[a - 1].level === 'calm') a--
+  while (b + 1 < all.length && all[b + 1].level === 'calm') b++
+  const start = all[a]
+  const untilEnd = b === all.length - 1
+  const endHour = (all[b].hour + 1) % 24
+  if (start === now) {
+    if (untilEnd) return { text: '지금부터 예측 범위 끝까지 무던해요.', from: now.hour }
+    return { text: a === b ? `지금(${now.hour}시)이 무던해요. ${endHour}시부터는 달라져요.` : `지금부터 ${endHour}시 전까지 무던해요.`, from: now.hour }
   }
-  if (best.level === 'calm') return { text: `${dayLabel}은 ${best.hour}시 이후가 무던해요.`, from: best.hour }
-  return { text: `${dayLabel}은 ${best.hour}시 무렵이 비교적 무던해요. 다른 날도 함께 살펴보세요.`, from: best.hour }
+  if (untilEnd) return { text: `${label(start)} ${start.hour}시부터 무던해요.`, from: start.hour }
+  return { text: a === b ? `${label(start)} ${start.hour}시 무렵이 무던해요.` : `${label(start)} ${start.hour}시부터 ${endHour}시 전까지 무던해요.`, from: start.hour }
 }

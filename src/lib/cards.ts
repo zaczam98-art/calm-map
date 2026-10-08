@@ -1,5 +1,6 @@
 import { validateCard } from '../../shared/cardRules'
 import type { Card, Level3, SenseTag } from '../types'
+import { HAS_API } from './publicData'
 
 let presets: Record<string, unknown> | null = null
 
@@ -26,6 +27,7 @@ export interface CardRequest {
 /** 서버 생성(규칙 검사 통과분)을 먼저 쓰고, 안 되면 사전 생성 카드, 그것도 없으면 기본 카드 */
 export async function getCard(req: CardRequest): Promise<{ card: Card; note: string }> {
   try {
+    if (!HAS_API) throw new Error('no api')
     const r = await fetch('/api/card', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req) })
     if (r.ok) {
       const j = (await r.json()) as { card?: unknown; source?: string; note?: string }

@@ -37,7 +37,7 @@ export default function Briefing({ briefing, known, onSelect }: { briefing: Brie
           )}
           <p className="muted">{briefing.tip}</p>
           <p className="briefing-src">
-            {briefing.source === 'ai' ? 'AI가 쓰고 규칙 검사(자료와의 일치, 금지 표현)를 통과한 문장이에요.' : '혼잡도 예측에서 규칙으로 만든 문장이에요.'}
+            {briefing.source === 'ai' ? 'AI가 쓴 문장이에요. 장소와 시간대는 혼잡도 예측과 대조했고, 문장은 길이·어미·금지 표현을 검사했어요.' : '혼잡도 예측에서 규칙으로 만든 문장이에요.'}
             {' '}{briefing.generatedAt.slice(11)} 작성
           </p>
         </>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ChildProfile, HourScore, Level3, Place, Snapshot } from '../types'
-import { hourScores, LEVEL3_LABEL, nowKeyFor } from '../lib/index'
+import { hourScores, LEVEL3_LABEL } from '../lib/index'
 import { distanceKm } from '../lib/nearby'
 import { factorTags } from '../lib/factors'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
@@ -11,6 +11,7 @@ interface Props {
   sound: SoundStore
   profile: ChildProfile
   offsets: Record<string, number>
+  nowKey: string | undefined
   onOpen: (name: string) => void
 }
 
@@ -35,22 +36,20 @@ function calmLine(scores: HourScore[]): string {
   return next ? `${next.hour}시부터 무던해져요.` : '오늘 낮에는 무던한 시간대가 보이지 않아요.'
 }
 
-export default function Recommend({ places, snap, sound, profile, offsets, onOpen }: Props) {
+export default function Recommend({ places, snap, sound, profile, offsets, nowKey, onOpen }: Props) {
   const [group, setGroup] = useState(0)
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null)
   const [byDistance, setByDistance] = useState(false)
   const [geoMsg, setGeoMsg] = useState<string | null>(null)
 
   const rows = useMemo(() => {
-    const nowKey = nowKeyFor(snap)
     return places.map((p) => {
       const s = snap?.places[p.name]
-      const dow = s?.live ? new Date(s.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
-      const scores = hourScores(s, (h) => sound[p.name]?.[bucketKey(dow, h)], profile, offsets[p.name] ?? 0, nowKey)
+      const scores = hourScores(s, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)
       const now = scores[0]
       return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: calmLine(scores), km: pos ? distanceKm(pos, p) : null, tags: factorTags(s?.extra).filter((t) => t.key.startsWith('control') || t.key === 'rain').slice(0, 2) }
     })
-  }, [places, snap, sound, profile, offsets, pos])
+  }, [places, snap, sound, profile, offsets, pos, nowKey])
 
   const cats = GROUPS[group][1]
   const shown = rows

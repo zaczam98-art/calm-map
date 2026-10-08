@@ -10,7 +10,11 @@ const LABEL = ['여유', '보통', '약간 붐빔', '붐빔']
 export default function WeekPattern({ pattern, place }: { pattern: WeekPatternData | null; place: string }) {
   if (!pattern) return null
   const cells = pattern.places[place] ?? {}
-  const total = Object.values(cells).reduce((a, c) => a + c[1], 0)
+  // 화면에 그리는 8~21시 칸의 표본만 센다
+  const total = Object.entries(cells).reduce((a, [k, c]) => {
+    const h = Number(k.split('-')[1])
+    return h >= HOURS[0] && h <= HOURS[HOURS.length - 1] ? a + c[1] : a
+  }, 0)
   const now = kstNow()
   return (
     <div className="card" style={{ marginTop: 12 }}>
@@ -51,7 +55,7 @@ export default function WeekPattern({ pattern, place }: { pattern: WeekPatternDa
             <span><i className="empty" />표본 없음</span>
           </p>
           <p className="muted">
-            서울시 혼잡도 관측값을 요일과 시간대별로 평균한 값이에요. 자료를 모은 지 {pattern.days}일째이고 이 장소의 표본은 {total}개예요.
+            서울시 혼잡도 관측값을 요일과 시간대별로 평균한 값이에요. 관측한 날은 {pattern.days}일이고 이 장소의 8~21시 표본은 {total}개예요.
             표본이 1개인 칸은 점선 테두리로 표시했고, 표본이 적은 동안에는 참고용으로만 봐 주세요.
           </p>
         </>

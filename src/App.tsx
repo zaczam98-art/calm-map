@@ -4,6 +4,7 @@ import type { Briefing as BriefingData, ChildProfile, ForecastMetrics, NoiseData
 import { loadProfile, loadOffsets, saveProfile } from './lib/profile'
 import { loadSnapshot, loadSoundStore, type SoundStore } from './lib/snapshot'
 import { loadPublicJson } from './lib/publicData'
+import { nowKeyFor } from './lib/index'
 import MapView from './components/MapView'
 import PlaceDetail from './components/PlaceDetail'
 import ChildProfileView from './components/ChildProfile'
@@ -30,6 +31,22 @@ export default function App() {
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [noise, setNoise] = useState<NoiseData | null>(null)
 
+  // 열어 둔 채 시간이 지나도 '지금'이 맞도록 1분마다 시각을 다시 보고, 10분마다 자료를 다시 읽는다
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const bump = () => setTick((t) => t + 1)
+    const id = setInterval(bump, 60_000)
+    document.addEventListener('visibilitychange', bump)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', bump)
+    }
+  }, [])
+  const nowKey = useMemo(() => nowKeyFor(snap), [snap, tick])
+  const reload = Math.floor(tick / 10)
+  useEffect(() => {
+    if (reload > 0) void loadSnapshot().then(setSnap)
+  }, [reload])
   useEffect(() => {
     void loadSnapshot().then(setSnap)
     void loadPublicJson<WeekPattern>('pattern.json').then(setPattern)
@@ -68,7 +85,7 @@ export default function App() {
       <main className="main">
         {view === 'map' && (
           <>
-            <MapView places={PLACES} snap={snap} sound={sound} profile={profile} offsets={offsets} onSelect={setSelected} />
+            <MapView places={PLACES} snap={snap} sound={sound} profile={profile} offsets={offsets} nowKey={nowKey} onSelect={setSelected} />
             {!selected && snap?.source === 'seoul' && <Briefing briefing={briefing} known={PLACE_NAMES} onSelect={setSelected} />}
             {selected && (
               <PlaceDetail
@@ -78,6 +95,7 @@ export default function App() {
                 pattern={pattern}
                 noise={noise}
                 onSelect={setSelected}
+                nowKey={nowKey}
                 snap={snap}
                 sound={sound}
                 profile={profile}
@@ -99,6 +117,7 @@ export default function App() {
             sound={sound}
             profile={profile}
             offsets={offsets}
+            nowKey={nowKey}
             onOpen={(name) => {
               setSelected(name)
               setView('map')

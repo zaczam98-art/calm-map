@@ -5,7 +5,7 @@
 - history.json  : 시간대별 관측값(obs)과 그 시각에 받은 예측값(fc)을 누적한다(주간 패턴 계산과 예측 검증용)
 
 사용: SEOUL_KEY=발급키 python scripts/collect_seoul.py [snapshot 경로] [history 경로]
-- 직전 수집이 50분 이내면 건너뛴다(FORCE=1이면 항상 수집). 장소당 호출을 시간당 1회 이하로 묶기 위한 장치다.
+- 직전 수집이 50분 이내면 건너뛴다(FORCE=1이면 항상 수집). 장소당 호출을 약 1시간에 한 번으로 묶기 위한 장치다.
 - citydata 호출이 실패한 장소는 인구 항목만 주는 citydata_ppltn으로 한 번 더 시도한다.
 - 키가 없으면 sample 키로 광화문·덕수궁만 받는다(시험용).
 """
@@ -150,6 +150,14 @@ for p in places:
             out['places'][p['name']] = {**PREV[p['name']], 'stale': True}
     time.sleep(0.2)
 
+if not any(not v.get('stale') for v in out['places'].values()):
+    # 한 곳도 새로 받지 못했다. 이전 스냅샷을 그대로 두어 갱신 시각이 실제 마지막 성공 시각을 가리키게 하고, 다음 시도에서 다시 받는다.
+    print('no place fetched; keeping the previous snapshot')
+    for f in fails[:5]:
+        print(' -', str(f).replace(KEY, '<KEY>'))
+    set_output(False)
+    sys.exit(0)
+
 with_extra = sum(1 for v in out['places'].values() if 'extra' in v)
 json.dump(out, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print(f"saved {len(out['places'])} places ({with_extra} with extras) -> {OUT}; failures {len(fails)}")
@@ -194,9 +202,13 @@ if HIST:
             if lead in KEEP_LEADS:
                 # fc[대상 시각][몇 시간 전 예측인지] = [예측 단계, 예측 인구 중앙값]
                 fc.setdefault(target, {})[str(lead)] = [lvl(f['level']), (f['min'] + f['max']) // 2]
-        for table in (obs, fc):
-            for k in [k for k in table if k < cutoff]:
-                del table[k]
+    # 보존 기간 정리는 이번에 받지 못한 장소와 추적을 그만둔 장소에도 적용한다
+    for table in (hist['obs'], hist['fc']):
+        for name in list(table):
+            for k in [k for k in table[name] if k < cutoff]:
+                del table[name][k]
+            if not table[name]:
+                del table[name]
     hist['runs'] = [r for r in hist['runs'] if r[:13] >= cutoff] + [out['updatedAt']]
     json.dump(hist, open(HIST, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(f"history: +{added} observations, runs={len(hist['runs'])} -> {HIST}")

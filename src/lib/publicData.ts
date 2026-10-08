@@ -18,6 +18,12 @@ export async function loadPublicJson<T>(file: string): Promise<T | null> {
   }
 }
 
+/**
+ * 받는 서버(/api)가 있는 배포인지. 공개 스냅샷 주소로 동작하는 정적 배포(GitHub Pages)에는 서버가 없으므로
+ * 그런 배포에서는 /api 요청을 아예 보내지 않는다(맞춤 요인이나 측정값이 요청 본문으로 기기를 떠나지 않게 한다).
+ */
+export const HAS_API = !import.meta.env.VITE_PUBLIC_SNAPSHOT_URL
+
 /** 한국 시간 기준 오늘 날짜와 시(기기 시간대와 무관하게 계산) */
 export function kstNow(now = Date.now()): { date: string; hour: number; dow: number } {
   const d = new Date(now + 9 * 3600 * 1000)

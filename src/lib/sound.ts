@@ -24,13 +24,22 @@ export const CLASS_TAG: (SenseTag | null)[] = NAMES.map((n) => {
 })
 
 let model: tf.GraphModel | null = null
+let loading: Promise<tf.GraphModel> | null = null
 
 export async function loadModel(onProgress?: (msg: string) => void): Promise<tf.GraphModel> {
   if (model) return model
   onProgress?.('모델을 내려받는 중이에요(약 15MB, 처음 한 번만)')
-  model = await tf.loadGraphModel(YAMNET_URL, { fromTFHub: true })
+  // 받는 중에 다시 불러도 내려받기는 한 번만 한다. 실패하면 다음에 다시 시도할 수 있게 비운다.
+  loading ??= tf.loadGraphModel(YAMNET_URL, { fromTFHub: true }).then(
+    (m) => (model = m),
+    (e) => {
+      loading = null
+      throw e
+    },
+  )
+  const m = await loading
   onProgress?.('모델 준비 완료')
-  return model
+  return m
 }
 
 export interface WindowResult {

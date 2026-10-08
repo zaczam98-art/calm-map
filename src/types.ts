@@ -135,6 +135,7 @@ export interface Briefing {
 export interface NoisePlace {
   sensors: number
   km: [number, number]
+  excluded?: number
   avg: Record<string, (number | null)[]>
   max: Record<string, (number | null)[]>
   n: number

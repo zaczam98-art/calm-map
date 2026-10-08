@@ -16,7 +16,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
     return (
       <div className="card" style={{ marginTop: 12 }}>
         <h2>이 동네의 소리 크기</h2>
-        <p className="muted">가까운 곳(직선 1km 안)에 서울시 소음 센서가 없거나 아직 자료를 받지 못했어요.</p>
+        <p className="muted">가까운 곳(직선 1km 안)에 쓸 수 있는 서울시 소음 센서가 없어요. 센서가 없거나, 값이 변하지 않아 고장으로 보이는 센서만 있는 경우예요.</p>
       </div>
     )
   }
@@ -75,6 +75,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
       )}
       <p className="muted">
         가까운 서울시 센서 {p.sensors}개(직선 {p.km[0]}~{p.km[1]}km)가 {noise.from}부터 {noise.to}까지 잰 값이에요({noise.days}일 치, 센서·시간 {p.n}건).
+        {p.excluded ? ` 값이 변하지 않아 고장으로 보이는 센서 ${p.excluded}개는 뺐어요.` : ''}
         센서는 길가에 있어서 장소 안쪽과 다를 수 있고, 소리의 크기만 재요. 소리의 종류는 현장 측정에서 분류하고, 이 값은 아직 지수 계산에 넣지 않았어요.
       </p>
     </div>

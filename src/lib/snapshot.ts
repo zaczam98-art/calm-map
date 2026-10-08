@@ -1,16 +1,19 @@
 import type { SenseTag, Snapshot, SoundBucket } from '../types'
+import { HAS_API } from './publicData'
 
 const KEY_SOUND = 'calmmap.sound.v1'
 
 export async function loadSnapshot(): Promise<Snapshot> {
-  try {
-    const r = await fetch('/api/snapshot', { cache: 'no-store' })
-    if (r.ok) {
-      const s = (await r.json()) as Snapshot
-      if (s && s.places && Object.keys(s.places).length > 0) return s
+  if (HAS_API) {
+    try {
+      const r = await fetch('/api/snapshot', { cache: 'no-store' })
+      if (r.ok) {
+        const s = (await r.json()) as Snapshot
+        if (s && s.places && Object.keys(s.places).length > 0) return s
+      }
+    } catch {
+      /* 서버가 없거나 키가 없으면 데모 스냅샷으로 */
     }
-  } catch {
-    /* 서버가 없거나 키가 없으면 데모 스냅샷으로 */
   }
   // Worker가 없는 정적 호스팅(GitHub Pages)에서는 data 브랜치의 공개 스냅샷을 직접 읽는다
   const pub = import.meta.env.VITE_PUBLIC_SNAPSHOT_URL as string | undefined
@@ -62,11 +65,13 @@ export function mergeBucket(a: SoundBucket | undefined, b: SoundBucket): SoundBu
 /** 서버 버킷 + 이 기기에서 측정한 버킷을 합친다. 서버가 없으면 로컬만 쓴다. */
 export async function loadSoundStore(): Promise<SoundStore> {
   let server: SoundStore = {}
-  try {
-    const r = await fetch('/api/sound', { cache: 'no-store' })
-    if (r.ok) server = (await r.json()) as SoundStore
-  } catch {
-    /* 로컬만 */
+  if (HAS_API) {
+    try {
+      const r = await fetch('/api/sound', { cache: 'no-store' })
+      if (r.ok) server = (await r.json()) as SoundStore
+    } catch {
+      /* 로컬만 */
+    }
   }
   const local = readLocal()
   const out: SoundStore = { ...server }
@@ -88,6 +93,7 @@ export async function submitMeasurement(place: string, bucket: SoundBucket, dow:
   } catch {
     /* 무시 */
   }
+  if (!HAS_API) return 'local'
   try {
     const r = await fetch('/api/measure', {
       method: 'POST',

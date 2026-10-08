@@ -4,6 +4,7 @@ import { TAG_LABEL } from '../types'
 import { bestTag, classifyWindow, decodeFile, loadModel, startMic, summarize, windowsFromBuffer, type WindowResult } from '../lib/sound'
 import samplesRaw from '../data/samples.json'
 import { submitMeasurement } from '../lib/snapshot'
+import { HAS_API } from '../lib/publicData'
 
 interface Sample {
   id: string
@@ -28,6 +29,12 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
   const [sent, setSent] = useState<string | null>(null)
   const [sample, setSample] = useState<string | null>(null) // 샘플 소리로 만든 요약이면 그 이름
   const playRef = useRef<AudioContext | null>(null)
+  const playToken = useRef(0) // 샘플 재생을 새로 시작하거나 마이크를 켜면 올려서, 진행 중이던 이전 샘플 분류가 화면을 덮어쓰지 못하게 한다
+  const stopSample = () => {
+    playToken.current++
+    void playRef.current?.close()
+    playRef.current = null
+  }
   const stopRef = useRef<(() => void) | null>(null)
   const busy = useRef(false)
 
@@ -64,6 +71,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
 
   const start = async () => {
     try {
+      stopSample()
       await loadModel(setStatus)
       setWindows([])
       setSummary(null)
@@ -89,6 +97,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
   const onFile = async (f: File | undefined) => {
     if (!f) return
     try {
+      stopSample()
       await loadModel(setStatus)
       setStatus('파일을 분류하는 중이에요…')
       const ws = await decodeFile(f)
@@ -108,20 +117,27 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
   const playSample = async (s: Sample) => {
     try {
       if (running) stop()
-      void playRef.current?.close()
+      stopSample()
+      const my = playToken.current
       const ctx = new AudioContext()
       playRef.current = ctx
       void ctx.resume()
       await loadModel(setStatus)
-      setStatus(`샘플 '${s.label}'을 불러오는 중이에요…`)
+      if (my !== playToken.current) return
+      setStatus(`'${s.label}' 샘플을 불러오는 중이에요…`)
       const ab = await (await fetch(`${import.meta.env.BASE_URL}samples/${s.file}`)).arrayBuffer()
+      if (my !== playToken.current) return
       const audio = await ctx.decodeAudioData(ab)
+      if (my !== playToken.current) return
       const src = ctx.createBufferSource()
       src.buffer = audio
       src.connect(ctx.destination)
       src.start()
       const results: WindowResult[] = []
-      for (const w of windowsFromBuffer(audio)) results.push(await classifyWindow(w))
+      for (const w of windowsFromBuffer(audio)) {
+        results.push(await classifyWindow(w))
+        if (my !== playToken.current) return
+      }
       const loudest = results.reduce<WindowResult | null>((a, r) => (!a || r.intensity > a.intensity ? r : a), null)
       const sum = summarize(results)
       const tag = bestTag(sum)
@@ -130,8 +146,9 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       setSummary(sum)
       setSent(null)
       setSample(s.label)
-      setStatus(tag ? `샘플 '${s.label}' ${results.length}초 분량을 분류했어요. 가장 큰 태그로 '${TAG_LABEL[tag]}' 태그가 나왔어요.` : `샘플 '${s.label}' ${results.length}초 분량을 분류했지만 뚜렷한 태그가 나오지 않았어요.`)
+      setStatus(tag ? `'${s.label}' 샘플 ${results.length}초 분량을 분류했어요. 가장 큰 태그로 '${TAG_LABEL[tag]}' 태그가 나왔어요.` : `'${s.label}' 샘플 ${results.length}초 분량을 분류했지만 뚜렷한 태그가 나오지 않았어요.`)
     } catch (e) {
+      if (playRef.current === null) return // 다른 동작이 이 재생을 취소한 경우
       setStatus(`샘플을 재생하지 못했어요: ${(e as Error).message}`)
     }
   }
@@ -139,7 +156,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
     if (!summary) return
     const now = new Date()
     const where = await submitMeasurement(place, summary, now.getDay(), now.getHours())
-    setSent(where === 'server' ? '서버에 라벨·강도·시각만 보냈어요(원음 없음).' : '서버가 없어 이 기기에만 저장했어요.')
+    setSent(where === 'server' ? '서버에 라벨·강도·시각만 보냈어요(원음 없음).' : '이 기기에만 저장했어요.')
     onSubmitted()
   }
 
@@ -174,7 +191,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       </div>
       {summary && (
         <div className="card">
-          <h2>{sample ? `샘플 '${sample}' 요약` : '이 세션 요약'}</h2>
+          <h2>{sample ? `'${sample}' 샘플 요약` : '이 세션 요약'}</h2>
           <table className="simple">
             <tbody>
               {(Object.entries(summary.tags) as [keyof typeof TAG_LABEL, number][]).map(([t, v]) => (
@@ -187,7 +204,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
             <p className="muted">샘플 소리는 체험용이라 장소에 반영하지 않아요. 실제 장소의 소리는 마이크로 측정해요.</p>
           ) : (
             <>
-              <p className="muted">서버로 보내는 것은 이 표의 숫자와 요일·시각뿐이에요.</p>
+              <p className="muted">{HAS_API ? '서버로 보내는 것은 장소 이름과 이 표의 숫자, 요일·시각뿐이에요.' : '이 사이트에는 받는 서버가 없어서 아무것도 보내지 않고 이 기기에만 저장해요.'}</p>
               <button className="btn primary" onClick={submit} disabled={!!sent}>이 장소에 반영</button>
             </>
           )}
