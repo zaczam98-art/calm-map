@@ -83,9 +83,13 @@ export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics
         </table>
         <p className="muted">
           앱과 같은 모델(YAMNet)과 같은 태그 기준으로 공개 음원 {soundEval.clips}개({soundEval.dataset}의 {soundEval.classes}개 분류)를 분류해 본 값이에요({soundEval.evaluatedAt} 시험).
-          음원마다 가장 큰 태그가 미리 정해 둔 정답표와 같으면 맞은 것으로 셌어요.
-          {' '}잘 틀린 소리는 {soundEval.weakest.map((w) => `${CLASS_KO[w.category] ?? w.category}(${w.n}개 중 ${w.correct}개 맞음, 주로 '${TAG_LABEL[w.mostConfused as SenseTag] ?? w.mostConfused}'로 분류)`).join(', ')}이에요.
+          음원마다 가장 큰 태그가 미리 정해 둔 정답표와 같으면 맞은 것으로 셌어요. 잘 틀린 소리는 아래와 같아요.
         </p>
+        <ul className="credits">
+          {soundEval.weakest.map((w) => (
+            <li key={w.category}>{CLASS_KO[w.category] ?? w.category}: {w.n}개 중 {w.correct}개 맞음, 주로 '{TAG_LABEL[w.mostConfused as SenseTag] ?? w.mostConfused}' 태그로 분류</li>
+          ))}
+        </ul>
         <p className="muted">
           말소리 태그는 이 데이터에 해당 분류가 없어 시험하지 못했고, 음악·안내방송 태그는 종소리 한 분류로만 시험했어요. 실제 장소에서는 여러 소리가 섞이기 때문에 이 수치보다 낮을 수 있어요.
           시험은 브라우저가 아닌 Node 환경에서 했고, 정답표(scripts/esc50_tag_map.json)와 음원별 결과(docs/eval/esc50_result.json)는 저장소에 있어요.

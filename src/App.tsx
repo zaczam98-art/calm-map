@@ -10,11 +10,12 @@ import ChildProfileView from './components/ChildProfile'
 import Measure from './components/Measure'
 import Info from './components/Info'
 import Briefing from './components/Briefing'
+import Recommend from './components/Recommend'
 
 export const PLACES = (placesRaw as Place[]).filter((p) => p.tracked)
 const PLACE_NAMES = new Set(PLACES.map((p) => p.name))
 
-type View = 'map' | 'child' | 'measure' | 'info'
+type View = 'map' | 'recommend' | 'child' | 'measure' | 'info'
 
 export default function App() {
   const [view, setView] = useState<View>('map')
@@ -88,6 +89,19 @@ export default function App() {
             )}
           </>
         )}
+        {view === 'recommend' && (
+          <Recommend
+            places={PLACES}
+            snap={snap}
+            sound={sound}
+            profile={profile}
+            offsets={offsets}
+            onOpen={(name) => {
+              setSelected(name)
+              setView('map')
+            }}
+          />
+        )}
         {view === 'child' && <ChildProfileView profile={profile} onChange={updateProfile} />}
         {view === 'measure' && (
           <Measure places={PLACES} defaultPlace={selected ?? PLACES[0].name} onSubmitted={() => setSoundVersion((v) => v + 1)} />
@@ -98,6 +112,7 @@ export default function App() {
         {(
           [
             ['map', '🗺️', '지도'],
+            ['recommend', '⭐', '추천'],
             ['child', '🧒', '우리 아이'],
             ['measure', '🎙️', '현장 측정'],
             ['info', 'ℹ️', '정보'],
