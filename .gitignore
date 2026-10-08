@@ -26,3 +26,4 @@ dist-ssr
 *.sln
 *.sw?
 public/data/snapshot-live.json
+.tmp

@@ -1,0 +1,11 @@
+{
+  "note": "ESC-50 분류를 무던한 지도의 감각 태그로 옮긴 정답표다. 평가 결과를 보기 전에 정했다(2026-10-08). 기준은 앱의 태그 정의(src/lib/sound.ts의 TAG_KEYWORDS)이며, 뜻이 애매한 분류는 넣지 않았다. ESC-50에는 말소리 분류가 없어서 speech 태그는 평가하지 못한다.",
+  "dataset": "ESC-50 (K. J. Piczak, 2015), https://github.com/karolpiczak/ESC-50, CC BY-NC 3.0",
+  "tags": {
+    "sudden": ["dog", "crying_baby", "siren", "car_horn", "clock_alarm", "glass_breaking", "fireworks", "thunderstorm", "chainsaw"],
+    "machine": ["helicopter", "engine", "train", "airplane", "washing_machine", "vacuum_cleaner"],
+    "ambient": ["rain", "sea_waves", "wind", "chirping_birds", "crickets"],
+    "crowd": ["clapping", "laughing"],
+    "music": ["church_bells"]
+  }
+}
