@@ -1,6 +1,9 @@
-import type { Snapshot } from '../types'
+import type { ForecastMetrics, Snapshot } from '../types'
 
-export default function Info({ snap }: { snap: Snapshot | null }) {
+const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
+
+export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics: ForecastMetrics | null }) {
+  const leads = ['1', '3', '6', '12']
   return (
     <div className="page">
       <div className="card">
@@ -30,6 +33,34 @@ export default function Info({ snap }: { snap: Snapshot | null }) {
         <h2>데이터 출처</h2>
         <p className="muted">본 서비스는 서울특별시 공공데이터를 사용한 결과입니다. 서울 열린데이터광장 "서울시 실시간 인구데이터"(citydata_ppltn, 공공누리 제1유형, 121곳 중 31곳 추적), 서울시 실시간 도시데이터 핫스팟 좌표, OpenStreetMap 타일(ODbL), YAMNet(Apache-2.0).
           {snap ? ` 현재 자료: ${snap.source === 'seoul' ? '서울시 API' : '데모 스냅샷'} (${snap.updatedAt} 기준).` : ''}</p>
+      </div>
+      <div className="card">
+        <h2>예측이 얼마나 맞았나</h2>
+        {metrics && metrics.overall.n > 0 ? (
+          <>
+            <table className="simple">
+              <thead>
+                <tr><th>몇 시간 전 예측</th><th>비교 건수</th><th>단계 일치</th><th>한 단계 이내</th><th>그대로 유지 가정</th></tr>
+              </thead>
+              <tbody>
+                {leads.map((k) => {
+                  const m = metrics.byLead[k]
+                  return m ? (
+                    <tr key={k}><th>{k}시간 전</th><td>{m.n}</td><td>{pct(m.exact, m.n)}</td><td>{pct(m.within1, m.n)}</td><td>{pct(m.persistExact, m.persistN)}</td></tr>
+                  ) : null
+                })}
+                <tr><th>전체(1~12시간 전)</th><td>{metrics.overall.n}</td><td>{pct(metrics.overall.exact, metrics.overall.n)}</td><td>{pct(metrics.overall.within1, metrics.overall.n)}</td><td>{pct(metrics.overall.persistExact, metrics.overall.persistN)}</td></tr>
+              </tbody>
+            </table>
+            <p className="muted">
+              서울시가 준 혼잡도 예측(4단계)을 그 시각의 실제 관측과 비교한 값이에요. 무던한 지도의 지수는 이 예측을 입력으로 쓰기 때문에 예측이 맞은 정도를 그대로 공개해요.
+              "그대로 유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율이에요. {metrics.firstObs?.slice(0, 10)}부터 {metrics.days}일 동안 관측 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
+              기간이 짧은 동안에는 참고용으로만 봐 주세요.
+            </p>
+          </>
+        ) : (
+          <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중이에요. 수집이 몇 번 쌓이면 여기에 일치율이 표시돼요.</p>
+        )}
       </div>
       <div className="card">
         <h2>한계</h2>

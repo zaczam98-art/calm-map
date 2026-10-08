@@ -74,3 +74,48 @@ export interface Card {
   whenHard: string
   source: 'ai' | 'preset'
 }
+
+/** 요일×시간대 혼잡도 패턴. places[장소]['요일-시'] = [평균 단계(0~3), 표본 수]. 요일은 일요일=0 */
+export interface WeekPattern {
+  updatedAt: string
+  firstObs: string | null
+  days: number
+  places: Record<string, Record<string, [number, number]>>
+}
+
+export interface LeadMetric {
+  n: number
+  exact: number
+  within1: number
+  persistN: number
+  persistExact: number
+}
+
+/** 서울시 혼잡도 예측과 실제 관측의 비교(몇 시간 전 예측인지별) */
+export interface ForecastMetrics {
+  updatedAt: string
+  firstObs: string | null
+  days: number
+  nObs: number
+  runs: number
+  byLead: Record<string, LeadMetric>
+  overall: LeadMetric
+}
+
+export interface BriefingWindow {
+  place: string
+  from: number
+  to: number
+}
+
+/** 오늘의 브리핑(GitHub Actions에서 생성, 규칙 검사 통과분) */
+export interface Briefing {
+  generatedAt: string
+  date: string
+  basis: string
+  source: 'ai' | 'rule'
+  headline: string
+  picks: (BriefingWindow & { reason: string })[]
+  avoid: BriefingWindow[]
+  tip: string
+}

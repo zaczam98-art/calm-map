@@ -1,16 +1,22 @@
 import { useMemo, useState } from 'react'
-import type { Card, ChildProfile, Place, SenseTag, Snapshot } from '../types'
+import type { Card, ChildProfile, Place, SenseTag, Snapshot, WeekPattern as WeekPatternData } from '../types'
 import { TAG_LABEL } from '../types'
 import { hourScores, LEVEL3_LABEL, nowKeyFor, recommend } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { recordVisit } from '../lib/profile'
 import { getCard } from '../lib/cards'
 import { topTags } from '../lib/sound'
+import { calmerNearby, NEARBY_MAX_KM } from '../lib/nearby'
 import HourChart from './HourChart'
 import CardView from './CardView'
+import NearbyCalm from './NearbyCalm'
+import WeekPattern from './WeekPattern'
 
 interface Props {
   place: Place
+  places: Place[]
+  pattern: WeekPatternData | null
+  onSelect: (name: string) => void
   snap: Snapshot | null
   sound: SoundStore
   profile: ChildProfile
@@ -20,7 +26,7 @@ interface Props {
   onMeasure: () => void
 }
 
-export default function PlaceDetail({ place, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
+export default function PlaceDetail({ place, places, pattern, onSelect, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
   const ps = snap?.places[place.name]
   const dow = ps?.live ? new Date(ps.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
   const scores = useMemo(() => hourScores(ps, (h) => sound[place.name]?.[bucketKey(dow, h)], profile, offsets[place.name] ?? 0, nowKeyFor(snap)), [ps, sound, profile, offsets, place.name, dow, snap])
@@ -29,6 +35,16 @@ export default function PlaceDetail({ place, snap, sound, profile, offsets, onCl
   const nowBucket = sound[place.name]?.[bucketKey(dow, now?.hour ?? new Date().getHours())]
   const tags: SenseTag[] = nowBucket ? topTags(nowBucket) : []
   const totalN = Object.values(sound[place.name] ?? {}).reduce((a, b) => a + b.n, 0)
+  // 지금 '보통' 이상일 때만, 가까운 곳 중 지수가 뚜렷이 낮은 곳을 찾는다
+  const nearby = useMemo(() => {
+    if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
+    const nowKey = nowKeyFor(snap)
+    return calmerNearby(place, now.index, places, (p) => {
+      const s = snap?.places[p.name]
+      const d = s?.live ? new Date(s.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
+      return hourScores(s, (h) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey)[0]
+    })
+  }, [now, place, places, snap, sound, profile, offsets])
   const [card, setCard] = useState<{ card: Card; note: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [recorded, setRecorded] = useState<string | null>(null)
@@ -76,6 +92,8 @@ export default function PlaceDetail({ place, snap, sound, profile, offsets, onCl
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {card && <CardView card={card.card} note={card.note} place={place.name} />}
+      {nearby && <NearbyCalm items={nearby} maxKm={NEARBY_MAX_KM} onSelect={onSelect} />}
+      <WeekPattern pattern={pattern} place={place.name} />
       <div className="card" style={{ marginTop: 12 }}>
         <h2>다녀온 뒤 기록</h2>
         <p className="muted">버튼 두 개로 끝나요. 이 기기에만 저장되고 서버로 가지 않아요.</p>
