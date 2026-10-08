@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Card, ChildProfile, Place, SenseTag, Snapshot } from '../types'
 import { TAG_LABEL } from '../types'
-import { hourScores, LEVEL3_LABEL, recommend } from '../lib/index'
+import { hourScores, LEVEL3_LABEL, nowKeyFor, recommend } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { recordVisit } from '../lib/profile'
 import { getCard } from '../lib/cards'
@@ -23,7 +23,7 @@ interface Props {
 export default function PlaceDetail({ place, snap, sound, profile, offsets, onClose, onRecorded, onMeasure }: Props) {
   const ps = snap?.places[place.name]
   const dow = ps?.live ? new Date(ps.live.time.replace(' ', 'T') + ':00').getDay() : new Date().getDay()
-  const scores = useMemo(() => hourScores(ps, (h) => sound[place.name]?.[bucketKey(dow, h)], profile, offsets[place.name] ?? 0), [ps, sound, profile, offsets, place.name, dow])
+  const scores = useMemo(() => hourScores(ps, (h) => sound[place.name]?.[bucketKey(dow, h)], profile, offsets[place.name] ?? 0, nowKeyFor(snap)), [ps, sound, profile, offsets, place.name, dow, snap])
   const rec = recommend(scores)
   const now = scores[0]
   const nowBucket = sound[place.name]?.[bucketKey(dow, now?.hour ?? new Date().getHours())]
@@ -62,7 +62,7 @@ export default function PlaceDetail({ place, snap, sound, profile, offsets, onCl
       <h2>{place.name} <span className="muted">{place.category}</span></h2>
       <p>
         <span className={`pill ${now?.level ?? 'nodata'}`}>{LEVEL3_LABEL[now?.level ?? 'nodata']}</span>{' '}
-        {now?.index != null && <span className="muted">지금 지수 {now.index}{profile.enabled ? ' (우리 아이 맞춤)' : ''}</span>}
+        {now?.index != null && <span className="muted">지금 지수 {now.index}{now.forecast ? ' (예측값)' : ''}{profile.enabled ? ' (우리 아이 맞춤)' : ''}</span>}
       </p>
       <p><b>{rec.text}</b></p>
       <HourChart scores={scores} highlight={rec.from} />

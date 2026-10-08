@@ -64,6 +64,8 @@ export interface HourScore {
   index: number | null
   level: Level3
   soundN: number
+  /** 실시간 관측이 아니라 예측값으로 채운 시간대 */
+  forecast: boolean
 }
 
 export interface Card {

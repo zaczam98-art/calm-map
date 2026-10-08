@@ -57,6 +57,12 @@ export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
 }
 
+/** 한국 시간 기준 현재 시각 키 'YYYY-MM-DD HH'. 실제 서울시 자료일 때만 지난 시간대를 걸러 낸다(데모 스냅샷은 날짜가 고정). */
+export function nowKeyFor(snap: { source: string } | null | undefined, now = Date.now()): string | undefined {
+  if (!snap || snap.source !== 'seoul') return undefined
+  return new Date(now + 9 * 3600 * 1000).toISOString().slice(0, 13).replace('T', ' ')
+}
+
 export function hourOf(time: string): number {
   return Number(time.slice(11, 13))
 }
@@ -70,11 +76,19 @@ export function hourScores(
   sound: (hour: number) => SoundBucket | undefined,
   profile: ChildProfile | null,
   offset = 0,
+  nowKey?: string,
 ): HourScore[] {
   if (!snap) return []
-  const pts: ForecastPoint[] = []
-  if (snap.live) pts.push({ time: snap.live.time, level: snap.live.level, min: snap.live.min, max: snap.live.max })
-  pts.push(...snap.fcst)
+  type Pt = ForecastPoint & { forecast: boolean }
+  let pts: Pt[] = []
+  if (snap.live) pts.push({ time: snap.live.time, level: snap.live.level, min: snap.live.min, max: snap.live.max, forecast: false })
+  pts.push(...snap.fcst.map((f) => ({ ...f, forecast: true })))
+  if (nowKey) {
+    // 수집이 늦어지면 실시간 값이 이미 지난 시각의 것이다. 지난 시간대는 버리고 현재 시각의 예측값부터 보여 준다.
+    const fresh = pts.filter((p) => p.time.slice(0, 13) >= nowKey)
+    const seen = new Set<string>()
+    pts = fresh.filter((p) => (seen.has(p.time.slice(0, 13)) ? false : (seen.add(p.time.slice(0, 13)), true)))
+  }
   const personal = profile?.enabled ? profile : null
   return pts.map((p) => {
     const h = hourOf(p.time)
@@ -84,7 +98,7 @@ export function hourScores(
     const s = soundScore(b, personal ?? undefined)
     const w = s === null ? 0 : soundWeight(b?.n ?? 0)
     const idx = clamp((1 - w) * c + w * (s ?? 0) + (personal ? offset : 0), 0, 100)
-    return { time: p.time, hour: h, index: Math.round(idx), level: level3(idx), soundN: b?.n ?? 0 }
+    return { time: p.time, hour: h, index: Math.round(idx), level: level3(idx), soundN: b?.n ?? 0, forecast: p.forecast }
   })
 }
 

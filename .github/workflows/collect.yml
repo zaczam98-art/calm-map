@@ -2,7 +2,9 @@ name: collect-seoul-citydata
 
 on:
   schedule:
-    - cron: '7 * * * *' # 매시 7분(UTC). 30곳 × 24회 = 720회/일
+    # GitHub 예약 실행은 지연과 누락이 잦다. 15분마다 시도하고, 스크립트가 직전 수집 후 50분 이내면 건너뛴다.
+    # 그래서 장소당 호출은 시간당 1회 이하(31곳이면 하루 744회 이하)로 유지된다.
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -18,24 +20,29 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: checkout data branch
+      - name: restore files from data branch
         run: |
           git fetch origin data:data || true
-          if git show-ref --quiet refs/heads/data; then git show data:snapshot.json > snapshot.json || true; fi
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+          if git show-ref --quiet refs/heads/data; then
+            git show data:snapshot.json > snapshot.json || rm -f snapshot.json
+            git show data:history.json > history.json 2>/dev/null || rm -f history.json
+          fi
       - name: collect
+        id: collect
         env:
           SEOUL_KEY: ${{ secrets.SEOUL_KEY }}
-        run: python scripts/collect_seoul.py snapshot.json
-      - name: push to data branch
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+        run: python3 scripts/collect_seoul.py snapshot.json history.json
+      - name: publish to data branch (single commit)
+        if: steps.collect.outputs.changed == 'true'
         run: |
-          mkdir -p /tmp/data && cp snapshot.json /tmp/data/
+          mkdir -p /tmp/data && cp snapshot.json history.json /tmp/data/
           git config user.name "calm-map-bot"
           git config user.email "bot@users.noreply.github.com"
-          if git show-ref --quiet refs/heads/data; then git checkout data; else git checkout --orphan data && git rm -rf . >/dev/null 2>&1 || true; fi
-          cp /tmp/data/snapshot.json snapshot.json
-          git add snapshot.json
-          git commit -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no change"
-          git push --force origin data  # data 브랜치는 최신 스냅샷 1개만 유지하므로 이력 보존이 필요 없다
+          # data 브랜치는 항상 커밋 1개만 둔다(누적 파일이 커밋마다 쌓여 저장소가 커지는 것을 막는다)
+          git checkout --orphan data-publish
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/data/snapshot.json /tmp/data/history.json .
+          git add snapshot.json history.json
+          git commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push --force origin data-publish:data

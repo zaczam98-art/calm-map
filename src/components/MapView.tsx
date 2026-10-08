@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import type { ChildProfile, Level3, Place, Snapshot } from '../types'
-import { hourScores, LEVEL3_LABEL } from '../lib/index'
+import { hourScores, LEVEL3_LABEL, nowKeyFor } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 
 const FILL: Record<Level3, string> = { calm: '#d9e1ea', mid: '#8595ab', busy: '#34445a', nodata: '#c9cdd3' }
@@ -61,7 +61,7 @@ export default function MapView({ places, snap, sound, profile, offsets, onSelec
     for (const p of places) {
       const ps = snap?.places[p.name]
       const dowOf = (t: string) => new Date(t.replace(' ', 'T') + ':00').getDay()
-      const scores = hourScores(ps, (h) => sound[p.name]?.[bucketKey(ps?.live ? dowOf(ps.live.time) : new Date().getDay(), h)], profile, offsets[p.name] ?? 0)
+      const scores = hourScores(ps, (h) => sound[p.name]?.[bucketKey(ps?.live ? dowOf(ps.live.time) : new Date().getDay(), h)], profile, offsets[p.name] ?? 0, nowKeyFor(snap))
       const now = scores[0]
       const level: Level3 = now?.level ?? 'nodata'
       const m = L.circleMarker([p.lat, p.lng], {
