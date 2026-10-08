@@ -1,16 +1,16 @@
 {
- "note": "샘플 소리는 ESC-50 데이터셋(K. J. Piczak, 2015)에 실린 음원 가운데 개별 라이선스가 CC0인 것만 골랐다. 원 출처는 Freesound이며 음원별 출처를 credit에 적었다.",
+ "note": "샘플 소리는 ESC-50 데이터셋(K. J. Piczak, 2015)에 실린 음원 가운데 개별 라이선스가 CC0인 것만 골랐다. 분류마다 메타데이터 순서로 첫 번째 CC0 음원을 썼고, 사이렌만 첫 음원이 음악으로 분류되어 다음 음원으로 바꿨다. 따라서 샘플은 분류가 예상대로 나오는 예시이며 전체 정확도를 대표하지 않는다.",
  "dataset": "https://github.com/karolpiczak/ESC-50",
  "samples": [
   {
    "id": "siren",
    "label": "사이렌",
-   "file": "1-54084-A-42.wav",
+   "file": "2-70936-A-42.wav",
    "expected": "sudden",
    "credit": {
-    "title": "civildefense.wav",
+    "title": "police.wav",
     "author": "guitarguy1985",
-    "url": "http://www.freesound.org/people/guitarguy1985/sounds/54084/",
+    "url": "http://www.freesound.org/people/guitarguy1985/sounds/70936/",
     "license": "CC0"
    }
   },

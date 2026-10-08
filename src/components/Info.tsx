@@ -1,7 +1,10 @@
-import type { ForecastMetrics, Snapshot } from '../types'
+import type { ForecastMetrics, SenseTag, Snapshot } from '../types'
+import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
+import soundEval from '../data/sound_eval.json'
 
 const SAMPLES = samplesRaw.samples
+const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람', car_horn: '자동차 경적', laughing: '웃음소리', crickets: '귀뚜라미', clapping: '박수' }
 
 const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
 
@@ -64,6 +67,29 @@ export default function Info({ snap, metrics }: { snap: Snapshot | null; metrics
         ) : (
           <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중이에요. 수집이 몇 번 쌓이면 여기에 일치율이 표시돼요.</p>
         )}
+      </div>
+      <div className="card">
+        <h2>소리 분류를 공개 음원으로 시험한 결과</h2>
+        <table className="simple">
+          <thead>
+            <tr><th>태그</th><th>음원 수</th><th>맞은 수</th><th>일치율</th></tr>
+          </thead>
+          <tbody>
+            {(Object.entries(soundEval.byTag) as [SenseTag, { n: number; correct: number }][]).map(([t, m]) => (
+              <tr key={t}><th>{TAG_LABEL[t]}</th><td>{m.n}</td><td>{m.correct}</td><td>{pct(m.correct, m.n)}</td></tr>
+            ))}
+            <tr><th>전체</th><td>{soundEval.overall.n}</td><td>{soundEval.overall.correct}</td><td>{pct(soundEval.overall.correct, soundEval.overall.n)}</td></tr>
+          </tbody>
+        </table>
+        <p className="muted">
+          앱과 같은 모델(YAMNet)과 같은 태그 기준으로 공개 음원 {soundEval.clips}개({soundEval.dataset}의 {soundEval.classes}개 분류)를 분류해 본 값이에요({soundEval.evaluatedAt} 시험).
+          음원마다 가장 큰 태그가 미리 정해 둔 정답표와 같으면 맞은 것으로 셌어요.
+          {' '}잘 틀린 소리는 {soundEval.weakest.map((w) => `${CLASS_KO[w.category] ?? w.category}(${w.n}개 중 ${w.correct}개 맞음, 주로 '${TAG_LABEL[w.mostConfused as SenseTag] ?? w.mostConfused}'로 분류)`).join(', ')}이에요.
+        </p>
+        <p className="muted">
+          말소리 태그는 이 데이터에 해당 분류가 없어 시험하지 못했고, 음악·안내방송 태그는 종소리 한 분류로만 시험했어요. 실제 장소에서는 여러 소리가 섞이기 때문에 이 수치보다 낮을 수 있어요.
+          시험은 브라우저가 아닌 Node 환경에서 했고, 정답표(scripts/esc50_tag_map.json)와 음원별 결과(docs/eval/esc50_result.json)는 저장소에 있어요.
+        </p>
       </div>
       <div className="card">
         <h2>샘플 소리 출처</h2>

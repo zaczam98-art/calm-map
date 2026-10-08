@@ -130,7 +130,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
       setSummary(sum)
       setSent(null)
       setSample(s.label)
-      setStatus(`샘플 '${s.label}'을 ${results.length}초 분량 분류했어요. 가장 큰 태그는 ${tag ? TAG_LABEL[tag] : '없음'}이에요.`)
+      setStatus(tag ? `샘플 '${s.label}' ${results.length}초 분량을 분류했어요. 가장 큰 태그로 '${TAG_LABEL[tag]}' 태그가 나왔어요.` : `샘플 '${s.label}' ${results.length}초 분량을 분류했지만 뚜렷한 태그가 나오지 않았어요.`)
     } catch (e) {
       setStatus(`샘플을 재생하지 못했어요: ${(e as Error).message}`)
     }
@@ -156,7 +156,7 @@ export default function Measure({ places, defaultPlace, onSubmitted }: Props) {
           <label className="btn">📁 오디오 파일로 시연 <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => void onFile(e.target.files?.[0])} /></label>
           <button className="btn" onClick={prefetch}>⬇️ 모델 미리 받기</button>
         </div>
-        <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>마이크가 없어도 샘플 소리로 체험할 수 있어요. 누르면 소리가 나요.</p>
+        <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>마이크가 없어도 샘플 소리로 체험할 수 있어요. 누르면 소리가 나요. 샘플은 분류가 예상대로 나오는 예시를 고른 것이고, 공개 음원 920개로 잰 일치율은 정보 화면에 있어요.</p>
         <div className="row" aria-label="샘플 소리">
           {SAMPLES.map((s) => (
             <button key={s.id} className="btn" onClick={() => void playSample(s)} disabled={running}>🔊 {s.label}</button>

@@ -1,0 +1,62 @@
+{
+ "evaluatedAt": "2026-10-08",
+ "dataset": "ESC-50",
+ "clips": 920,
+ "classes": 23,
+ "overall": {
+  "n": 920,
+  "correct": 745
+ },
+ "byTag": {
+  "sudden": {
+   "n": 360,
+   "correct": 282
+  },
+  "machine": {
+   "n": 240,
+   "correct": 225
+  },
+  "ambient": {
+   "n": 200,
+   "correct": 148
+  },
+  "crowd": {
+   "n": 80,
+   "correct": 50
+  },
+  "music": {
+   "n": 40,
+   "correct": 40
+  }
+ },
+ "weakest": [
+  {
+   "category": "chainsaw",
+   "truth": "sudden",
+   "n": 40,
+   "correct": 7,
+   "mostConfused": "machine"
+  },
+  {
+   "category": "wind",
+   "truth": "ambient",
+   "n": 40,
+   "correct": 13,
+   "mostConfused": "machine"
+  },
+  {
+   "category": "car_horn",
+   "truth": "sudden",
+   "n": 40,
+   "correct": 14,
+   "mostConfused": "machine"
+  },
+  {
+   "category": "laughing",
+   "truth": "crowd",
+   "n": 40,
+   "correct": 20,
+   "mostConfused": "speech"
+  }
+ ]
+}
