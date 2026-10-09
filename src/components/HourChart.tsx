@@ -1,9 +1,6 @@
-import type { HourScore, Level3 } from '../types'
+import type { HourScore } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
-
-const FILL: Record<Level3, string> = { calm: '#9ddbc8', mid: '#46739e', busy: '#2e2a5e', nodata: '#ffffff' }
-// 밤 시간(22~7시)은 추천 비교에서 빼므로 옅게 그린다
-const isNight = (h: number) => h < 8 || h > 21
+import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 추천 비교에서 빼므로 옅게 그린다
 // 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준 16. 320px 화면에서 줄어든 뒤에도 12px 안팎이 된다)
 const TEXT = { fontSize: 16 }
 const TEXT_SEL = { fontSize: 16, fontWeight: 700 } as const

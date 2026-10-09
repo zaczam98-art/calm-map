@@ -157,6 +157,7 @@ export default function App() {
   const [profile, setProfile] = useState<ChildProfile>(() => loadProfile())
   const [offsets, setOffsets] = useState<Record<string, number>>(() => loadOffsets())
   const [selected, setSelected] = useState<string | null>(null)
+  const [selectedHour, setSelectedHour] = useState<number | null>(null) // 지도 슬라이더와 장소 시트가 함께 쓰는 시각(0~23, null=지금)
   const [soundVersion, setSoundVersion] = useState(0)
   const [pattern, setPattern] = useState<WeekPattern | null>(null)
   const [metrics, setMetrics] = useState<ForecastMetrics | null>(null)
@@ -412,6 +413,8 @@ export default function App() {
             selected={selected}
             active={view === 'map'}
             onTileError={onTileError}
+            selectedHour={selectedHour}
+            onSelectHour={setSelectedHour}
           />
           {snap?.source === 'seoul' && !tooOld && (
             <Briefing
@@ -450,6 +453,8 @@ export default function App() {
             }}
             onMeasure={() => go('measure')}
             onGoChild={() => go('child')}
+            selectedHour={selectedHour}
+            onSelectHour={setSelectedHour}
           />
         )}
         {view === 'recommend' && (

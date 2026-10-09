@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import L from 'leaflet'
-import type { ChildProfile, Level3, NoiseData, Place, Snapshot } from '../types'
+import type { ChildProfile, HourScore, Level3, NoiseData, Place, Snapshot } from '../types'
 import { hourScores, LEVEL3_LABEL } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { activeControls, factorTags } from '../lib/factors'
 import { kstNow } from '../lib/publicData'
 import { noiseLookup } from '../lib/noise'
 import SearchBox from './SearchBox'
+import TimeSlider, { cellAt, levelAt, offsetOf, planFor, slotHour, slotShort } from './TimeSlider'
 import '../styles/map.css'
 
 const FILL: Record<Level3, string> = { calm: '#9ddbc8', mid: '#46739e', busy: '#2e2a5e', nodata: '#ffffff' }
@@ -29,6 +30,11 @@ function baseStyle(level: Level3, hasControl: boolean): L.CircleMarkerOptions {
   }
 }
 
+/** 마커 말풍선. 시각을 골랐으면 어느 시각 기준인지 덧붙인다. */
+function tipHtml(name: string, level: Level3, cell: HourScore | undefined, at: string, controls: string[]): string {
+  return `${name}<br><b>${LEVEL3_LABEL[level]}</b>${cell?.index != null ? ` (${cell.index})` : ''}${at ? ` · ${at} 기준` : ''}${controls.length ? `<br>${controls.join(', ')}` : ''}`
+}
+
 interface Props {
   places: Place[]
   snap: Snapshot | null
@@ -41,15 +47,17 @@ interface Props {
   selected?: string | null
   active?: boolean
   onTileError?: () => void
+  /** 슬라이더로 고른 시(0~23). null이면 지금. 장소 시트의 막대와 같은 값을 쓴다. */
+  selectedHour?: number | null
+  onSelectHour?: (hour: number | null) => void
 }
 
-export default function MapView({ places, snap, sound, profile, offsets, nowKey, noise, onSelect, selected = null, active = true, onTileError }: Props) {
+export default function MapView({ places, snap, sound, profile, offsets, nowKey, noise, onSelect, selected = null, active = true, onTileError, selectedHour = null, onSelectHour }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
-  const markersRef = useRef(new Map<string, { m: L.CircleMarker; base: L.CircleMarkerOptions; level: Level3 }>())
+  const markersRef = useRef(new Map<string, { m: L.CircleMarker; base: L.CircleMarkerOptions; level: Level3; ctrl: boolean; ctrlLabels: string[] }>())
   const [pick, setPick] = useState<{ x: number; y: number; names: string[] } | null>(null) // 겹친 마커 중 고르는 목록
-  const [levels, setLevels] = useState<Record<string, Level3> | null>(null) // 지금 시각의 장소별 단계(범례 개수와 검색 결과 표시용)
   const [searchHost, setSearchHost] = useState<HTMLElement | null>(null) // 줌 버튼 아래 검색 단추 자리
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
@@ -186,6 +194,23 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     }
   }, [])
 
+  // 장소별 시간대 시계열(마커 색, 범례 개수, 슬라이더 범위가 모두 이 한 벌을 쓴다)
+  const allScores = useMemo(() => {
+    if (!snap) return null
+    const out: Record<string, HourScore[]> = {}
+    for (const p of places) out[p.name] = hourScores(snap.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
+    return out
+  }, [places, snap, sound, profile, offsets, nowKey, noise])
+  const plan = useMemo(() => planFor(allScores, nowKey), [allScores, nowKey])
+  const step = plan && selectedHour !== null ? offsetOf(plan, selectedHour) : 0 // 슬라이더 칸 번호(0=지금)
+  const hour = plan && step > 0 && step <= plan.max ? selectedHour : null // 지도가 실제로 쓰는 시각. 지금 칸과 범위 밖은 지금으로 본다.
+  const hourRef = useRef(hour)
+  hourRef.current = hour
+  const planRef = useRef(plan)
+  planRef.current = plan
+  const paintedRef = useRef<number | null>(null) // 마커에 입혀 둔 시각
+  const atOf = (h: number | null) => (plan && h !== null ? slotShort(plan, offsetOf(plan, h)) : '')
+
   useEffect(() => {
     const layer = layerRef.current
     if (!layer) return
@@ -193,34 +218,57 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     markersRef.current.clear()
     styledRef.current = null
     setPick(null)
-    if (!snap) {
-      setLevels(null)
-      return // 자료가 오기 전에는 마커를 그리지 않는다
-    }
-    const nowLevels: Record<string, Level3> = {}
+    if (!snap || !allScores) return // 자료가 오기 전에는 마커를 그리지 않는다
     const k = kstNow()
     const nowStr = `${k.date} ${String(k.hour).padStart(2, '0')}:00`
+    const h = hourRef.current
+    const pl = planRef.current
+    const at = pl && h !== null ? slotShort(pl, offsetOf(pl, h)) : ''
+    paintedRef.current = h
     for (const p of places) {
       const ps = snap.places[p.name]
-      const scores = hourScores(ps, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
-      const now = scores[0]
-      const level: Level3 = now?.level ?? 'nodata'
-      nowLevels[p.name] = level
-      const controls = factorTags(activeControls(ps?.extra, nowStr)).filter((t) => t.key.startsWith('control'))
-      const base = baseStyle(level, controls.length > 0)
+      const scores = allScores[p.name]
+      const level = levelAt(scores, h)
+      // 공사·통제 테두리는 지금 시각의 자료다(서울시가 내일 통제는 주지 않는다). 시각을 옮겨도 그대로 둔다.
+      const ctrlLabels = factorTags(activeControls(ps?.extra, nowStr)).filter((t) => t.key.startsWith('control')).map((t) => t.label)
+      const base = baseStyle(level, ctrlLabels.length > 0)
       const m = L.circleMarker([p.lat, p.lng], { ...base, className: `mk ${level}`, bubblingMouseEvents: false })
-      m.bindTooltip(`${p.name}<br><b>${LEVEL3_LABEL[level]}</b>${now?.index != null ? ` (${now.index})` : ''}${controls.length ? `<br>${controls.map((t) => t.label).join(', ')}` : ''}`, { direction: 'top', offset: [0, -8] })
+      m.bindTooltip(tipHtml(p.name, level, cellAt(scores, h), at, ctrlLabels), { direction: 'top', offset: [0, -8] })
       m.on('click', (e) => pickAt(mapRef.current!.latLngToContainerPoint(e.latlng)))
       m.addTo(layer)
       // 키보드·스크린리더 경로는 추천 탭 목록으로 일원화하므로 마커는 탭 정지에서 뺀다
       const el = m.getElement()
       el?.setAttribute('tabindex', '-1')
       el?.setAttribute('aria-hidden', 'true')
-      markersRef.current.set(p.name, { m, base, level })
+      markersRef.current.set(p.name, { m, base, level, ctrl: ctrlLabels.length > 0, ctrlLabels })
     }
-    setLevels(nowLevels)
     applySelection(selectedRef.current)
-  }, [places, snap, sound, profile, offsets, nowKey, noise])
+  }, [places, snap, allScores])
+
+  // 슬라이더를 옮기면 마커를 다시 만들지 않고 색과 말풍선만 바꾼다
+  useEffect(() => {
+    if (!allScores || paintedRef.current === hour) return
+    paintedRef.current = hour
+    const at = atOf(hour)
+    for (const [name, e] of markersRef.current) {
+      const scores = allScores[name]
+      const level = levelAt(scores, hour)
+      if (level !== e.level) {
+        e.base = baseStyle(level, e.ctrl)
+        e.m.setStyle(e.base)
+        e.m.getElement()?.classList.replace(e.level, level)
+        e.level = level
+      }
+      e.m.setTooltipContent(tipHtml(name, level, cellAt(scores, hour), at, e.ctrlLabels))
+    }
+    setPick(null)
+    applySelection(styledRef.current) // 선택 강조는 setStyle로 지워졌을 수 있으니 다시 입힌다
+  }, [allScores, hour])
+
+  // 고른 시각이 지나 범위 밖이 되면(시간이 흘러 칸이 밀린 경우) 선택을 지금으로 돌린다
+  useEffect(() => {
+    if (plan && selectedHour !== null && offsetOf(plan, selectedHour) > plan.max) onSelectHour?.(null)
+  }, [plan, selectedHour, onSelectHour])
 
   useEffect(() => {
     setPick(null)
@@ -237,6 +285,14 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
     }, 0)
     return () => clearTimeout(t)
   }, [active])
+
+  // 고른 시각의 장소별 단계(범례 개수와 검색 결과 표시용)
+  const levels = useMemo(() => {
+    if (!allScores) return null
+    const out: Record<string, Level3> = {}
+    for (const p of places) out[p.name] = levelAt(allScores[p.name], hour)
+    return out
+  }, [allScores, places, hour])
 
   const counts = useMemo(() => {
     if (!levels) return null
@@ -259,12 +315,21 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
         }}
       />
       {pick && <PickList pick={pick} box={containerRef.current} levels={markersRef.current} onPick={(name) => onSelect(name)} onClose={() => setPick(null)} />}
-      <div className="legend" role="group" aria-label="범례">
+      {plan && onSelectHour && (
+        <TimeSlider
+          plan={plan}
+          value={step > plan.max ? 0 : step}
+          onChange={(k) => onSelectHour(k === 0 ? null : slotHour(plan, k))}
+          active={active && !selected}
+        />
+      )}
+      <div className={plan && onSelectHour ? 'legend above-slider' : 'legend'} role="group" aria-label="범례">
+        {hour !== null && <span className="legend-at">{atOf(hour)} 기준</span>}
         <span><i className="dot calm" />무던함{counts && <b>{counts.calm}</b>}</span>
         <span><i className="dot mid" />보통{counts && <b>{counts.mid}</b>}</span>
         <span><i className="dot busy" />붐빔{counts && <b>{counts.busy}</b>}</span>
         <span><i className="dot nodata" />자료 없음{counts && <b>{counts.nodata}</b>}</span>
-        <span><i className="dot ring" />공사·통제</span>
+        <span><i className="dot ring" />공사·통제{hour !== null && '(지금 기준)'}</span>
       </div>
     </div>
   )

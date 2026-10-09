@@ -1,0 +1,6 @@
+/* 이미지로 공유 단추(ShareImage) */
+/* 단추와 안내 문구를 .share의 직접 항목처럼 배치한다. 문구가 길어져도 단추가 아래 줄로 밀려 내려가지 않고, 문구만 다음 줄로 넘어간다. */
+.share-img { display: contents; }
+.share-img .btn { white-space: nowrap; }
+.share-img .btn[aria-disabled='true'] { opacity: .6; cursor: default; }
+.share-img-msg { font-size: 14px; }

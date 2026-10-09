@@ -16,6 +16,7 @@ import WeekPattern from './WeekPattern'
 import Factors from './Factors'
 import NoiseCard from './NoiseCard'
 import WhyIndex from './WhyIndex'
+import ShareImage from './ShareImage'
 import '../styles/detail.css'
 
 const UNDO_MS = 10 * 60 * 1000 // 방금 기록을 취소할 수 있는 시간
@@ -41,16 +42,21 @@ interface Props {
   onMeasure: () => void
   /** 우리 아이 탭으로 이동(맞춤 전후가 같을 때 민감도를 고르러 가는 단추) */
   onGoChild?: () => void
+  /** 지도 슬라이더와 함께 쓰는 선택 시각(0~23, null=지금). 주지 않으면 이 시트 안에서만 기억한다. */
+  selectedHour?: number | null
+  onSelectHour?: (hour: number | null) => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
   // 맞춤 전후 비교용: 맞춤을 끈 같은 시계열
   const plainScores = useMemo(() => (profile.enabled ? hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], null, 0, nowKey, noiseAt) : []), [ps, sound, profile.enabled, place.name, nowKey, noiseAt])
   // 막대를 눌러 고른 시각(null이면 선택 없음: 머리 줄은 지금, 카드는 권고 시각 기준). 예측이 있는 칸만 고를 수 있다.
-  const [selectedHour, setSelectedHour] = useState<number | null>(null)
+  // 부모가 값을 주면 지도 슬라이더와 같은 값을 쓰고(장소를 바꿔도 유지), 주지 않으면 이 시트 안에서만 기억한다.
+  const [ownHour, setOwnHour] = useState<number | null>(null)
+  const selectedHour = hourProp !== undefined ? hourProp : ownHour
   const rec = recommend(scores, nowKey)
   const now = scores[0]
   const sel = selectedHour !== null ? scoreAt(scores, selectedHour) : undefined
@@ -68,6 +74,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const shownTags = tagsOf(shown)
   const nowTags = tagsOf(now) // 방문 기록은 지금 있었던 시간대의 소리로 남긴다
   const plain = profile.enabled && shown ? scoreAt(plainScores, shown.hour) : undefined
+  // 맞춤을 켰어도 지수가 하나도 달라지지 않았으면 공유 이미지에 '맞춤 반영'을 붙이지 않는다
+  const adapted = profile.enabled && scores.some((s, i) => s.index !== plainScores[i]?.index)
   const chosen = profile.crowd !== 1 || profile.loud !== 1 || Object.values(profile.tags).some((v) => v !== 1)
   const totalN = Object.values(sound[place.name] ?? {}).reduce((a, b) => a + b.n, 0)
   // 기록을 남기거나 취소하면 offsets가 새 객체로 바뀌므로 그때 이 장소의 기록 건수를 다시 센다
@@ -146,7 +154,10 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cellKey])
 
-  const pickHour = (h: number | null) => setSelectedHour(h)
+  const pickHour = (h: number | null) => {
+    if (hourProp === undefined) setOwnHour(h)
+    onSelectHour?.(h)
+  }
 
   const record = (ok: boolean) => {
     const r = recordVisit(place.name, ok, nowTags)
@@ -226,11 +237,18 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       )}
       <p><b>{rec.text}</b></p>
       <div className="sel-row">
-        {sel ? <b role="status">{hourName(sel)} 기준</b> : <span className="muted">막대를 누르거나 아래 단추로 시각을 바꿔 볼 수 있어요.</span>}
-        {sel && <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>}
+        {sel ? (
+          <b role="status">{hourName(sel)} 기준</b>
+        ) : selectedHour !== null ? (
+          <span className="muted" role="status">지도에서 고른 시각의 예측이 이 장소에는 없어서 지금 기준으로 보여 드려요.</span>
+        ) : (
+          <span className="muted">막대를 누르거나 아래 단추로 시각을 바꿔 볼 수 있어요.</span>
+        )}
+        {selectedHour !== null && <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>}
       </div>
       <div className="share">
         <button className="btn" onClick={share}>링크 복사</button>
+        <ShareImage place={place} scores={scores} nowKey={nowKey} updatedAt={snap?.source === 'seoul' ? snap.updatedAt : undefined} selectedHour={sel ? sel.hour : null} adapted={adapted} />
         <div role="status" className="muted">{shareMsg}</div>
       </div>
       <HourChart scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />

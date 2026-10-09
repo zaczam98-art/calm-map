@@ -1,0 +1,36 @@
+/* 카드 머리줄의 단추가 세 개로 늘어 두 줄로 접히면 아래 단계 목록에 붙으므로 간격을 둔다 */
+.card .story { margin-top: 8px; }
+
+/* 카드 한 단계씩 보기: 전체 화면 모드. 움직임 없이 한 화면에 아이콘 하나와 문장 하나만 둔다. */
+.cs-back { position: fixed; inset: 0; z-index: 3100; display: flex; flex-direction: column; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; background: var(--bg); color: var(--ink); outline: none; }
+.cs-top, .cs-stage, .cs-nav, .cs-aux { width: 100%; max-width: 560px; margin-left: auto; margin-right: auto; }
+.cs-top { flex: none; display: flex; justify-content: flex-end; }
+.cs-top .btn { min-width: 76px; font-size: 16px; }
+.cs-stage { flex: 1 0 auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; padding: 20px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); text-align: center; }
+.cs-stage.last { background: #eaf3f8; }
+.cs-cap { margin: 0; font-size: 17px; color: var(--muted); }
+.cs-ico { font-size: clamp(96px, 30vw, 160px); line-height: 1.1; }
+.cs-text { margin: 0; font-size: clamp(26px, 7.5vw, 40px); font-weight: 600; line-height: 1.5; }
+.cs-dots { flex: none; display: flex; justify-content: center; align-items: center; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.cs-dots li { width: 12px; height: 12px; border: 2px solid var(--muted); border-radius: 50%; }
+.cs-dots li.last { margin-left: 6px; border-radius: 4px; }
+.cs-dots li.done { background: var(--muted); }
+.cs-dots li[aria-current='step'] { width: 18px; height: 18px; border-color: var(--accent); background: var(--accent); }
+.cs-nav { flex: none; display: flex; gap: 10px; margin-top: 16px; }
+.cs-nav .btn { flex: 1; min-height: 60px; font-size: 20px; }
+.cs-aux { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+.cs-aux .btn { font-size: 15px; }
+.cs-back .btn[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.cs-back .btn[aria-disabled='true'] { opacity: .45; cursor: default; }
+.cs-back button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cs-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* 가로 화면처럼 낮은 화면에서는 한 화면에 다 들어가도록 줄이고, 그래도 넘치면 화면 전체가 스크롤된다 */
+@media (max-height: 560px) {
+  .cs-stage { min-height: 0; margin-top: 4px; padding: 10px 16px; gap: 4px; }
+  .cs-ico { font-size: 56px; }
+  .cs-text { font-size: 26px; }
+  .cs-dots { margin-top: 8px; }
+  .cs-nav { margin-top: 8px; }
+  .cs-nav .btn { min-height: 48px; }
+  .cs-aux { margin-top: 6px; }
+}

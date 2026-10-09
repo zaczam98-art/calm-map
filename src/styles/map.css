@@ -1,6 +1,19 @@
 /* 범례의 단계별 곳 수 */
 .legend b { font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* 지도 시각 슬라이더: 범례 바로 아래에 붙는다. 범례는 슬라이더가 있을 때만 그만큼 위로 올라간다 */
+.legend-at { font-weight: 700; }
+.map-wrap .legend.above-slider { bottom: 86px; }
+.tslider { position: absolute; left: 12px; right: 12px; bottom: 26px; z-index: 500; max-width: 460px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 10px; background: rgba(255, 255, 255, .95); box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+.tslider-play { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--accent); }
+.tslider-play:focus-visible, .tslider input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.tslider input[type='range'] { flex: 1; min-width: 0; height: 44px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; }
+.tslider input[type='range']::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: #7a8794; }
+.tslider input[type='range']::-moz-range-track { height: 6px; border-radius: 3px; background: #7a8794; }
+.tslider input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -11px; border: 3px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), 0 1px 4px rgba(0, 0, 0, .3); }
+.tslider input[type='range']::-moz-range-thumb { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), 0 1px 4px rgba(0, 0, 0, .3); }
+.tslider-label { flex: none; min-width: 5.2em; text-align: right; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* 줌 버튼도 누르기 쉽게 44px로 맞춘다(Leaflet 기본은 30px, 터치는 40px) */
 #map .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
 
@@ -45,4 +58,5 @@
 /* 넓은 화면에서는 시트가 왼쪽 패널이라 검색창과 겹치지 않는다 */
 @media (min-width: 900px) {
   .main:has(.sheet:not(.on-list)) .sbx-panel { bottom: 10px; }
+  .main:has(.sheet:not(.on-list)) .tslider { left: 432px; }
 }
