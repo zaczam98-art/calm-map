@@ -49,14 +49,16 @@ export default function Briefing({ briefing, known, onSelect, collapsed, onToggl
   const range = (from: number, to: number) => `${Math.max(from, now.hour)}~${to}시`
   const first = picks[0]
   const start = Math.max(first.from, now.hour)
-  const part = start < 12 ? '오전' : start < 17 ? '오후' : '저녁'
+  // 시간대 접두어는 범위 전체가 한 시간대 안일 때만 붙인다(8~22시에 '오전'이라고 쓰지 않는다). 끝은 포함하지 않는 시각이므로 마지막 칸은 to - 1시다.
+  const partOf = (h: number) => (h < 12 ? '오전' : h < 17 ? '오후' : '저녁')
+  const part = partOf(start) === partOf(first.to - 1) ? partOf(start) : ''
   return (
     <aside className={collapsed ? 'briefing collapsed' : 'briefing'} aria-label="오늘의 브리핑" hidden={hidden} style={hidden ? { display: 'none' } : undefined}>
       <button className="briefing-head" onClick={onToggle} aria-expanded={!collapsed}>
         {collapsed ? (
           <>
             <span>
-              <span>오늘 {part}</span>
+              <span>{part ? `오늘 ${part}` : '오늘'}</span>
               <b className="bf-place">{first.place}</b>
               <span>{range(first.from, first.to)}</span>
             </span>

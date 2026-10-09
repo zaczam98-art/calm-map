@@ -64,7 +64,7 @@
 
 @media (max-width: 699px) {
   /* 펼친 검색창이 좌상단 브리핑과 겹치지 않게, 검색하는 동안은 브리핑을 가린다 */
-  .map-wrap:has(.sbx-panel.open) ~ .briefing { visibility: hidden; }
+  .main:has(.sbx-panel.open) .briefing { visibility: hidden; }
 }
 
 @media (min-width: 700px) {

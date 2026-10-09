@@ -7,6 +7,7 @@ import { noiseLookup } from '../lib/noise'
 import { matchesPlace } from '../lib/hangul'
 import { kstNow } from '../lib/publicData'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
+import '../styles/nonoise.css'
 
 interface Props {
   places: Place[]
@@ -66,7 +67,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
       const scores = hourScores(s, (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))
       const now = scores[0]
       const tags = factorTags(activeControls(s?.extra, nowStr)).filter((t) => t.key.startsWith('control') || t.key === 'rain').slice(0, 2)
-      return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: recommend(scores, nowKey).short, km: pos ? distanceKm(pos, p) : null, tags }
+      return { place: p, level: (now?.level ?? 'nodata') as Level3, index: now?.index ?? null, line: recommend(scores, nowKey).short, km: pos ? distanceKm(pos, p) : null, tags, noMeter: noise !== null && !noise.places[p.name] }
     })
   }, [places, snap, sound, profile, offsets, pos, nowKey, noise])
 
@@ -150,6 +151,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
                 {r.tags.map((t) => (
                   <span key={t.key} className="factor small">{t.label}</span>
                 ))}
+                {r.noMeter && <span className="nonoise small">소음 미반영</span>}
               </span>
               {r.index !== null && (
                 <span className="rec-index" role="img" aria-label={`지수 ${r.index}점`}>

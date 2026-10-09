@@ -1,3 +1,4 @@
+import { useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { HourScore } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
 import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 추천 비교에서 빼므로 옅게 그린다
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export default function HourChart({ scores, highlight, selectedHour = null, onSelectHour }: Props) {
+  const barRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [focusAt, setFocusAt] = useState<number | null>(null) // 방향키로 옮기는 동안만 쓰는 칸 번호. 막대 밖으로 포커스가 나가면 비운다.
   const W = 360
   const H = 160
   const padL = 6
@@ -56,6 +59,21 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
         return
       }
     }
+  }
+
+  // Tab 정지는 막대 묶음 전체에서 한 곳이다: 고른 막대(없으면 값이 있는 첫 칸), 방향키로 옮기는 동안에는 포커스가 있는 막대
+  const enabledIdx = scores.flatMap((s, i) => (s.index === null ? [] : [i]))
+  const tabIdx = focusAt !== null && enabledIdx.includes(focusAt) ? focusAt : enabledIdx.includes(selIdx) ? selIdx : (enabledIdx[0] ?? -1)
+  const onBarsKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const from = enabledIdx.indexOf(barRefs.current.indexOf(e.target as HTMLButtonElement))
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+    if (from < 0 || (!step && e.key !== 'Home' && e.key !== 'End')) return
+    e.preventDefault()
+    const to = step ? from + step : e.key === 'Home' ? 0 : enabledIdx.length - 1
+    barRefs.current[enabledIdx[Math.min(Math.max(to, 0), enabledIdx.length - 1)]]?.focus()
+  }
+  const onBarsBlur = (e: FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setFocusAt(null)
   }
 
   const hasNight = scores.some((s) => isNight(s.hour))
@@ -137,9 +155,21 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
           )}
         </svg>
         {onSelectHour && (
-          <div className="chart-bars" role="group" aria-label="시간대별 감각부하 지수. 시간을 고르면 그 시각 기준으로 보여 줘요">
+          <div className="chart-bars" role="group" aria-label="시간대별 감각부하 지수. 시간을 고르면 그 시각 기준으로 보여 줘요" onKeyDown={onBarsKey} onBlur={onBarsBlur}>
             {scores.map((s, i) => (
-              <button key={s.time} type="button" aria-pressed={i === selIdx} aria-label={buttonName(s, i)} disabled={s.index === null} onClick={() => onSelectHour(i === selIdx ? null : s.hour)} />
+              <button
+                key={s.time}
+                ref={(el) => {
+                  barRefs.current[i] = el
+                }}
+                type="button"
+                tabIndex={i === tabIdx ? 0 : -1}
+                aria-pressed={i === selIdx}
+                aria-label={buttonName(s, i)}
+                disabled={s.index === null}
+                onFocus={() => setFocusAt(i)}
+                onClick={() => onSelectHour(i === selIdx ? null : s.hour)}
+              />
             ))}
           </div>
         )}

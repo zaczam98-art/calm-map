@@ -170,7 +170,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
       <div className="card">
         <h2>개인정보</h2>
         <p className="muted">아이의 이름, 진단명, 행동 기록을 받지 않아요. 프로필(민감 요인 7개의 3단계 값)과 다녀온 뒤 기록, 소리 측정 요약은 이 기기의 저장소에만 있어요. {HAS_API ? '소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달돼요.' : '이 사이트에는 받는 서버가 없어서 프로필, 기록, 소리 측정 요약, 내 위치는 이 기기 밖으로 나가지 않아요. 지도 타일, 자료 파일, 소리 분류 모델을 받을 때는 접속 정보(IP 주소)가 OpenStreetMap, GitHub, TF Hub(Kaggle, Google Cloud Storage로 연결)에 전달돼요.'} 생성형 AI에는 자료 수집 단계에서 장소 이름과 혼잡도 예측만 전달돼요. 위치를 허용하면 거리 계산에만 쓰고 저장하지 않아요.</p>
-        <p className="muted">카드 읽어 주기는 이 기기의 음성 합성 기능을 써요.</p>
+        <p className="muted">카드 읽어 주기는 이 기기의 음성 합성 기능을 써요. 앱 화면 파일은 이 기기에 캐시해 두어 오프라인에서도 열려요(지도 그림과 서울시 자료는 제외).</p>
       </div>
       <div className="card">
         <h2>데이터 출처</h2>

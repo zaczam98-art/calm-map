@@ -1,0 +1,4 @@
+/* 가까이에 소음 센서가 없어 지수에 소음이 들어가지 않은 장소의 작은 꼬리표 */
+.nonoise { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--nodata-line); background: var(--nodata); color: var(--muted); font-size: 12px; line-height: 1.5; white-space: nowrap; }
+.nonoise.small { margin: 4px 4px 0 6px; }
+.sheet .nonoise { vertical-align: 1px; }

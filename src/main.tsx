@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import 'leaflet/dist/leaflet.css'
 import App from './App'
+import { registerServiceWorker } from './sw-register'
 import './styles.css'
 
 /** 화면을 그리다 오류가 나면 빈 화면 대신 새로고침을 안내한다. */
@@ -64,3 +65,6 @@ window.setTimeout(() => {
     /* 저장소를 못 쓰면 지울 것도 없다 */
   }
 }, 5000)
+
+// 새 서비스 워커는 안내 없이 다음 방문부터 쓴다. 새로고침을 끼워 넣지 않아서 위의 reloadOnce와 겹치지 않는다
+registerServiceWorker()

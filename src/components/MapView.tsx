@@ -321,6 +321,7 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
           value={step > plan.max ? 0 : step}
           onChange={(k) => onSelectHour(k === 0 ? null : slotHour(plan, k))}
           active={active && !selected}
+          counts={counts}
         />
       )}
       <div className={plan && onSelectHour ? 'legend above-slider' : 'legend'} role="group" aria-label="범례">

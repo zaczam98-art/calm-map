@@ -32,6 +32,15 @@ FORBIDDEN = ['장애', '자폐', '진단', '증상', '치료', '환자', '위험
              '행사', '축제', '공사', '주차', '할인', '세일', '날씨', '비가', '눈이', '입장료', '무료',
              '조용', '소음', '시끄', '고요', '소리', '잔잔', '차분',  # 혼잡도 예측만으로 소리를 단정하지 않는다
              '내내', '종일', '거의 없', '사람이 없', '아무도']  # 자료가 뒷받침하지 않는 단정
+# 장소의 성격을 묘사하는 낱말. 입력 자료에는 혼잡도 예측뿐이라 장소가 어떤 곳인지는 알 수 없으므로(분류명만 보고 '탁 트인 공원에서 산책' 같은 묘사를 지어내던 문제),
+# 문장은 예측 혼잡도에 근거한 말로만 쓰게 한다. FORBIDDEN과 달리 장소 이름에 든 낱말은 예외다(mask_names 참고).
+# 낱말 목록은 같은 뜻의 다른 낱말을 다 막지 못하므로(차단 목록 방식의 한계), pick의 reason에는 GROUNDED 구조 검사를 함께 건다(check_grounded).
+DESCRIPTIVE = ['공원', '산책', '거리', '쇼핑', '전망', '시장', '구경', '광장', '궁궐', '고궁', '유적', '문화유산', '상권', '번화가', '관광',
+               '골목', '야경', '경치', '풍경', '숲', '잔디', '한강', '호수', '카페', '맛집', '먹거리', '볼거리', '놀거리', '나들이', '소풍',
+               '탁 트', '트인', '박물관', '미술관', '전시', '공연', '한옥', '놀이', '걷기',
+               '거닐', '둘러', '걸어', '즐기', '놀기', '한적', '쾌적', '좋은 곳']  # 뒤쪽 여덟은 활동과 적합성(어울리는 곳)을 말하는 표현
+GROUNDED = ['예측', '혼잡', '붐비', '붐벼']  # pick의 reason에 이 가운데 하나는 들어 있어야 한다(예측 혼잡도에 근거한 문장만 통과)
+INTERNAL = ['인구밀집지역', '발달상권', '관광특구', '고궁·문화유산', '공원']  # 서울시 분류명. 앱에는 src/types.ts의 CATEGORY_LABEL이 보이므로 문장에 새면 안 된다
 
 snap = json.load(open(SNAP, encoding='utf-8'))
 prev = {}
@@ -65,6 +74,20 @@ if not FORCE:
 today = NOW.strftime('%Y-%m-%d')
 start = max(NOW.hour, DAY_START)
 cats = {p['name']: p['category'] for p in json.load(open(os.path.join(ROOT, 'src', 'data', 'places.json'), encoding='utf-8'))}
+
+
+def load_labels():
+    """src/types.ts의 CATEGORY_LABEL(서울시 분류 -> 앱에 보이는 이름)을 읽는다. 프롬프트에는 분류명 대신 이 이름을 쓴다."""
+    src = open(os.path.join(ROOT, 'src', 'types.ts'), encoding='utf-8').read()
+    block = re.search(r'CATEGORY_LABEL[^=]*=\s*\{(.*?)\n\}', src, re.S)
+    entries = re.findall(r"^\s*(?:'([^']+)'|([^\s:']+))\s*:\s*'([^']+)'", block.group(1), re.M) if block else []
+    return {quoted or bare: label for quoted, bare, label in entries}
+
+
+LABEL = load_labels()
+# 장소 이름과 그 조각(공백, 가운뎃점으로 나눈 것). 문장에서 이 이름을 불러도 이름 속 낱말(예: '서울숲공원'의 '공원')은 묘사로 보지 않는다.
+# 조각 가운데 분류명이나 묘사 낱말 그 자체인 것('홍대 관광특구'의 '관광특구')은 뺀다. 이름 전체로 부를 때만 예외가 된다.
+NAME_PARTS = sorted({p for n in cats for p in (n, *re.split(r'[\s·]+', n)) if len(p) >= 2 and p not in INTERNAL + DESCRIPTIVE}, key=len, reverse=True)
 
 def live_as_now(live):
     """실시간 관측을 현재 시각 칸으로 쓸 수 있는가. 같은 시이거나 지금보다 90분 이내로 앞선 관측이면 쓴다.
@@ -135,6 +158,12 @@ def ends_politely(s):
     return bool(re.search(r'요[.!]?$', s.strip()))
 
 
+def mask_names(s):
+    for p in NAME_PARTS:
+        s = s.replace(p, ' ')
+    return s
+
+
 def check_text(label, s, reasons):
     if not isinstance(s, str) or not s.strip():
         reasons.append(f'{label} 없음')
@@ -150,9 +179,23 @@ def check_text(label, s, reasons):
             reasons.append(f"{label} 금지 표현 '{w}'")
             # 모델에게 돌려주는 문장에는 걸린 글자 묶음 하나만 싣는다('금지' 같은 다른 금지어가 섞여 모델이 따라 쓰면 다시 반려되는 순환을 막는다)
             DETAIL[reasons[-1]] = f"{label}에 '{w}'이(가) 들어 있어 반려됨. 이 글자 묶음을 빼고 다시 쓰세요"
+    masked = mask_names(s)
+    for w in dict.fromkeys(INTERNAL + DESCRIPTIVE):
+        if w in masked:
+            kind = '분류명' if w in INTERNAL else '장소 묘사'
+            reasons.append(f"{label} {kind} '{w}'")
+            DETAIL[reasons[-1]] = f"{label}에 '{w}'이(가) 들어 있어 반려됨. 장소가 어떤 곳인지는 자료에 없으니 쓰지 말고, 예측 혼잡도만 근거로 다시 쓰세요"
 
 
 DETAIL = {}  # 반려 사유 -> 모델에게 돌려줄 구체적인 문장. 사유 자체(통계 키)는 짧게 두고, 장소와 시각은 여기에만 담는다
+
+
+def check_grounded(label, s, reasons):
+    """reason이 예측 혼잡도에 근거한 말인지 허용 쪽에서 본다. 비어 있거나 문자열이 아닌 경우는 check_text가 이미 세었다."""
+    if isinstance(s, str) and s.strip() and not any(w in s for w in GROUNDED):
+        key = f'{label} 예측 근거 없음'
+        reasons.append(key)
+        DETAIL[key] = f"{label}에 {', '.join(repr(w) for w in GROUNDED)} 중 하나가 없어 반려됨. 활동이나 장소의 성격은 쓰지 말고, 예측 혼잡도만 근거로 다시 쓰세요"
 
 
 def check_window(label, w, ok, reasons, want):
@@ -188,7 +231,9 @@ def validate(d):
         picks = picks if isinstance(picks, list) else []
     for i, w in enumerate(picks):
         check_window(f'pick{i + 1}', w, lambda v: v == 0, reasons, LEVELS[0])
-        check_text(f'pick{i + 1} reason', (w or {}).get('reason') if isinstance(w, dict) else None, reasons)
+        reason = (w or {}).get('reason') if isinstance(w, dict) else None
+        check_text(f'pick{i + 1} reason', reason, reasons)
+        check_grounded(f'pick{i + 1} reason', reason, reasons)
     avoid = d.get('avoid') or []
     if not isinstance(avoid, list) or len(avoid) > 2:
         reasons.append('avoid 개수가 0~2가 아님')
@@ -216,18 +261,22 @@ def clean(d):
 def ask_gemini(feedback=None):
     """규칙이 계산한 후보 구간을 주고, AI는 그중에서 고르고 문장을 쓴다. 답은 validate()가 자료와 다시 대조한다."""
     def line(w):
-        return f"- {w['place']} ({cats.get(w['place'], '')}): {w['from']}시부터 {w['to']}시 전까지"
+        kind = LABEL.get(cats.get(w['place'], ''))  # 서울시 분류명 대신 앱에 보이는 이름. 없으면 괄호를 생략해 분류명이 새지 않게 한다
+        return f"- {w['place']}{f' ({kind})' if kind else ''}: {w['from']}시부터 {w['to']}시 전까지"
     prompt_lines = [
         '당신은 발달장애 아동 가족의 외출을 돕는 안내 문장을 쓰는 사람입니다.',
         f'아래는 서울시 혼잡도 예측에서 뽑은 오늘({today}) 남은 시간의 후보 구간입니다.',
         '이 후보만 근거로 오늘의 브리핑을 JSON으로 쓰세요.',
         '규칙:',
-        "- picks: '여유 구간 후보'에서 1~3개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 분류가 서로 다른 장소가 섞이면 좋습니다.",
+        "- picks: '여유 구간 후보'에서 1~3개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 종류가 서로 다른 장소가 섞이면 좋습니다.",
         "- avoid: '붐비는 구간 후보'에서 0~2개를 고릅니다. place, from, to는 후보에 적힌 값을 그대로 씁니다. 후보가 없으면 빈 배열로 둡니다.",
         f"- headline, 각 pick의 reason, tip은 각각 {MAX_LEN}자 이내의 쉬운 말로 쓰고 '~요'로 끝냅니다. 이 문장들에는 숫자와 시각을 쓰지 않습니다(시각은 from, to로만 전달).",
         "- 소리의 크기(조용하다, 시끄럽다)나 '내내', '종일', '사람이 없다' 같은 단정은 쓰지 않습니다. 사람이 적은 편이라는 정도로만 말합니다.",
         '- 후보에 없는 사실(행사, 공사, 날씨, 주차, 가격, 시설)은 쓰지 않습니다. 진단이나 판정, 금지 표현을 쓰지 않고 권고만 합니다.',
         "- 검사기는 headline, 각 pick의 reason, tip에 다음 글자 묶음이 들어 있으면(다른 낱말의 일부여도, 활용형이어도) 반려합니다. 이 글자 묶음이 나오지 않게 쓰세요: " + ', '.join(f"'{w}'" for w in FORBIDDEN),
+        "- 장소 이름 옆 괄호의 말은 앱에 표시되는 장소 종류일 뿐이며, 그 장소가 어떤 곳인지(풍경, 시설, 거리 모습, 할 수 있는 활동)는 자료에 없으므로 쓰지 않습니다. reason은 예측 혼잡도에 근거한 말만 씁니다(예: '예측 혼잡도가 계속 여유예요', '사람이 적은 편으로 예측돼요').",
+        "- 각 pick의 reason에는 " + ', '.join(f"'{w}'" for w in GROUNDED) + " 중 하나가 반드시 들어가야 하고, 없으면 반려됩니다. 활동이나 어울리는 사람, 장소의 성격을 말하는 문장(예: '~하기 좋은 곳이에요')은 위 목록의 낱말이 없어도 쓰지 않습니다.",
+        "- 다음 글자 묶음은 장소를 묘사하거나 분류명을 옮기는 말이라 문장에 들어 있으면 반려됩니다(장소 이름 속 낱말은 괜찮습니다): " + ', '.join(f"'{w}'" for w in dict.fromkeys(INTERNAL + DESCRIPTIVE)),
         '여유 구간 후보:',
         *[line(w) for w in calm[:12]],
         '붐비는 구간 후보:',

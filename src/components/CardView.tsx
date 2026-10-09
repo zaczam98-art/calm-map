@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { ICON_EMOJI, type CardIcon } from '../../shared/cardRules'
 import type { Card } from '../types'
@@ -41,6 +41,7 @@ export function StepDialog({ card, place, index, voice, autoRead, onGo, onClose,
   const last = card.steps.length
   const i = Math.min(Math.max(index, 0), last)
   const page = stepPage(card, i)
+  const textId = useId()
 
   useEffect(() => {
     closeBtn.current?.focus()
@@ -75,14 +76,14 @@ export function StepDialog({ card, place, index, voice, autoRead, onGo, onClose,
   }
 
   return (
-    <div className="cs-back" role="dialog" aria-modal="true" aria-label={`${place} 한 단계씩 보기`} tabIndex={-1} ref={box} onKeyDown={onKeyDown}>
+    <div className="cs-back" role="dialog" aria-modal="true" aria-label={`${place} 한 단계씩 보기`} aria-describedby={textId} tabIndex={-1} ref={box} onKeyDown={onKeyDown}>
       <div className="cs-top">
         <button className="btn" onClick={onClose} ref={closeBtn}>닫기</button>
       </div>
       <div className={`cs-stage${i === last ? ' last' : ''}`} aria-live="polite" aria-atomic="true">
         <p className="cs-cap">{page.cap}</p>
         <span className="cs-ico" aria-hidden>{page.icon}</span>
-        <p className="cs-text">{page.text}</p>
+        <p className="cs-text" id={textId}>{page.text}</p>
       </div>
       <ol className="cs-dots" aria-label="진행 상황">
         {Array.from({ length: last + 1 }, (_, n) => (

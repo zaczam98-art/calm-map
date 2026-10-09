@@ -55,6 +55,9 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_PUBLIC_SNAPSHOT_URL: https://raw.githubusercontent.com/${{ github.repository }}/data/snapshot.json
         run: npm run build
+      - name: fill the service worker precache list
+        # dist/sw.js의 자리표시에 해시 자산 목록과 빌드 해시를 넣는다. vite build가 dist를 비우므로 빌드 뒤에 실행한다.
+        run: node scripts/gen_precache.mjs dist
       - name: copy data mirror into dist
         # vite build가 dist를 비우므로 빌드 뒤에 넣는다.
         run: |

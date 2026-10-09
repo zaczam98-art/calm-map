@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import type { HourScore, Level3 } from '../types'
 import { scoreAt } from '../lib/index'
+import '../styles/a11y.css'
 
 const HOUR_MS = 3600_000
 const MAX_AHEAD = 12 // 지금부터 이만큼 뒤까지만 고를 수 있다(예측이 이보다 짧으면 있는 데까지)
 const PLAY_MS = 1000
+const ANNOUNCE_MS = 300 // 슬라이더를 끄는 동안 문장이 쌓이지 않게, 멈춘 뒤 이만큼 기다렸다가 한 번만 알린다
 
 /** 슬라이더가 고를 수 있는 칸의 범위. 0번 칸이 '지금'(고른 시각이 없음, selectedHour=null)이고, k번 칸은 0번 칸에서 k시간 뒤다. */
 export interface SliderPlan {
@@ -81,9 +83,11 @@ interface Props {
   onChange: (k: number) => void
   /** 지도 탭이 보이는 동안만 true. 숨겨지면 자동 진행을 멈춘다. */
   active: boolean
+  /** 고른 칸의 단계별 장소 수(범례와 같은 값). 주면 시각을 바꾼 뒤 화면 밖 문장으로 읽어 준다. */
+  counts?: Record<Level3, number> | null
 }
 
-export default function TimeSlider({ plan, value, onChange, active }: Props) {
+export default function TimeSlider({ plan, value, onChange, active, counts }: Props) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
   const valueRef = useRef(value)
@@ -130,6 +134,21 @@ export default function TimeSlider({ plan, value, onChange, active }: Props) {
   }, [value])
 
   const label = slotLabel(plan, value)
+
+  // 시각을 바꾼 결과를 읽어 준다: '15시 기준 무던함 79곳, 보통 30곳, 붐빔 12곳'. 처음 그릴 때와 자료만 새로 들어온 때는 읽지 않는다.
+  const said = counts
+    ? `${value === 0 && plan.isNow ? '지금' : slotShort(plan, value)} 기준 무던함 ${counts.calm}곳, 보통 ${counts.mid}곳, 붐빔 ${counts.busy}곳${counts.nodata ? `, 자료 없음 ${counts.nodata}곳` : ''}`
+    : ''
+  const saidRef = useRef(said)
+  saidRef.current = said
+  const shownValue = useRef(value)
+  const [spoken, setSpoken] = useState('')
+  useEffect(() => {
+    if (shownValue.current === value) return
+    shownValue.current = value
+    const id = window.setTimeout(() => setSpoken(saidRef.current), ANNOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [value])
   const toggle = () => {
     if (playing) {
       setPlaying(false)
@@ -165,6 +184,7 @@ export default function TimeSlider({ plan, value, onChange, active }: Props) {
         }}
       />
       <span className="tslider-label" aria-hidden="true">{label}</span>
+      <span className="tslider-live" role="status" aria-live="polite" aria-atomic="true">{spoken}</span>
     </div>
   )
 }

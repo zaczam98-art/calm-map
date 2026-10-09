@@ -18,6 +18,7 @@ import NoiseCard from './NoiseCard'
 import WhyIndex from './WhyIndex'
 import ShareImage from './ShareImage'
 import '../styles/detail.css'
+import '../styles/nonoise.css'
 
 const UNDO_MS = 10 * 60 * 1000 // 방금 기록을 취소할 수 있는 시간
 
@@ -226,6 +227,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       <p>
         <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
         {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 {shown.index}점(0~100, 낮을수록 편안)</span>}
+        {noise !== null && !noise.places[place.name] && <>{' '}<span className="nonoise">소음 미반영</span></>}
       </p>
       {plain?.index != null && shown?.index != null && (
         <div className="adapt">

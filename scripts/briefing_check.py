@@ -2,7 +2,9 @@
 
 실제 스크립트를 그대로 실행하되 시계(datetime.now)를 고정하고 Gemini 호출(urllib.request.urlopen)을 모의 응답으로 바꿔 끼운다. 실제 API는 부르지 않는다.
 data 브랜치의 snapshot.json 사본을 고정 시각(08:10, 13:10, 20:10 KST)에 맞게 시간만 옮겨 쓴다(혼잡 단계 값은 그대로).
-검사 항목: 후보 계산(현재 시각 칸 포함), validate 반려 사유, 재시도 프롬프트(금지 표현 목록, 구체적인 사유), stats 누적과 버전 리셋, 로그.
+검사 항목: 후보 계산(현재 시각 칸 포함), validate 반려 사유, 재시도 프롬프트(금지 표현 목록, 구체적인 사유), stats 누적과 버전 리셋, 로그,
+장소 줄의 종류 이름(src/types.ts CATEGORY_LABEL), 장소 묘사 낱말과 서울시 분류명 반려(장소 이름 속 낱말은 예외), 규칙 문장의 같은 기준,
+활동과 적합성 문장('거닐기 좋은 곳이에요' 따위, 낱말 목록 밖의 표현 포함)을 거르는 reason 구조 검사(예측 혼잡도에 근거한 말이 아니면 반려).
 
 사용: python scripts/briefing_check.py [snapshot.json]
 - snapshot은 인자, 환경변수 BRIEFING_CHECK_SNAPSHOT, 저장소 루트의 snapshot.json 순으로 찾고, 없으면 data 브랜치의 공개 파일을 내려받는다.
@@ -161,7 +163,39 @@ def ref_windows(table, ok, start):
     return sorted(found, key=lambda w: (-(w[2] - w[1]), w[1], w[0]))
 
 
-REASON_TEXTS = ['사람이 적은 편이라 편하게 걸어요.', '여유로운 시간대라 마음이 편해요.', '천천히 둘러보기 좋은 시간이에요.']
+REASON_TEXTS = ['예측 혼잡도가 계속 여유예요.', '사람이 적은 편으로 예측돼요.', '붐비지 않는 시간대로 예측돼요.']
+# 활동과 적합성을 말하는 문장(자료에 없는 사실). (문장, 낱말 목록으로도 걸려야 하는 낱말). 낱말이 None이면 구조 검사로만 걸린다.
+# 앞 아홉 개는 낱말 목록만 쓰던 때 통과하던 문장, 뒤 세 개는 data 브랜치 briefing.json(2026-10-09 15:07, source ai)의 실제 reason이다.
+ACTIVITY_TEXTS = [('여유롭게 거닐기 좋은 곳이에요.', '거닐'), ('천천히 둘러보기 좋은 곳이에요.', '둘러'), ('넓은 곳에서 편하게 쉬어요.', None),
+                  ('느긋하게 걸어 보기 좋아요.', '걸어'), ('가족과 함께 즐기기 좋은 곳이에요.', '즐기'), ('아이와 놀기 좋은 곳이에요.', '놀기'),
+                  ('한적하게 시간을 보내요.', '한적'), ('쾌적한 곳이에요.', '쾌적'), ('아이와 함께 가기 좋은 곳이에요.', '좋은 곳'),
+                  ('마음 편히 산책하기 좋은 곳이에요.', '산책'), ('여유롭게 거닐기 좋은 곳이에요.', '거닐'), ('천천히 둘러보기 좋은 곳이에요.', '둘러')]
+# 예측 혼잡도에 근거한 문장은 통과해야 한다(과잉 반려 방지)
+GROUNDED_TEXTS = [*REASON_TEXTS, '지금보다 덜 혼잡할 것으로 보여요.', '사람이 덜 붐벼요.', '붐비는 정도가 낮아요.']
+
+
+def types_labels():
+    """src/types.ts의 CATEGORY_LABEL을 gen_briefing.py의 정규식과 다른 방법(줄 단위)으로 읽는다."""
+    lines = open(os.path.join(ROOT, 'src', 'types.ts'), encoding='utf-8').read().split('\n')
+    i = next(i for i, s in enumerate(lines) if 'CATEGORY_LABEL' in s and s.rstrip().endswith('{'))
+    out = {}
+    for s in lines[i + 1:]:
+        if s.startswith('}'):
+            break
+        k, v = s.strip().rstrip(',').split(': ', 1)
+        out[k.strip("'")] = v.strip("'")
+    return out
+
+
+def describe_hits(ns, text):
+    """문장에 들어 있는 장소 묘사 낱말과 분류명(이름 예외 없이 글자 그대로). 규칙 문장에는 장소 이름이 없으므로 하나도 없어야 한다."""
+    return [w for w in ns['INTERNAL'] + ns['DESCRIPTIVE'] if w in text]
+
+
+def text_reasons(ns, text):
+    reasons = []
+    ns['check_text']('x', text, reasons)
+    return reasons
 
 
 def good_draft(ns, n_pick=2, n_avoid=1):
@@ -215,6 +249,9 @@ def check_prompt_and_feedback(tag, r):
     for i, p in enumerate(r.prompts):
         line = next((s for s in p.split('\n') if '반려합니다' in s and '활용형' in s), '')
         check(line and all(f"'{w}'" in line for w in forbidden), f'{tag} 프롬프트 {i + 1}: FORBIDDEN 전체가 한 줄에 들어 있지 않다')
+        desc = next((s for s in p.split('\n') if '반려됩니다' in s and '장소를 묘사' in s), '')
+        check(desc and all(f"'{w}'" in desc for w in r.ns['INTERNAL'] + r.ns['DESCRIPTIVE']), f'{tag} 프롬프트 {i + 1}: 묘사 낱말과 분류명 전체가 한 줄에 들어 있지 않다')
+        check('예측 혼잡도에 근거한 말만' in p, f'{tag} 프롬프트 {i + 1}: reason을 예측 혼잡도에 근거하게 하는 규칙이 없다')
         for fb in feedback_lines(p):
             flagged = re.search(r"에 '(.+?)'이\(가\) 들어 있어 반려됨", fb)
             stray = [w for w in forbidden if w in fb and not (flagged and w == flagged.group(1))]
@@ -248,7 +285,12 @@ for now in NOWS:
     check(all(set(p) == {'place', 'from', 'to', 'reason'} for p in r.out['picks']) and all(set(a) == {'place', 'from', 'to'} for a in r.out['avoid']), f'{tag} picks/avoid 항목의 키가 다르다')
     check(set(r.out['stats']) == STATS_KEYS and r.out['stats']['version'] == EXPECTED_VERSION and r.out['stats']['previous'] == [], f'{tag} 새 stats의 형식이나 버전이 다르다')
     check(ns['validate']({k: r.out[k] for k in ('headline', 'picks', 'avoid', 'tip')}) == [], f'{tag} 규칙 문장이 validate를 통과하지 못했다')
+    rule_texts = [r.out['headline'], r.out['tip'], *[p['reason'] for p in r.out['picks']]]
+    check(all(not describe_hits(ns, t) for t in rule_texts), f'{tag} 규칙 문장에 장소 묘사나 분류명이 들어 있다: {[(t, describe_hits(ns, t)) for t in rule_texts if describe_hits(ns, t)]}')
     check(r.out['date'] == now.strftime('%Y-%m-%d') and r.out['generatedAt'] == now.strftime('%Y-%m-%d %H:%M'), f'{tag} date/generatedAt이 고정 시각과 다르다')
+
+    check(ns['LABEL'] == types_labels() and set(ns['cats'].values()) <= set(ns['LABEL']) and set(ns['cats'].values()) == set(ns['INTERNAL']),
+          f"{tag} CATEGORY_LABEL 읽기나 INTERNAL(서울시 분류명 5개)이 places.json, types.ts와 다르다: {ns['LABEL']} / {sorted(set(ns['cats'].values()))}")
 
     # B. 정상 응답 1건: 첫 시도 통과
     r = run(now, snap, [lambda ns: good_draft(ns)])
@@ -258,7 +300,12 @@ for now in NOWS:
     raw_line = next((x for x in r.log.split('\n') if x.startswith('  raw:')), '')
     check(raw_line.startswith('  raw: {') and len(raw_line) <= len('  raw: ') + 400, f'{tag} 모델 응답 원문 로그 줄이 없거나 400자를 넘는다')
     first = r.ns['calm'][0]
-    check(f"- {first['place']} ({r.ns['cats'].get(first['place'], '')}): {first['from']}시부터 {first['to']}시 전까지" in r.prompts[0], f'{tag} 프롬프트에 첫 여유 후보 줄이 없다')
+    labels = types_labels()
+    check(f"- {first['place']} ({labels[r.ns['cats'][first['place']]]}): {first['from']}시부터 {first['to']}시 전까지" in r.prompts[0], f'{tag} 프롬프트에 첫 여유 후보 줄이 없다(괄호 안은 CATEGORY_LABEL의 이름이어야 한다)')
+    cand_lines = [x for x in r.prompts[0].split('\n') if re.search(r': \d+시부터 \d+시 전까지$', x)]
+    check(len(cand_lines) == min(len(r.ns['calm']), 12) + min(len(r.ns['busy']), 6), f'{tag} 프롬프트의 후보 줄 수가 다르다: {len(cand_lines)}')
+    raw_only = [c for c in set(r.ns['cats'].values()) if c != labels[c]]  # 분류명과 앱 이름이 다른 것(인구밀집지역, 발달상권, 고궁·문화유산)
+    check(raw_only and not [x for x in cand_lines for c in raw_only if f'({c})' in x], f'{tag} 프롬프트의 후보 줄에 서울시 분류명이 남아 있다')
     check_prompt_and_feedback(f'{tag} 정상', r)
 
     # C. 후보 밖 선택 1건(여유가 아닌 칸이 든 pick, 여유 구간을 avoid로 씀) 뒤에 정상 응답
@@ -290,7 +337,7 @@ for now in NOWS:
     def with_forbidden(ns):
         d = good_draft(ns)
         d['tip'] = '조용하게 쉬어 가기 좋아요.'
-        d['picks'][0]['reason'] = '차분히 둘러보기 좋아요.'
+        d['picks'][0]['reason'] = '예측 혼잡도가 낮고 차분해요.'
         return d
     r = run(now, snap, [with_forbidden, lambda ns: good_draft(ns)])
     s = (r.out or {}).get('stats', {})
@@ -298,6 +345,72 @@ for now in NOWS:
     fb = feedback_lines(r.prompts[1]) if len(r.prompts) > 1 else []
     check(any("'조용'" in x for x in fb) and any("'차분'" in x for x in fb) and all('금지' not in x for x in fb), f'{tag} 금지어 사유 문장이 다르다: {fb}')
     check_prompt_and_feedback(f'{tag} 금지어', r)
+
+    # D2. 장소 묘사와 분류명이 든 응답 1건 뒤에 정상 응답(라이브 점검에서 나온 '탁 트인 공원에서 천천히 산책' 유형)
+    def with_description(ns):
+        d = good_draft(ns)
+        d['picks'][0]['reason'] = '예측으로는 공원에서 천천히 산책하기 좋아요.'
+        d['headline'] = '인구밀집지역은 지금 여유로워요.'
+        return d
+    r = run(now, snap, [with_description, lambda ns: good_draft(ns)])
+    s = (r.out or {}).get('stats', {})
+    want_reasons = {"pickN reason 분류명 '공원'": 1, "pickN reason 장소 묘사 '산책'": 1, "headline 분류명 '인구밀집지역'": 1}  # '공원'은 서울시 분류명이기도 해서 분류명으로 센다
+    check(r.out is not None and r.out['source'] == 'ai' and r.out['attemptsUsed'] == 2 and s.get('reasons') == want_reasons, f"{tag} 묘사 문장 반려의 stats가 다르다: {s.get('reasons')}")
+    fb = feedback_lines(r.prompts[1]) if len(r.prompts) > 1 else []
+    check(sum("에 '공원'이(가) 들어 있어 반려됨" in x and x.startswith('pick1 reason') for x in fb) == 1 and any(x.startswith('headline에 ') and "'인구밀집지역'" in x for x in fb)
+          and all('예측 혼잡도만 근거로' in x for x in fb), f'{tag} 묘사 반려 사유 문장이 다르다: {fb}')
+    check_prompt_and_feedback(f'{tag} 묘사', r)
+
+    # D3. 장소 이름 속 낱말은 예외, 그 밖의 묘사는 이름을 불러도 반려
+    named = [n for n in ns['table'] if any(w in n for w in ns['DESCRIPTIVE']) and not re.search(r'\d', n) and len(n) <= 12]
+    check(len(named) >= 3, f'{tag} 이름에 묘사 낱말이 든 장소가 3곳 미만이라 예외를 시험할 수 없다: {named}')
+    for n in named[:3]:
+        check(text_reasons(ns, f'{n}은 계속 여유예요.') == [], f'{tag} 이름 속 낱말이 예외가 되지 않았다: {n} -> {text_reasons(ns, f"{n}은 계속 여유예요.")}')
+    if named:
+        n = named[0]
+        check(any(x.startswith("x 장소 묘사 '") for x in text_reasons(ns, f'{n}은 탁 트인 곳이라 걷기 좋아요.')), f'{tag} 이름 옆의 다른 묘사가 반려되지 않았다: {n}')
+        part = next((w for w in ns['DESCRIPTIVE'] if w in n), None)
+        check(any(x.endswith(f"'{part}'") for x in text_reasons(ns, f'{part}에서 여유로워요.')), f'{tag} 이름 없이 낱말만 쓴 문장이 반려되지 않았다: {part}')
+    check(all(x in text_reasons(ns, '탁 트인 공원에서 천천히 산책하기 좋아요.') for x in ("x 분류명 '공원'", "x 장소 묘사 '산책'", "x 장소 묘사 '탁 트'", "x 장소 묘사 '트인'")),
+          f'{tag} 고척돔 사례 문장이 반려되지 않았다: {text_reasons(ns, "탁 트인 공원에서 천천히 산책하기 좋아요.")}')
+
+    # D4. 서울시 분류명 5개는 어느 것이든 반려(이름 속 조각이 가려 주지 않는다)
+    for w in ns['INTERNAL']:
+        got = text_reasons(ns, f'{w}이라 여유로워요.')
+        check(any(x in (f"x 분류명 '{w}'",) for x in got), f'{tag} 분류명 {w}이 반려되지 않았다: {got}')
+
+    # D5. 활동과 적합성 문장은 낱말 목록 밖의 표현이어도 예측 근거가 없어 반려, 예측 혼잡도에 근거한 문장은 통과
+    for text, word in ACTIVITY_TEXTS:
+        d = good_draft(ns)
+        d['picks'][0]['reason'] = text
+        got = ns['validate'](d)
+        check(got == [x for x in got if x.startswith('pick1 reason ')] and 'pick1 reason 예측 근거 없음' in got, f'{tag} 활동 문장이 예측 근거 없음으로 반려되지 않았다: {text} -> {got}')
+        check(not any(w in text for w in ('예측', '혼잡', '붐비', '붐벼')), f'{tag} 시험 문장에 예측 근거 낱말이 들어 있다: {text}')
+        if word:
+            check(f"x 장소 묘사 '{word}'" in text_reasons(ns, text), f"{tag} 낱말 목록이 '{word}'로 거르지 못한다: {text} -> {text_reasons(ns, text)}")
+    for text in GROUNDED_TEXTS:
+        d = good_draft(ns)
+        d['picks'][0]['reason'] = text
+        check(ns['validate'](d) == [], f'{tag} 예측 혼잡도에 근거한 문장이 반려되었다: {text} -> {ns["validate"](d)}')
+    d = good_draft(ns)
+    d['picks'][0]['reason'] = ''
+    check(ns['validate'](d) == ['pick1 reason 없음'], f"{tag} 빈 reason이 한 가지 사유로 세어지지 않았다: {ns['validate'](d)}")
+
+    def with_activity(ns):
+        d = good_draft(ns)
+        d['picks'][0]['reason'] = '여유롭게 거닐기 좋은 곳이에요.'
+        d['picks'][1]['reason'] = '넓은 곳에서 편하게 쉬어요.'
+        return d
+    r = run(now, snap, [with_activity, lambda ns: good_draft(ns)])
+    s = (r.out or {}).get('stats', {})
+    want_reasons = {"pickN reason 장소 묘사 '거닐'": 1, "pickN reason 장소 묘사 '좋은 곳'": 1, 'pickN reason 예측 근거 없음': 2}
+    check(r.out is not None and r.out['source'] == 'ai' and r.out['attemptsUsed'] == 2 and s.get('reasons') == want_reasons, f"{tag} 활동 문장 반려의 stats가 다르다: {s.get('reasons')}")
+    fb = feedback_lines(r.prompts[1]) if len(r.prompts) > 1 else []
+    check(any(x.startswith('pick1 reason에 ') and "'예측', '혼잡', '붐비', '붐벼' 중 하나가 없어 반려됨" in x for x in fb)
+          and any(x.startswith('pick2 reason에 ') and "'예측', '혼잡', '붐비', '붐벼' 중 하나가 없어 반려됨" in x for x in fb)
+          and all('예측 혼잡도만 근거로' in x for x in fb), f'{tag} 예측 근거 반려 사유 문장이 다르다: {fb}')
+    check(all("'예측', '혼잡', '붐비', '붐벼' 중 하나가 반드시 들어가야" in p for p in r.prompts), f'{tag} 프롬프트에 reason 구조 규칙이 없다')
+    check_prompt_and_feedback(f'{tag} 활동', r)
 
     # E. 이름 불일치 응답 3번(규칙 문장으로 대체) + 모든 사유 집계
     def wrong_name(ns):
@@ -390,6 +503,24 @@ check(reasons == ['pick1 자료와 불일치'] and f"{hole_name} " in t.ns['DETA
 r = run(now13, snap13, [lambda ns: 'x' * 600, lambda ns: good_draft(ns)])
 s = (r.out or {}).get('stats', {})
 check(('  raw: ' + 'x' * 400) in r.log.split('\n') and (s.get('apiErrors'), s.get('aiAttempts'), s.get('aiPasses')) == (1, 1, 1) and r.out['attemptsUsed'] == 2, f'JSON이 아닌 응답의 로그나 stats가 다르다: {s}')
+
+# M. 여유 구간이 하나도 없는 날: AI를 부르지 않고, '보통 이하' 규칙 문장도 같은 기준(형식, 금지 표현, 장소 묘사, 분류명)을 지킨다
+mild = copy.deepcopy(snap13)
+for ps in mild['places'].values():
+    if ps.get('live'):
+        ps['live']['level'] = '보통'
+    for f in ps.get('fcst') or []:
+        f['level'] = '보통'
+rm = run(now13, mild)
+check(rm.out is not None and rm.ns['calm'] == [] and rm.out['source'] == 'rule' and rm.out['picks'] and rm.prompts == [] and '드물어요' in rm.out['headline'],
+      f'여유 구간이 없는 날의 규칙 문장 경로가 다르다: {rm.code} {rm.log[-200:]}')
+if rm.out:
+    texts = [('headline', rm.out['headline']), ('tip', rm.out['tip'])] + [(f'pick{i + 1} reason', p['reason']) for i, p in enumerate(rm.out['picks'])]
+    problems = []
+    for label, t in texts:
+        rm.ns['check_text'](label, t, problems)
+        problems += [f'{label} {w}' for w in describe_hits(rm.ns, t)]
+    check(not problems, f'여유 구간이 없는 날의 규칙 문장이 기준을 어겼다: {problems}')
 
 # L. 모의 응답이 남거나 모자라지 않았고, 장소 이름에 금지어가 없다(사유 문장에 섞일 수 없다)
 check(r.queue_left == 0 and r.aborted is None, '모의 응답 수가 맞지 않는다')

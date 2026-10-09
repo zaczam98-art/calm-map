@@ -11,7 +11,7 @@
 |---|---|---|
 | 감각부하 지도 | 서울 121곳의 지금 지수(혼잡 0.6 + 주변 소음 0.4)와 12시간 예측을 3단계 농담으로 보여 줍니다. 공사·집회·사고 등 통제가 등록된 곳은 테두리로 표시합니다. 예측값으로 채운 시간대는 "예측 지수"로 표시하고, 관측값을 쓴 지금 칸은 "지금(관측 HH:MM)"으로 표시합니다. | `src/lib/index.ts`, `src/components/MapView.tsx` |
 | 지도 시간 슬라이더 | 지도 아래 슬라이더로 지금부터 예측이 있는 최대 12시간을 1시간 단위로 고르면(라벨 "지금", "오늘 15시", "내일 8시") 마커 색, 범례 개수, 마커 말풍선이 그 시각 기준으로 바뀝니다. 재생 단추는 1초마다 한 칸씩 나아가다가 끝에서 멈춥니다. 그 시각의 예측이 없는 장소는 값을 지어내지 않고 "자료 없음"으로 둡니다. 서울시가 내일 통제 자료를 주지 않으므로 공사·통제 테두리는 시각을 옮겨도 지금 기준입니다. 예측이 한 칸뿐이면 슬라이더를 그리지 않습니다. | `src/components/TimeSlider.tsx`, `src/components/MapView.tsx` |
-| 장소 시트와 시각 선택 | 장소를 열면 12시간 막대가 나옵니다. 막대를 누르거나 "이전 시간", "다음 시간" 단추로 시각을 고르면 시트 머리의 "9시 기준", 지수, 요인 카드의 비 예보, 미리 보는 카드의 단계가 그 시각 기준으로 바뀝니다. 지도 슬라이더와 같은 값(`selectedHour`)을 쓰므로 장소를 바꿔도 고른 시각이 유지됩니다. 고른 시각의 예측이 그 장소에 없으면 지금 기준으로 보여 주면서 그 사실을 문장으로 알립니다. 모바일에서는 시트가 슬라이더를 가리므로 시트의 막대와 단추로 시각을 바꿉니다. | `src/components/PlaceDetail.tsx`, `src/components/HourChart.tsx` |
+| 장소 시트와 시각 선택 | 장소를 열면 12시간 막대가 나옵니다. 막대를 누르거나 "이전 시간", "다음 시간" 단추로 시각을 고르면 시트 머리의 "9시 기준", 지수, 요인 카드의 비 예보, 미리 보는 카드의 단계가 그 시각 기준으로 바뀝니다. 지도 슬라이더와 같은 값(`selectedHour`)을 쓰므로 장소를 바꿔도 고른 시각이 유지됩니다. 고른 시각의 예측이 그 장소에 없으면 지금 기준으로 보여 주면서 그 사실을 문장으로 알립니다. 모바일에서는 시트가 슬라이더를 가리므로 시트의 막대와 단추로 시각을 바꿉니다. 키보드에서는 Tab으로 시간 막대에 한 번에 들어가 방향키(←, →)와 Home, End로 막대를 옮기고 Enter 또는 Space로 시각을 고릅니다. | `src/components/PlaceDetail.tsx`, `src/components/HourChart.tsx` |
 | 지수가 만들어진 과정 | 선택한 시각의 지수를 "혼잡만 보면", "소음을 더하면", "소리를 더하면", "기록 보정", "지수" 순서로 막대와 점수 변화로 보여 주고, 근거(혼잡 단계, 평소 소음 dB, 소리 표본 수, 곱한 민감도)를 문장으로 덧붙입니다. 값은 모두 지수 계산(`hourScores`)이 남긴 구성 요소(`parts`)에서 가져옵니다. | `src/components/WhyIndex.tsx` |
 | 우리 아이 맞춤 | 민감 요인 7개(소리 종류 5개, 혼잡, 큰 소리. 각 3단계)로 지수를 다시 계산합니다. 이름과 진단명은 받지 않고 기기에만 저장합니다. | `src/lib/profile.ts` |
 | 맞춤 전후 | 맞춤을 켜면 장소 시트에 "맞춤 전 N점 → 후 M점"을 보여 주고, 단계가 바뀌면 그 변화도 적습니다. 지수가 같으면 같다고 알리고, 민감도를 아직 고르지 않았으면 우리 아이 탭으로 이동하는 단추를 둡니다. | `src/components/PlaceDetail.tsx` |
@@ -25,7 +25,7 @@
 | 카드 읽어 주기와 한 단계씩 보기 | 브라우저의 읽기 기능(`speechSynthesis`)으로 카드를 읽어 줍니다. 한국어 목소리가 있는 기기에서만 읽기 단추가 보입니다. "아이용 큰 글씨"로 글자를 키울 수 있고, "한 단계씩 보기"는 전체 화면에 큰 아이콘과 문장 하나만 보여 주며 [이전], [다음], [닫기] 단추, 진행 점, 마지막 "힘들 때" 화면이 있습니다. "이 문장 듣기"와 "넘길 때 읽어 주기"(기본 꺼짐)로 그 화면의 문장만 읽을 수 있고, Esc나 닫기로 나옵니다. 화면 상태는 저장하지 않습니다. | `src/components/CardView.tsx`, `src/styles/card.css` |
 | 공유 이미지 | 장소 시트의 "이미지로 공유"가 1080×1350 PNG를 기기 안에서 그립니다. 장소 이름, 권고 문장, 12시간 막대(고른 시각 강조), "서울시 MM/DD HH:MM 기준", "예측이며 확정이 아니에요", 장소 주소가 들어갑니다. 기기가 파일 공유(Web Share)를 지원하면 공유 시트를 열고, 아니면 PNG 파일로 저장합니다. 예시(데모) 자료로 열린 화면에서는 서울시 자료가 아니므로 이 단추를 숨깁니다. 맞춤을 켜서 지수가 실제로 달라졌을 때만 "맞춤 반영" 표식이 붙고, 아이 프로필의 값은 이미지에 담지 않습니다. 글꼴은 기기의 기본 한글 sans-serif입니다. | `src/lib/shareCard.ts`, `src/components/ShareImage.tsx` |
 | 링크 미리보기와 설치 | 링크를 붙여 넣을 때 보이는 미리보기 이미지(`og.png`), 홈 화면 설치 정보(`manifest.webmanifest`)와 아이콘을 갖췄습니다. 이미지는 `scripts/make_og.mjs`로 다시 만듭니다. | `public/`, `scripts/make_og.mjs` |
-| 오늘의 브리핑 | 규칙이 여유 구간 후보를 계산하고, Gemini가 그중에서 골라 문장을 쓰고, 규칙이 자료와 다시 대조합니다. 통과하지 못하면 규칙 기반 문장을 씁니다. | `scripts/gen_briefing.py`, `src/components/Briefing.tsx` |
+| 오늘의 브리핑 | 규칙이 여유 구간 후보를 계산하고, Gemini가 그중에서 골라 문장을 쓰고, 규칙이 자료와 다시 대조합니다. 통과하지 못하면 규칙 기반 문장을 씁니다. 검사는 형식과 금지 표현 외에 장소가 어떤 곳인지 묘사하는 낱말(공원, 산책, 거리 등)과 서울시 분류명(인구밀집지역, 발달상권 등)이 문장에 들어 있으면 반려하고, 장소 이름 속 낱말은 허용합니다. 낱말 목록은 같은 뜻의 다른 낱말(거닐기 좋은 곳, 쉬어요 등)을 다 막지 못하므로, 각 추천 이유(reason)에는 '예측', '혼잡', '붐비', '붐벼' 중 하나가 반드시 들어 있어야 통과합니다. 후보 장소 옆 괄호에는 서울시 분류명 대신 앱 이름(역·번화가, 상권, 관광특구, 궁궐·유적, 공원)을 씁니다. | `scripts/gen_briefing.py`, `src/components/Briefing.tsx` |
 | 요일별 패턴 | 수집한 관측값을 요일과 시간대별로 평균해 보여 줍니다(표본 수 표시). | `scripts/derive_stats.py`, `src/components/WeekPattern.tsx` |
 | 오늘 이 장소 주변 | 혼잡도 말고도 부담이 될 수 있는 요인(공사·집회 통제, 문화행사, 비 예보, 자외선, 미세먼지, 도로 정체)을 서울시 자료에서 그대로 옮겨 보여 줍니다. | `scripts/collect_seoul.py`, `src/components/Factors.tsx` |
 | 이 동네의 소리 크기 | 장소 가까이 있는 서울시 S-DoT 센서가 잰 시간대별 소음(평균과 큰 소리 수준)을 요일별로 보여 줍니다. 값이 변하지 않는 센서는 뺍니다. 지수에는 소음 점수(기본 지수의 40%)로 들어가며, 센서가 없거나 그 시간대 자료가 없으면 혼잡도만 씁니다. | `scripts/collect_sdot.py`, `src/components/NoiseCard.tsx` |
@@ -73,6 +73,14 @@ npm run build
 
 `data-mirror/`는 같은 출처에서 받는 사본입니다. 앱은 `raw.githubusercontent.com` 요청이 실패한 경우(네트워크 오류, 4xx/5xx, 8초 초과, JSON이 아닌 응답)에만 이 사본을 한 번 읽습니다.
 
+### 서비스 워커 (오프라인 앱 화면)
+
+`public/sw.js`가 앱 화면 파일을 기기에 캐시해서, 연결이 없어도 앱이 열리고 `자료 없음` 또는 `데모 데이터` 배너가 보입니다. `src/sw-register.ts`가 배포본(production)에서만, 페이지 load 뒤에 `BASE_URL/sw.js`를 등록합니다. 새 버전은 안내 없이 설치되어 다음 방문부터 쓰입니다.
+
+- 빌드 뒤 `node scripts/gen_precache.mjs dist`(`pages.yml`에 단계가 있습니다)가 `dist/sw.js`의 자리표시를 채웁니다. 미리 받는 목록은 `index.html`, `manifest.webmanifest`, 아이콘, 해시가 붙은 `assets/*`(필수)와 `data/snapshot-demo.json`, `data/cards.json`, `data/card_modules.json`, `samples/*.wav`(받지 못해도 설치를 막지 않음)입니다. 캐시 이름에는 이 목록의 이름과 내용에서 만든 빌드 해시가 들어가고, 새 워커가 켜질 때 옛 캐시를 지웁니다. 로컬에서 `npm run build`만 하면 자리표시가 비어 있어 미리 받기 없이 방문한 파일만 캐시하므로, 오프라인 시험은 `gen_precache`까지 실행한 `dist`로 합니다.
+- 해시가 붙은 `assets/*`와 `samples/*`는 캐시를 먼저 쓰고, `index.html`과 `manifest.webmanifest`, `data/*`는 네트워크를 먼저 받아 보고 안 될 때 캐시를 씁니다.
+- 지도 타일, `raw.githubusercontent.com`, `data-mirror/`, TF Hub(Kaggle, Google Cloud Storage) 요청은 서비스 워커가 응답하지 않고 브라우저가 그대로 처리합니다. 소리 분류 모델은 앱이 이미 IndexedDB에 저장합니다.
+
 ## 투표 기간 운영 규칙
 
 투표 기간에는 배포를 하루 한 번 이하로 묶어서 하고, 긴급 수정만 예외로 합니다. main에 push할 때마다 `pages.yml`이 돌아 해시가 붙은 JS 파일 이름이 바뀌는데, `index.html`은 최대 10분 동안 캐시되어 이전 `index.html`을 가진 방문자가 삭제된 JS를 요청할 수 있기 때문입니다. 투표를 시작하기 전에는 게시 주소(https://zaczam98-art.github.io/calm-map/)에서 부하 시험을 한 번 하고, 첫 화면이 뜨는 시간과 실패 건수를 "측정 결과"에 적습니다. 수집 정체는 `watchdog.yml`이 3시간마다 `snapshot.json`의 `updatedAt`을 확인해서 180분을 넘으면 `[watchdog] 수집 정체: 마지막 갱신 …` 이슈를 한 건 여는 방식으로 알립니다. 투표 기간에는 하루 한 번 저장소 Issues에서 열린 watchdog 이슈가 있는지 확인하고, 있으면 Actions의 `collect-seoul-citydata`를 Run workflow로 실행합니다(정상으로 돌아오면 다음 점검에서 이슈가 자동으로 닫힙니다). 메일 알림을 받으려면 저장소의 Watch 설정에서 Issues를 켜야 하고, Issues 기능이 꺼져 있으면 watchdog이 실패합니다. 배포할 때마다 `data` 브랜치의 `snapshot.json`, `noise.json`, `pattern.json`, `metrics.json`, `briefing.json`이 `data-mirror/`에 복사되며, 앱은 raw.githubusercontent.com 요청이 실패한 경우에만 이 사본을 한 번 읽습니다. 사본은 마지막 배포 시점의 자료라서 오래될 수 있고, 그때도 화면의 갱신 시각 경고는 그대로 작동합니다.
@@ -101,7 +109,7 @@ node .tmp/eval_sound.cjs <ESC-50 audio 폴더> <meta/esc50.csv> <결과.json>
 | `scripts/rule_test.ts` | 카드 규칙 검사기(`shared/cardRules.ts`)가 통과 사례와 금지어 사례를 가려내는지 | `node scripts/rule_test.ts` |
 | `scripts/assemble_check.ts` | 카드 366장에 민감 태그 부분집합 64가지와 시간대 요인 4가지 조합을 조립해 검사 통과율, 서로 다른 결과 수, 5단계 초과 건수를 셉니다. | 파일 머리의 esbuild 명령으로 묶은 뒤 `node` |
 | `scripts/sound_score_test.ts` | 소리 점수 S의 속성 시험 10개(0~100 범위, 태그 값과 민감도가 커져도 줄지 않음, 태그가 모두 0이면 0, 표본이 없으면 null 등)와 수정 전 식과의 비교 | `node scripts/sound_score_test.ts` |
-| `scripts/briefing_check.py` | 브리핑 후보 계산, 반려 사유, 재시도 프롬프트, 통계 누적을 시계 고정과 Gemini 모의 응답으로 확인 | `python scripts/briefing_check.py [snapshot.json]` |
+| `scripts/briefing_check.py` | 브리핑 후보 계산, 반려 사유, 재시도 프롬프트, 통계 누적, 장소 묘사 낱말과 서울시 분류명 반려, 활동과 적합성 문장을 거르는 reason 구조 검사를 시계 고정과 Gemini 모의 응답으로 확인 | `python scripts/briefing_check.py [snapshot.json]` |
 | `scripts/metrics_check.py` | 예측 일치율 집계(`derive_stats.py`)와 이력 적재(`collect_seoul.py`)를 따로 짠 재계산, 손으로 센 기대값, 모의 응답과 대조 | `python scripts/metrics_check.py history.json metrics.json` |
 
 화면 확인은 `npm run build` 뒤 `npm run preview`로 띄워 헤드리스 브라우저로 캡처하는 방식으로 했고, 그 캡처 스크립트는 저장소에 넣지 않았습니다.

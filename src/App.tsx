@@ -167,6 +167,8 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [briefingCollapsed, setBriefingCollapsedState] = useState(initialBriefingCollapsed)
   const [introOpen, setIntroOpen] = useState(shouldShowIntro)
+  // 공유 링크(#/place/이름)로 처음 들어오면 장소 시트를 먼저 보여 주고, 온보딩은 그 시트를 닫거나 다른 화면으로 옮긴 뒤에 띄운다
+  const [introHold, setIntroHold] = useState(initialLoc.selected !== null)
   // 첫 방문 안내 시트가 뜨는 방문에서는 같은 내용의 막대를 띄우지 않는다(시트를 닫을 때 TIP_KEY도 기록한다)
   const [tipOpen, setTipOpen] = useState(() => lsGet(TIP_KEY) === null && !introOpen)
   const [tileErr, setTileErr] = useState(0) // 0 없음, 1 안내 중, 2 닫음
@@ -186,6 +188,7 @@ export default function App() {
 
   const navigate = useCallback((v: View, sel: string | null, replace = false) => {
     pendingPlace.current = null
+    if (!sel) setIntroHold(false)
     setView(v)
     setSelected(sel)
     const hash = urlFor(v, sel)
@@ -223,6 +226,7 @@ export default function App() {
         return
       }
       pendingPlace.current = null
+      if (!loc.selected) setIntroHold(false)
       setView(loc.view)
       setSelected(loc.selected)
     }
@@ -333,9 +337,20 @@ export default function App() {
   const chip = personalOn ? appliedParts(profile) : null
   const chipLabel = chip ? chip.lead + chip.rest : ''
 
+  // 첫 방문 안내 시트가 떠 있는 동안 뒤 화면은 inert로 막고(Tab, 클릭, 스크린리더 탐색 모두), 안내를 닫으면 inert를 푼 뒤 포커스를 지도로 보낸다
+  const introShown = introOpen && !introHold
+  const introWasShown = useRef(introShown)
+  useEffect(() => {
+    if (introWasShown.current && !introShown) {
+      const next = viewRef.current === 'map' ? document.getElementById('map') : document.querySelector<HTMLElement>('.nav button[aria-current="page"]')
+      next?.focus()
+    }
+    introWasShown.current = introShown
+  }, [introShown])
+
   return (
     <div className="app">
-      <header className={personalOn ? 'topbar has-chip' : 'topbar'}>
+      <header className={personalOn ? 'topbar has-chip' : 'topbar'} inert={introShown}>
         <h1>무던한 지도</h1>
         {loadState === 'loading' && <span className="badge">자료 불러오는 중…</span>}
         {loadState === 'demo' && <span className="badge demo">데모 데이터</span>}
@@ -372,29 +387,29 @@ export default function App() {
         )}
       </header>
       {view === 'map' && tipOpen && !selected && (
-        <div className="tip">
+        <div className="tip" inert={introShown}>
           <span>연한 점일수록 무던해요. 점을 누르면 시간대별 지수가 나와요</span>
           <button onClick={closeTip}>닫기</button>
         </div>
       )}
       {showData && (loadState === 'demo' || loadState === 'fail') && (
-        <div className="banner warn" role="status">
+        <div className="banner warn" role="status" inert={introShown}>
           <span>{snap ? '서울시 자료를 불러오지 못해 예시 자료를 보여 드려요' : '서울시 자료를 불러오지 못했어요'}</span>
           <button onClick={() => refresh(false)}>다시 시도</button>
         </div>
       )}
       {showData && tooOld && (
-        <div className="banner warn" role="status">
+        <div className="banner warn" role="status" inert={introShown}>
           <span>자료가 오래돼 예측을 보여 드리지 못해요 ({stampLabel})</span>
         </div>
       )}
       {view === 'map' && tileErr === 1 && (
-        <div className="banner warn" role="status">
+        <div className="banner warn" role="status" inert={introShown}>
           <span>지도 이미지를 불러오지 못했어요. 연결을 확인해 주세요</span>
           <button onClick={() => setTileErr(2)}>닫기</button>
         </div>
       )}
-      <main className="main" ref={mainRef}>
+      <main className="main" ref={mainRef} inert={introShown}>
         {/* 지도는 탭을 옮겨도 닫지 않고 숨기기만 해서 확대와 위치가 유지된다 */}
         <div
           hidden={view !== 'map'}
@@ -415,21 +430,7 @@ export default function App() {
           <button className="skip" onClick={() => go('recommend')}>
             지도를 건너뛰고 장소 목록 보기
           </button>
-          <MapView
-            places={PLACES}
-            snap={viewSnap}
-            sound={sound}
-            profile={profile}
-            offsets={offsets}
-            nowKey={nowKey}
-            noise={noise}
-            onSelect={openPlace}
-            selected={selected}
-            active={view === 'map'}
-            onTileError={onTileError}
-            selectedHour={selectedHour}
-            onSelectHour={setSelectedHour}
-          />
+          {/* 화면에서 지도 왼쪽 위에 놓이는 브리핑을 DOM에서도 지도보다 앞에 두어 Tab 순서가 화면 순서와 같다 */}
           {snap?.source === 'seoul' && !tooOld && (
             <Briefing
               briefing={briefing}
@@ -446,6 +447,21 @@ export default function App() {
               nowKey={nowKey}
             />
           )}
+          <MapView
+            places={PLACES}
+            snap={viewSnap}
+            sound={sound}
+            profile={profile}
+            offsets={offsets}
+            nowKey={nowKey}
+            noise={noise}
+            onSelect={openPlace}
+            selected={selected}
+            active={view === 'map'}
+            onTileError={onTileError}
+            selectedHour={selectedHour}
+            onSelectHour={setSelectedHour}
+          />
         </div>
         {showSheet && (
           <PlaceDetail
@@ -517,7 +533,7 @@ export default function App() {
           </LazyBoundary>
         )}
       </main>
-      <nav className="nav" aria-label="주 메뉴">
+      <nav className="nav" aria-label="주 메뉴" inert={introShown}>
         {NAV.map(([v, label]) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => go(v)} aria-label={label} aria-current={view === v ? 'page' : undefined}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -527,7 +543,7 @@ export default function App() {
           </button>
         ))}
       </nav>
-      {introOpen && (
+      {introOpen && !introHold && (
         <Onboarding
           places={PLACES}
           snap={viewSnap}
