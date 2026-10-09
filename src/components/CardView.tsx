@@ -156,15 +156,42 @@ export default function CardView({ card, note, place, focusToken }: { card: Card
     return () => synth.cancel()
   }, [step, pageText, autoRead, hasVoice])
 
+  // 한 단계씩 보기를 열 때 같은 주소로 기록을 한 칸 쌓아, 브라우저 뒤로 가기가 장소 시트가 아니라 단계 보기만 닫게 한다
+  const stepPushed = useRef(false)
+  useEffect(() => {
+    const onPop = () => {
+      if (!stepPushed.current) return
+      stepPushed.current = false
+      setStep(null)
+      opener.current?.focus()
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
   const openStep = () => {
     token.current++
     if (canSpeak) window.speechSynthesis.cancel()
     setReading(null)
     setStep(0)
+    try {
+      history.pushState(history.state, '')
+      stepPushed.current = true
+    } catch {
+      /* 기록을 쌓을 수 없는 환경에서는 닫기 단추와 Esc로만 닫는다 */
+    }
   }
   const closeStep = () => {
     setStep(null)
     opener.current?.focus()
+    if (stepPushed.current) {
+      stepPushed.current = false
+      try {
+        history.back() // 쌓아 둔 기록 한 칸을 되돌려, 닫은 뒤의 뒤로 가기가 한 단계 덜 걸리지 않게 한다
+      } catch {
+        /* 되돌릴 수 없어도 화면은 이미 닫혔다 */
+      }
+    }
   }
   const replay = () => {
     if (!canSpeak) return

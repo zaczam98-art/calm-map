@@ -186,7 +186,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
                 <tr><th>예측 시차</th><th>비교 건수</th><th>단계 일치</th><th>한 단계 이내</th><th>유지 가정</th></tr>
               </thead>
               <tbody>
-                {LEADS.map((k) => {
+                {LEADS.filter((k) => (metrics.byLead[k]?.n ?? 0) > 0).map((k) => {
                   const m = metrics.byLead[k] ?? NO_PAIRS
                   return (
                     <tr key={k}><th>{k}시간 전</th><td>{m.n}</td><td>{pct(m.exact, m.n)}</td><td>{pct(m.within1, m.n)}</td><td>{pct(m.persistExact, m.persistN)}</td></tr>

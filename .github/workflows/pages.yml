@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # data-mirror 사본은 배포 시점의 data 브랜치 자료로 굳는다. raw 주소가 막힌 망의 사용자가 12시간 넘은 사본을 보지 않도록 6시간마다 다시 배포한다.
+  schedule:
+    - cron: '40 */6 * * *'
 
 permissions:
   contents: read

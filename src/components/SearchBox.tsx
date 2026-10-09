@@ -2,19 +2,10 @@ import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEve
 import { createPortal, flushSync } from 'react-dom'
 import type { Level3, Place } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
-import { choseong, matches } from '../lib/hangul'
+import { ALIASES, choseong, matches } from '../lib/hangul'
 import '../styles/map.css'
 
 const MAX = 5
-
-/** 이름에 괄호나 가운뎃점이 끼어 있어 그대로는 찾아지지 않는 부름말. 장소 이름의 글자에서 곧바로 나오는 것만 둔다. */
-const ALIASES: Record<string, string[]> = {
-  'DDP(동대문디자인플라자)': ['디디피'],
-  'DMC(디지털미디어시티)': ['디엠씨'],
-  '광장(전통)시장': ['광장시장'],
-  '신촌·이대역': ['신촌역'],
-  '총신대입구(이수)역': ['총신대입구역', '이수역'],
-}
 
 const flat = (s: string) => Array.from(s.normalize('NFC').replace(/\s+/g, ''))
 
@@ -70,6 +61,7 @@ export default function SearchBox({ places, levels, host, onPick, onFocus }: Pro
   const toggleRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const quiet = useRef(false) // true인 동안의 입력창 포커스는 목록을 펼치지 않는다
   const names = useMemo(() => places.map((p) => p.name), [places])
   const found = useMemo(() => (query.trim() ? searchPlaces(names, query) : null), [names, query])
 
@@ -91,10 +83,20 @@ export default function SearchBox({ places, levels, host, onPick, onFocus }: Pro
     inputRef.current?.focus()
   }
 
+  // 입력창으로 포커스를 돌리되 목록을 다시 펼치지는 않는다(돋보기 단추가 숨겨진 700px 이상 화면에서 포커스가 body로 사라지지 않게)
+  const focusInput = () => {
+    quiet.current = true
+    inputRef.current?.focus()
+    quiet.current = false
+  }
+  const returnFocus = () => (toggleRef.current?.offsetParent ? toggleRef.current.focus() : focusInput())
+
   const choose = (name: string) => {
     setQuery('')
     setOpen(false)
-    ;(document.activeElement as HTMLElement | null)?.blur() // 키보드를 내린다
+    // 좁은 화면에서는 키보드를 내리고, 입력창이 늘 보이는 화면에서는 시트가 닫힐 때 검색창으로 돌아오도록 입력창에 포커스를 둔다
+    if (toggleRef.current?.offsetParent) (document.activeElement as HTMLElement | null)?.blur()
+    else focusInput()
     onPick(name)
   }
 
@@ -102,7 +104,7 @@ export default function SearchBox({ places, levels, host, onPick, onFocus }: Pro
     if (e.key === 'Escape' && open) {
       e.stopPropagation() // 열린 장소 시트까지 닫히지 않게 한다
       setOpen(false)
-      if (toggleRef.current?.offsetParent) toggleRef.current.focus()
+      returnFocus()
     }
   }
 
@@ -128,7 +130,7 @@ export default function SearchBox({ places, levels, host, onPick, onFocus }: Pro
       inputRef.current?.focus()
     } else {
       setOpen(false)
-      if (toggleRef.current?.offsetParent) toggleRef.current.focus()
+      returnFocus()
     }
   }
 
@@ -167,14 +169,14 @@ export default function SearchBox({ places, levels, host, onPick, onFocus }: Pro
             autoCapitalize="off"
             spellCheck={false}
             aria-label="장소 이름 검색"
-            placeholder="장소 검색 (예: 홍대, ㅎㄷ)"
+            placeholder="장소 이름 검색 (예: 홍대, ㅎㄷ)"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
               setOpen(true)
             }}
             onFocus={() => {
-              setOpen(true)
+              if (!quiet.current) setOpen(true)
               onFocus?.()
             }}
             onKeyDown={(e) => {

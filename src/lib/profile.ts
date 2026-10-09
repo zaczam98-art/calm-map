@@ -11,10 +11,13 @@ export function defaultProfile(): ChildProfile {
   return { enabled: false, tags, crowd: 1, loud: 1 }
 }
 
-function read<T>(key: string, fallback: T): T {
+/** valid가 있으면 저장값이 그 모양이 아닐 때(null, 배열 자리에 객체 등) fallback을 돌려준다. */
+function read<T>(key: string, fallback: T, valid?: (v: unknown) => boolean): T {
   try {
     const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
+    if (!raw) return fallback
+    const v: unknown = JSON.parse(raw)
+    return valid && !valid(v) ? fallback : (v as T)
   } catch {
     return fallback
   }
@@ -47,7 +50,7 @@ export function hasSavedProfile(): boolean {
 }
 
 export function loadOffsets(): Record<string, number> {
-  return read<Record<string, number>>(KEY_OFFSET, {})
+  return read<Record<string, number>>(KEY_OFFSET, {}, (v) => typeof v === 'object' && v !== null && !Array.isArray(v))
 }
 
 export interface VisitLog {
@@ -58,7 +61,7 @@ export interface VisitLog {
 }
 
 export function loadLog(): VisitLog[] {
-  return read<VisitLog[]>(KEY_LOG, [])
+  return read<VisitLog[]>(KEY_LOG, [], (v) => Array.isArray(v) && v.every((l) => typeof l === 'object' && l !== null))
 }
 
 /** 기록 직전 상태. 방금 기록 취소(undoVisit)에 쓴다. */

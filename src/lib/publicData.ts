@@ -19,9 +19,12 @@ export function timeoutSignal(ms: number): AbortSignal | undefined {
   return c.signal
 }
 
-async function fetchJson<T>(url: string): Promise<T | null> {
+/** raw 주소는 이 시간 안에 응답이 없으면 같은 출처 사본으로 넘어간다(사본은 평소 0.3초 안에 받아져 8초를 기다릴 이유가 약하다) */
+const RAW_TIMEOUT_MS = 4000
+
+async function fetchJson<T>(url: string, ms = TIMEOUT_MS): Promise<T | null> {
   try {
-    const r = await fetch(url, { cache: 'no-store', signal: timeoutSignal(TIMEOUT_MS) })
+    const r = await fetch(url, { cache: 'no-store', signal: timeoutSignal(ms) })
     return r.ok ? ((await r.json()) as T) : null
   } catch {
     return null
@@ -29,13 +32,13 @@ async function fetchJson<T>(url: string): Promise<T | null> {
 }
 
 /**
- * raw 주소가 실패하면(네트워크 오류, 4xx/5xx, 8초 초과, 본문이 JSON이 아님) 한 번만 같은 출처의 Pages 사본(data-mirror/)으로 다시 받는다.
+ * raw 주소가 실패하면(네트워크 오류, 4xx/5xx, 4초 초과, 본문이 JSON이 아님) 한 번만 같은 출처의 Pages 사본(data-mirror/)으로 다시 받는다.
  * 사본은 마지막 배포 시점의 자료라서 묵을 수 있으므로 실패했을 때만 쓰고, 화면의 갱신 시각 경과 경고는 그대로 작동한다.
  */
 export async function loadPublicJson<T>(file: string): Promise<T | null> {
   const url = publicDataUrl(file)
   if (!url) return null
-  const live = await fetchJson<T>(url)
+  const live = await fetchJson<T>(url, RAW_TIMEOUT_MS)
   if (live) return live
   const mirror = await fetchJson<T>(`${import.meta.env.BASE_URL}data-mirror/${file}`)
   if (mirror) console.warn(`[calm-map] ${file}: raw 주소 실패, Pages 사본으로 대체`)

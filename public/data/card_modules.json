@@ -17,7 +17,7 @@
   "id": "step_crowd",
   "kind": "step",
   "tag": "crowd",
-  "text": "사람 소리가 시끄러우면 귀마개를 써요.",
+  "text": "사람 소리가 시끄러우면 헤드폰을 써요.",
   "icon": "headphone"
  },
  {
@@ -45,7 +45,7 @@
   "id": "step_music",
   "kind": "step",
   "tag": "music",
-  "text": "안내방송이 나오면 귀마개를 써요.",
+  "text": "안내방송이 나오면 헤드폰을 써요.",
   "icon": "headphone"
  },
  {
@@ -101,7 +101,7 @@
   "id": "step_loudHour",
   "kind": "step",
   "tag": "loudHour",
-  "text": "소리가 큰 시간이라 귀마개를 써요.",
+  "text": "소리가 큰 시간이라 헤드폰을 써요.",
   "icon": "headphone"
  },
  {

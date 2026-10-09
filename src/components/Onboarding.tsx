@@ -99,6 +99,8 @@ export default function Onboarding({ places, snap, sound, offsets, noise, nowKey
     [shown, offCells, places, snap, sound, offsets, noise, nowKey],
   )
   const change = picked.size ? deferredChange : null
+  // 안내방송·기계 소리는 소리 점수에만 곱해지므로, 이 항목만 고르면 현장 측정이 없는 칸의 지수는 바뀌지 않는다
+  const soundOnly = !change && picked.size > 0 && [...picked].every((id) => id === 'music' || id === 'machine')
 
   const finish = (apply: boolean) => {
     try {
@@ -182,6 +184,8 @@ export default function Onboarding({ places, snap, sound, offsets, noise, nowKey
               </>
             ) : picked.size === 0 ? (
               <span className="ob-pv-note">{canPreview ? '고르면 지수가 어떻게 달라지는지 예를 보여 드려요. ' : ''}고르지 않고 시작하면 맞춤 없이 시작해요.</span>
+            ) : soundOnly ? (
+              <span className="ob-pv-note">고른 항목은 소리를 직접 잰 장소와 시간대에서 지수에 반영돼요. 현장 측정 탭에서 소리를 재 보세요.</span>
             ) : null}
           </div>
           <p className="muted ob-note">고른 내용은 이 기기에만 저장되고, 우리 아이 탭에서 언제든 바꿀 수 있어요.</p>

@@ -74,12 +74,13 @@ const APPLIED_TAG: Partial<Record<SenseTag, string>> = {
 }
 
 /** 칩 글자를 앞머리('적용 중: ')와 나머지로 나눈다. 아주 좁은 화면에서는 앞머리를 감추고 항목 이름을 보여 준다. */
-function appliedParts(p: ChildProfile): { lead: string; rest: string } {
+function appliedParts(p: ChildProfile): { lead: string; rest: string; count?: string } {
   const items: string[] = []
   for (const t of SENSE_TAGS) if (p.tags[t] === 1.5 && APPLIED_TAG[t]) items.push(APPLIED_TAG[t]!)
   if (p.crowd === 1.5) items.push('사람 많은 곳')
   if (p.loud === 1.5) items.push('큰 소리')
-  if (items.length) return { lead: '적용 중: ', rest: items.join(', ') }
+  // 항목이 둘 이상이면 좁은 화면에서 이름 대신 쓸 개수 글자를 함께 준다(이름 전체는 title과 aria-label에 있다)
+  if (items.length) return { lead: '적용 중: ', rest: items.join(', '), count: items.length > 1 ? `${items.length}개 적용` : undefined }
   return isDefaultSens(p) ? { lead: '', rest: '아직 고르지 않았어요' } : { lead: '적용 중: ', rest: '직접 고른 값' }
 }
 
@@ -212,6 +213,8 @@ export default function App() {
         ignorePop.current = false
         return
       }
+      // 한 단계씩 보기가 열려 있으면 뒤로 가기는 그것만 닫는다(CardView가 닫는다). 장소 시트는 그대로 둔다.
+      if (document.querySelector('.cs-back')) return
       const loc = readLocation()
       // 측정 중에 브라우저 뒤로 가기로 나가려 하면 탭을 누를 때와 같은 확인을 거친다. 취소하면 한 칸 앞으로 돌아온다.
       if (viewRef.current === 'measure' && measureRunningRef.current && loc.view !== 'measure' && !window.confirm(MEASURE_LEAVE_MSG)) {
@@ -251,7 +254,9 @@ export default function App() {
     loadedAt.current = Date.now()
     setLoading(true)
     const snapP = loadSnapshot().catch(() => null)
-    const noiseP = loadPublicJson<NoiseData>('noise.json').then((v) => {
+    const noiseP = loadPublicJson<NoiseData>('noise.json').then((raw) => {
+      // JSON이어도 places와 hours가 없는 모양이면 소음 자료로 쓰지 않는다(그대로 쓰면 지수 계산에서 앱 전체가 오류 화면이 된다)
+      const v = raw && typeof raw.places === 'object' && raw.places !== null && Array.isArray(raw.hours) ? raw : null
       if (v) setNoise((prev) => (prev && prev.updatedAt === v.updatedAt ? prev : v))
       return v
     })
@@ -314,6 +319,8 @@ export default function App() {
   const age = snap?.source === 'seoul' ? ageMinutes(snap.updatedAt) : 0
   const stale = age >= STALE_MIN
   const tooOld = age >= TOO_OLD_MIN
+  // 너무 오래된 자료는 배너 안내대로 예측을 보여 주지 않는다. 자료 시각은 남기고 장소 칸만 비워서 지도, 시트, 목록이 모두 '자료 없음'으로 나온다.
+  const viewSnap = useMemo(() => (snap && tooOld ? { ...snap, places: {} } : snap), [snap, tooOld])
   const today = snap?.updatedAt.slice(0, 10) === kstNow().date
   const hhmm = snap?.updatedAt.slice(11, 16) ?? ''
   const stampLabel = !snap ? '' : today ? `서울시 ${hhmm} 기준` : `${snap.updatedAt.slice(5, 7)}/${snap.updatedAt.slice(8, 10)} ${hhmm} 기준`
@@ -349,10 +356,17 @@ export default function App() {
           <span className="toggle-lead">우리 아이 </span>맞춤
         </label>
         {chip && (
-          <button className="applied-chip" onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
+          <button className={chip.count ? 'applied-chip has-count' : 'applied-chip'} onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
             <span>
               {chip.lead && <span className="applied-lead">{chip.lead}</span>}
-              {chip.rest}
+              {chip.count ? (
+                <>
+                  <span className="applied-full">{chip.rest}</span>
+                  <span className="applied-count" aria-hidden>{chip.count}</span>
+                </>
+              ) : (
+                chip.rest
+              )}
             </span>
           </button>
         )}
@@ -403,7 +417,7 @@ export default function App() {
           </button>
           <MapView
             places={PLACES}
-            snap={snap}
+            snap={viewSnap}
             sound={sound}
             profile={profile}
             offsets={offsets}
@@ -442,7 +456,7 @@ export default function App() {
             noise={noise}
             onSelect={openPlace}
             nowKey={nowKey}
-            snap={snap}
+            snap={viewSnap}
             sound={sound}
             profile={profile}
             offsets={offsets}
@@ -460,7 +474,7 @@ export default function App() {
         {view === 'recommend' && (
           <Recommend
             places={PLACES}
-            snap={snap}
+            snap={viewSnap}
             loading={loading}
             sound={sound}
             profile={profile}
@@ -516,7 +530,7 @@ export default function App() {
       {introOpen && (
         <Onboarding
           places={PLACES}
-          snap={snap}
+          snap={viewSnap}
           sound={sound}
           offsets={offsets}
           noise={noise}

@@ -10,6 +10,20 @@ export function choseong(str: string): string {
   return Array.from(str.normalize('NFC'), cho).join('')
 }
 
+/** 이름에 괄호나 가운뎃점이 끼어 있어 그대로는 찾아지지 않는 부름말. 장소 이름의 글자에서 곧바로 나오는 것만 둔다. */
+export const ALIASES: Record<string, string[]> = {
+  'DDP(동대문디자인플라자)': ['디디피'],
+  'DMC(디지털미디어시티)': ['디엠씨'],
+  '광장(전통)시장': ['광장시장'],
+  '신촌·이대역': ['신촌역'],
+  '총신대입구(이수)역': ['총신대입구역', '이수역'],
+}
+
+/** 장소 이름이나 부름말 중 하나라도 검색어와 일치하면 true. */
+export function matchesPlace(name: string, query: string): boolean {
+  return [name, ...(ALIASES[name] ?? [])].some((f) => matches(f, query))
+}
+
 const norm = (s: string) => s.normalize('NFC').replace(/\s+/g, '').toLowerCase()
 
 /**

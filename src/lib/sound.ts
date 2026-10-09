@@ -40,6 +40,54 @@ async function meanProbs(m: tf.GraphModel, wave: Float32Array): Promise<Float32A
   return probs
 }
 
+const DOWNLOAD_IDLE_MS = 45_000 // 이 시간 동안 응답이나 데이터가 한 번도 오지 않으면 내려받기를 끊는다(느린 연결은 데이터가 계속 오므로 끊기지 않는다)
+
+/** 응답이 오기까지, 그리고 본문 조각 사이가 idleMs를 넘기면 요청을 끊는 fetch. 연결이 끊긴 채 멈춘 내려받기가 영원히 끝나지 않는 것을 막는다. */
+function idleGuardFetch(idleMs: number): typeof fetch {
+  return async (input, init) => {
+    const ctl = new AbortController()
+    let timer = setTimeout(() => ctl.abort(), idleMs)
+    const bump = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => ctl.abort(), idleMs)
+    }
+    try {
+      const res = await fetch(input, { ...init, signal: ctl.signal })
+      if (!res.body) {
+        clearTimeout(timer)
+        return res
+      }
+      bump()
+      const reader = res.body.getReader()
+      const body = new ReadableStream<Uint8Array>({
+        async pull(c) {
+          try {
+            const { done, value } = await reader.read()
+            if (done) {
+              clearTimeout(timer)
+              c.close()
+            } else {
+              bump()
+              c.enqueue(value)
+            }
+          } catch (e) {
+            clearTimeout(timer)
+            c.error(e)
+          }
+        },
+        cancel(reason) {
+          clearTimeout(timer)
+          return reader.cancel(reason)
+        },
+      })
+      return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers })
+    } catch (e) {
+      clearTimeout(timer)
+      throw e
+    }
+  }
+}
+
 async function prepareModel(onProgress?: (msg: string) => void): Promise<tf.GraphModel> {
   let m: tf.GraphModel
   try {
@@ -48,7 +96,11 @@ async function prepareModel(onProgress?: (msg: string) => void): Promise<tf.Grap
     // 이 기기에 저장된 모델이 없으면 내려받아 저장한다
     onProgress?.('처음 한 번 약 16MB를 내려받아요')
     try {
-      m = await tf.loadGraphModel(YAMNET_URL, { fromTFHub: true })
+      m = await tf.loadGraphModel(YAMNET_URL, {
+        fromTFHub: true,
+        fetchFunc: idleGuardFetch(DOWNLOAD_IDLE_MS),
+        onProgress: (f) => onProgress?.(`모델을 내려받는 중이에요 (${Math.round(f * 100)}%)`),
+      })
     } catch {
       // 원인(네트워크, 주소 변경, 차단)은 여기서 가려내지 못하므로 화면 문구가 원인을 단정하지 않게 이름만 붙인다
       throw Object.assign(new Error('model download failed'), { name: 'ModelDownloadFailed' })

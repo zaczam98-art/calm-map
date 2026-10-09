@@ -205,6 +205,17 @@ h3.sub { font-size: 14px; margin: 10px 0 4px; }
   .main:has(.sheet:not(.on-list)) .legend { left: 432px; max-width: calc(100% - 444px); }
 }
 
+/* 추천 탭에서 장소 시트가 왼쪽에 뜨면 목록을 시트 오른쪽으로 비킨다 */
+@media (min-width: 900px) {
+  .main:has(.sheet.on-list) .page { margin-left: 436px; margin-right: 12px; }
+}
+
+/* Windows 고대비(강제 색상): 색으로만 나타낸 범례 점, 시간 슬라이더, 선택 상태를 시스템 색으로 지워 버리지 않는다 */
+@media (forced-colors: active) {
+  .dot.calm, .dot.mid, .dot.busy, .dot.nodata, .dot.ring, .tslider input[type='range'], .chip.on, .seg button.on, .btn[aria-pressed='true'] { forced-color-adjust: none; }
+  .chip.on, .seg button.on, .btn[aria-pressed='true'] { box-shadow: inset 0 0 0 2px Highlight; }
+}
+
 /* 동작 줄이기 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }

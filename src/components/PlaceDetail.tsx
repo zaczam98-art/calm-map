@@ -77,6 +77,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   // 맞춤을 켰어도 지수가 하나도 달라지지 않았으면 공유 이미지에 '맞춤 반영'을 붙이지 않는다
   const adapted = profile.enabled && scores.some((s, i) => s.index !== plainScores[i]?.index)
   const chosen = profile.crowd !== 1 || profile.loud !== 1 || Object.values(profile.tags).some((v) => v !== 1)
+  // 혼잡·큰 소리·돌발음 민감도가 모두 기본값이면, 고른 값은 소리 점수에만 곱해져 측정이 없는 시간대의 지수는 그대로다
+  const soundOnlyChosen = chosen && profile.crowd === 1 && profile.loud === 1 && profile.tags.sudden === 1
   const totalN = Object.values(sound[place.name] ?? {}).reduce((a, b) => a + b.n, 0)
   // 기록을 남기거나 취소하면 offsets가 새 객체로 바뀌므로 그때 이 장소의 기록 건수를 다시 센다
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -230,7 +232,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
           <span className="muted">
             {plain.index !== shown.index
               ? `맞춤 전 ${plain.index}점 → 후 ${shown.index}점${plain.level !== shown.level ? ` (${LEVEL3_LABEL[plain.level]} → ${LEVEL3_LABEL[shown.level]})` : ''}`
-              : chosen ? `이 시간은 맞춤 전후가 같아요(${shown.index}점).` : '민감도를 고르면 달라져요.'}
+              : chosen ? `이 시간은 맞춤 전후가 같아요(${shown.index}점).${soundOnlyChosen ? ' 고른 항목은 소리를 직접 잰 시간대에서만 지수에 반영돼요.' : ''}` : '민감도를 고르면 달라져요.'}
           </span>
           {plain.index === shown.index && !chosen && onGoChild && <button className="btn" onClick={onGoChild}>우리 아이에서 고르기</button>}
         </div>
@@ -263,7 +265,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
           label={shortLabel}
           crowdLevel={pointAt(shown)?.level}
           noiseAvg={noiseAt(shown.hour, dowOfTime(shown.time))?.avg}
-          personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud } : null}
+          personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud, sudden: profile.tags.sudden } : null}
           visits={visitN}
         />
       )}

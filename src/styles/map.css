@@ -44,6 +44,24 @@
 /* 장소 시트가 아래를 덮으면 결과 목록이 시트에 가려지지 않게 시트 위에서 끝낸다 */
 .main:has(.sheet:not(.on-list)) .sbx-panel { bottom: calc(62% + 30px); }
 
+/* 지도에 키보드 포커스가 오면 지도 가장자리에 테두리를 그린다(#map 자신의 outline은 .main 경계에서 잘리거나 Leaflet 패널에 가려진다). 슬라이더와 범례(500) 아래에 둔다. */
+.map-wrap:has(#map:focus-visible)::after { content: ''; position: absolute; inset: 0; border: 3px solid var(--accent); pointer-events: none; z-index: 450; }
+
+/* 아래 시트가 열려 있으면 시트에 가려진 시각 슬라이더와 재생 단추로 포커스가 가지 않게 감춘다 */
+@media (max-width: 899px) {
+  .main:has(.sheet:not(.on-list)) .tslider { visibility: hidden; }
+}
+
+/* 높이가 낮은 화면(가로 모드, 확대 150% 이상): 시트가 오른쪽 컨트롤(확대·축소, 검색 단추)을 덮지 않게 비키고, 검색하는 동안은 시트를 감춰 결과 목록이 전체 높이를 쓰게 한다 */
+@media (max-width: 899px) and (max-height: 640px) {
+  .main:has(.sheet:not(.on-list)) .sbx-panel { bottom: 10px; }
+  .main:has(.sheet:not(.on-list)) .sheet:not(.on-list) { right: 68px; }
+  .main:has(.sbx-panel.open) .sheet:not(.on-list) { visibility: hidden; }
+}
+
+/* 높이가 낮을 때 펼친 브리핑이 범례와 슬라이더 위에서 끝나게 한다 */
+.briefing:not(.collapsed) { max-height: min(45%, calc(100% - 140px)); }
+
 @media (max-width: 699px) {
   /* 펼친 검색창이 좌상단 브리핑과 겹치지 않게, 검색하는 동안은 브리핑을 가린다 */
   .map-wrap:has(.sbx-panel.open) ~ .briefing { visibility: hidden; }

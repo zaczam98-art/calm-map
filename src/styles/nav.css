@@ -8,6 +8,13 @@ nav.nav button.on::before { content: ''; position: absolute; top: -1px; left: 18
 .applied-chip > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 8px; border: 1px solid var(--accent); border-radius: 999px; background: #e4f0f6; font-size: 12px; line-height: 1.4; }
 .applied-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
 
+/* 항목이 둘 이상이면 좁은 화면에서는 이름 대신 '2개 적용'만 보여 준다(전체 이름은 title과 aria-label에 있다) */
+.applied-count { display: none; }
+@media (max-width: 520px) {
+  .applied-chip.has-count .applied-lead, .applied-chip.has-count .applied-full { display: none; }
+  .applied-chip.has-count .applied-count { display: inline; }
+}
+
 /* 좁은 화면에서는 '우리 아이' 글자를 화면에서만 감춘다(스크린 리더에는 '우리 아이 맞춤'으로 읽힌다) */
 @media (max-width: 520px) {
   .topbar.has-chip .toggle-lead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

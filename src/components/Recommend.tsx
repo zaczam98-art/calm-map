@@ -4,7 +4,7 @@ import { hourScores, LEVEL3_LABEL, recommend } from '../lib/index'
 import { distanceKm } from '../lib/nearby'
 import { activeControls, factorTags } from '../lib/factors'
 import { noiseLookup } from '../lib/noise'
-import { matches } from '../lib/hangul'
+import { matchesPlace } from '../lib/hangul'
 import { kstNow } from '../lib/publicData'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 
@@ -74,7 +74,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
   const q = query.trim()
   const shown = rows
     .filter((r) => cats.length === 0 || cats.includes(r.place.category))
-    .filter((r) => matches(r.place.name, q))
+    .filter((r) => matchesPlace(r.place.name, q))
     .sort((a, b) => {
       if (byDistance && a.km !== null && b.km !== null) return a.km - b.km
       return RANK[a.level] - RANK[b.level] || (a.index ?? 999) - (b.index ?? 999) || (a.km ?? 0) - (b.km ?? 0)
@@ -83,7 +83,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
   const emptyMsg =
     shown.length > 0 || !q
       ? null
-      : rows.some((r) => matches(r.place.name, q))
+      : rows.some((r) => matchesPlace(r.place.name, q))
         ? '선택한 종류에는 없어요. 종류를 \'전체\'로 바꿔 보세요.'
         : `찾는 장소가 목록에 없어요(서울시 추적 ${places.length}곳만 있어요)`
 

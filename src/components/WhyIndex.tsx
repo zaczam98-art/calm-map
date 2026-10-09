@@ -11,7 +11,7 @@ interface Props {
   /** 그 요일·시간대 주변 센서의 평균 소음(dB). 자료가 없으면 생략 */
   noiseAvg?: number
   /** 맞춤을 켰는지, 켰다면 혼잡과 큰 소리에 곱한 민감도 */
-  personal: { crowd: number; loud: number } | null
+  personal: { crowd: number; loud: number; sudden: number } | null
   /** 이 장소에 남긴 다녀온 기록 건수 */
   visits: number
 }
@@ -42,6 +42,7 @@ export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, 
   if (personal && personal.crowd !== 1) evidence.push(`혼잡 점수에는 '사람이 많은 곳' 민감도(${personal.crowd}배)를 곱했어요.`)
   if (personal && p.offset === 0) evidence.push(visits === 0 ? '이 장소는 다녀온 기록이 아직 없어서 기록 보정은 0이에요.' : `이 장소의 기록 보정은 0이에요(다녀온 기록 ${visits}건).`)
   if (personal && personal.loud !== 1 && hasNoise) evidence.push(`소음 점수에는 '큰 소리' 민감도(${personal.loud}배)를 곱했어요.`)
+  if (personal && personal.sudden !== 1 && hasNoise) evidence.push(`소음의 큰 소리 가산에는 사이렌·경적·알람 민감도(${personal.sudden}배)를 곱했어요.`)
 
   return (
     <div className="card why">

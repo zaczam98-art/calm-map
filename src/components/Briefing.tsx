@@ -40,7 +40,8 @@ export default function Briefing({ briefing, known, onSelect, collapsed, onToggl
       }),
       avoid: open(briefing.avoid).filter((p) => {
         const lv = levels(p.place, p.from, p.to)
-        return lv.length > 0 && lv.every((l) => l === 'busy')
+        // 생성기는 서울시 예측 '약간 붐빔' 이상으로 고르지만 앱 지수로는 같은 칸이 '보통'(55~64)이 되기도 한다. 무던한 칸이 없고 붐빔이 절반 이상이면 남긴다.
+        return lv.length > 0 && lv.every((l) => l !== 'calm' && l !== 'nodata') && lv.filter((l) => l === 'busy').length * 2 >= lv.length
       }),
     }
   }, [briefing, known, snap, sound, profile, offsets, noise, nowKey, now.date, now.hour])
