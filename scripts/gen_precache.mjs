@@ -15,6 +15,7 @@ const walk = (dir) =>
 
 const files = walk(dist)
   .map((f) => relative(dist, f).split(sep).join('/'))
+  .filter((f) => !f.startsWith('models/')) // 약 16MB 소리 분류 모델은 앱이 IndexedDB에 저장하므로 미리 받기 목록에 넣지 않는다
   .sort()
 const core = files.filter((f) => CORE.some((re) => re.test(f)))
 const extra = files.filter((f) => EXTRA.some((re) => re.test(f)))

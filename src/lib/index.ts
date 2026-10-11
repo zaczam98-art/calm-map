@@ -17,14 +17,17 @@ const DAY_TO = 21
 
 const LEVEL_BASE: Record<CongestLevel, number> = { 여유: 15, 보통: 40, '약간 붐빔': 65, 붐빔: 90 }
 
-/** 혼잡 점수 C: 단계 기준값 + 같은 단계 안에서 인구 중앙값 위치로 ±10 보정 */
+/**
+ * 혼잡 점수 C: 단계 기준값 + 같은 단계 안에서 인구 중앙값 위치로 ±10 보정.
+ * all은 그 장소의 비교 범위(스냅샷의 예측 전체, 관측값이 있으면 함께)다. 지금 시각으로 자르지 않아서 정각이 지나도 같은 칸의 값이 바뀌지 않는다.
+ */
 export function congestScore(p: ForecastPoint, all: ForecastPoint[]): number {
   const base = LEVEL_BASE[p.level] ?? 40
   const mids = all.map((f) => (f.min + f.max) / 2)
   const lo = Math.min(...mids)
   const hi = Math.max(...mids)
   if (!isFinite(lo) || hi <= lo) return base
-  const pos = ((p.min + p.max) / 2 - lo) / (hi - lo) // 0~1
+  const pos = clamp(((p.min + p.max) / 2 - lo) / (hi - lo), 0, 1)
   return clamp(base + (pos - 0.5) * 20, 0, 100)
 }
 
@@ -118,6 +121,7 @@ export function hourScores(
   let pts: Pt[] = []
   if (snap.live) pts.push({ time: snap.live.time, level: snap.live.level, min: snap.live.min, max: snap.live.max, forecast: false })
   pts.push(...snap.fcst.map((f) => ({ ...f, forecast: true })))
+  const win = pts.slice() // 혼잡 점수 C의 비교 범위: 지금 시각으로 거르기 전의 전체(관측값이 있으면 포함)
   if (nowKey) {
     // 수집이 늦어지면 실시간 값이 이미 지난 시각의 것이다. 지난 시간대는 버리고 현재 시각의 예측값부터 보여 준다.
     const fresh = pts.filter((p) => p.time.slice(0, 13) >= nowKey)
@@ -134,7 +138,7 @@ export function hourScores(
   return pts.map((p) => {
     const h = hourOf(p.time)
     const dow = dowOfTime(p.time)
-    let c = congestScore(p, pts)
+    let c = congestScore(p, win)
     if (personal) c = clamp(c * personal.crowd, 0, 100)
     const nz = noise(h, dow)
     const n = noiseScore(nz, personal ?? undefined)

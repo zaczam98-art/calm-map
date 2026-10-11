@@ -13,6 +13,10 @@
  *     - rec.from이 시계열에 있는 시각인지(카드가 맞출 칸이 존재하는지)
  *     - parts로 계산한 값이 index와 반올림 1 이내인지, 단계(level)가 index와 맞는지
  *  3. WhyIndex를 실제로 그려서 화면의 숫자(혼잡 값 + 각 단계의 증감 + 기록 보정)가 지수와 정확히 같은지
+ *  4. 혼잡 점수 C의 비교 범위(지수 산식 v1.1): 같은 스냅샷의 같은 칸은 보는 시각과 상관없이 같은 값인지
+ *     - 한국 시각 :59와 다음 정각 :06에서 같은 칸의 혼잡 점수 C와 지수가 같은지(정각 전후 안정성)
+ *     - 모든 시각에서 C가 '관측값 + 예측 전체'를 비교 범위로 한 congestScore와 같고, 단계 기준값 ±10을 넘지 않는지
+ *     - 검사기 점검: 비교 범위를 지금 이후 칸으로 자르는 v1 방식이었다면 이 검사가 잡아내는 칸이 있는지
  */
 import { readFileSync, mkdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -187,11 +191,88 @@ for (const name of places) {
   holes++
 }
 
+// 4. 혼잡 점수 C의 비교 범위: 같은 스냅샷의 같은 칸은 보는 시각과 상관없이 같은 값이다(지수 산식 v1.1)
+const BASE = { 여유: 15, 보통: 40, '약간 붐빔': 65, 붐빔: 90 }
+let stableCells = 0
+let crossPairs = 0
+let rangeCells = 0
+for (const name of places) {
+  const ps = snap.places[name]
+  const ptAt = new Map(ps.fcst.map((f) => [f.time, f]))
+  if (ps.live) ptAt.set(ps.live.time, ps.live)
+  const win = [...(ps.live ? [ps.live] : []), ...ps.fcst]
+  for (const prof of [null, sens]) {
+    const seen = new Map() // 칸 시각 -> 처음 본 값
+    const byKey = new Map()
+    for (const { dh, mm, key } of nowKeys) {
+      const scores = L.hourScores(ps, soundFn, prof, 0, key, noiseFn)
+      byKey.set(`${dh}:${mm}`, scores)
+      for (const c of scores) {
+        if (c.obs) continue
+        const prev = seen.get(c.time)
+        if (!prev) seen.set(c.time, { c: c.parts.c, index: c.index, key })
+        else if (prev.c !== c.parts.c || prev.index !== c.index) bad(`${name} ${c.time} 보는 시각 ${prev.key}와 ${key}에서 값이 다름: C ${prev.c} / ${c.parts.c}, 지수 ${prev.index} / ${c.index}`)
+        stableCells++
+        if (prof) continue
+        const pt = ptAt.get(c.time)
+        if (!pt) {
+          bad(`${name} ${c.time} 스냅샷에 없는 칸`)
+          continue
+        }
+        if (Math.abs(c.parts.c - L.congestScore(pt, win)) > 1e-9) bad(`${name} ${c.time} C ${c.parts.c}가 관측값+예측 전체를 비교 범위로 한 값 ${L.congestScore(pt, win)}과 다름`)
+        if (Math.abs(c.parts.c - BASE[pt.level]) > 10 + 1e-9) bad(`${name} ${c.time} C ${c.parts.c}가 단계 기준값 ${BASE[pt.level]}의 ±10을 넘음`)
+        rangeCells++
+      }
+    }
+    // 정각 전후: H:59와 다음 정각 :06
+    for (let dh = 0; dh < 13; dh++) {
+      const a = byKey.get(`${dh}:59`)
+      const b = byKey.get(`${dh + 1}:6`)
+      if (!a || !b) continue
+      const mb = new Map(b.filter((c) => !c.obs).map((c) => [c.time, c]))
+      for (const ca of a) {
+        const cb = ca.obs ? undefined : mb.get(ca.time)
+        if (!cb) continue
+        crossPairs++
+        if (ca.index !== cb.index || ca.parts.c !== cb.parts.c) bad(`${name} ${ca.time} 정각 전후(dh=${dh}) 값이 다름: C ${ca.parts.c} / ${cb.parts.c}, 지수 ${ca.index} / ${cb.index}`)
+      }
+    }
+  }
+}
+// 범위를 벗어난 칸과 한 칸짜리 범위
+const flat = [{ level: '보통', min: 100, max: 200 }, { level: '보통', min: 300, max: 400 }]
+const edge = [
+  [L.congestScore({ level: '보통', min: 0, max: 0 }, flat), 30],
+  [L.congestScore({ level: '보통', min: 1e6, max: 1e6 }, flat), 50],
+  [L.congestScore(flat[1], flat), 50],
+  [L.congestScore(flat[0], flat), 30],
+  [L.congestScore(flat[0], [flat[0]]), 40],
+]
+for (const [got, want] of edge) if (got !== want) bad(`congestScore 경계값 ${got} != ${want}`)
+// 검사기 점검: 비교 범위를 지금 이후 칸으로 자르면(v1 방식) 같은 칸의 값이 달라지는지
+let cutDiff = 0
+let cutAll = 0
+for (const name of places) {
+  const ps = snap.places[name]
+  const win = [...(ps.live ? [ps.live] : []), ...ps.fcst]
+  for (let i = 1; i < ps.fcst.length; i++) {
+    const cut = ps.fcst.slice(i)
+    for (const p of cut) {
+      cutAll++
+      if (L.congestScore(p, cut) !== L.congestScore(p, win)) cutDiff++
+    }
+  }
+}
+if (cutDiff === 0) bad('검사기 점검 실패: 비교 범위를 자른 v1 방식에서도 값이 같음(검사가 아무것도 잡지 못함)')
+if (SEOUL && crossPairs === 0) bad('정각 전후로 비교한 칸이 없음')
+
 console.log(`[2] 시험한 장소 ${places.length}곳, 시각 ${nowKeys.length}가지, 칸 ${cells}개, parts 최대 오차 ${partsMax.toFixed(3)}`)
 console.log('  현재 시 대비 첫 칸 일치(스냅샷 관측 시각 + dh시간):')
 for (const [dh, [ok, all]] of Object.entries(offsetStat)) console.log(`    dh=${dh}: ${ok}/${all}${ok === all ? '' : '  <- 불일치 있음'}`)
 if (missing.length) console.log('  불일치 예:', missing.join(' | '))
 console.log(`[2-f] 예측이 빠진 장소 ${holes}곳에서 scoreAt 확인`)
 console.log(`[3] WhyIndex 화면 산술 검산 ${rendered}건`)
+console.log(`[4] 혼잡 점수 C 비교 범위: 시각 간 일치 확인 ${stableCells}칸, 정각 전후(H:59와 다음 정각 :06) ${crossPairs}쌍, 범위 확인 ${rangeCells}칸`)
+console.log(`  참고: 비교 범위를 지금 이후 칸으로 자르는 v1 방식이면 예측 칸 ${cutAll}개 중 ${cutDiff}개의 C가 달라짐(이 검사가 잡는 대상)`)
 console.log(fail === 0 ? 'RESULT: PASS' : `RESULT: FAIL (${fail}건)`)
 process.exit(fail === 0 ? 0 : 1)

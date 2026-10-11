@@ -8,6 +8,8 @@ import { CLASS_TAG } from './tags'
 export { bestTag, CLASS_TAG, topTags } from './tags'
 
 export const YAMNET_URL = 'https://tfhub.dev/google/tfjs-model/yamnet/tfjs/1'
+// 앱과 같은 출처에 둔 모델 파일(public/models/yamnet). 주소를 만들 페이지가 없는 Node(평가 스크립트)에서는 null이라 건너뛴다.
+const OWN_MODEL_URL = typeof location === 'undefined' ? null : new URL(`${import.meta.env?.BASE_URL ?? '/'}models/yamnet/model.json`, location.href).href
 export const SAMPLE_RATE = 16000
 export const WINDOW_SEC = 0.975 // YAMNet 기본 창 0.96초에 맞춘 버퍼(15600 샘플)
 const MODEL_STORE = 'indexeddb://calm-yamnet' // 한 번 받은 모델을 이 기기에 두고 다음부터 다시 받지 않는다
@@ -88,6 +90,22 @@ function idleGuardFetch(idleMs: number): typeof fetch {
   }
 }
 
+/** 앱과 같은 출처의 모델 파일을 먼저 받고, 안 되면 TF Hub 주소로 한 번 더 시도한다. */
+async function downloadModel(onProgress?: (msg: string) => void): Promise<tf.GraphModel> {
+  const opts = {
+    fetchFunc: idleGuardFetch(DOWNLOAD_IDLE_MS),
+    onProgress: (f: number) => onProgress?.(`모델을 내려받는 중이에요 (${Math.round(f * 100)}%)`),
+  }
+  if (OWN_MODEL_URL) {
+    try {
+      return await tf.loadGraphModel(OWN_MODEL_URL, opts)
+    } catch {
+      // 파일이 없거나 막혀 있으면 아래 TF Hub 주소로 넘어간다
+    }
+  }
+  return tf.loadGraphModel(YAMNET_URL, { ...opts, fromTFHub: true })
+}
+
 async function prepareModel(onProgress?: (msg: string) => void): Promise<tf.GraphModel> {
   let m: tf.GraphModel
   try {
@@ -96,11 +114,7 @@ async function prepareModel(onProgress?: (msg: string) => void): Promise<tf.Grap
     // 이 기기에 저장된 모델이 없으면 내려받아 저장한다
     onProgress?.('처음 한 번 약 16MB를 내려받아요')
     try {
-      m = await tf.loadGraphModel(YAMNET_URL, {
-        fromTFHub: true,
-        fetchFunc: idleGuardFetch(DOWNLOAD_IDLE_MS),
-        onProgress: (f) => onProgress?.(`모델을 내려받는 중이에요 (${Math.round(f * 100)}%)`),
-      })
+      m = await downloadModel(onProgress)
     } catch {
       // 원인(네트워크, 주소 변경, 차단)은 여기서 가려내지 못하므로 화면 문구가 원인을 단정하지 않게 이름만 붙인다
       throw Object.assign(new Error('model download failed'), { name: 'ModelDownloadFailed' })

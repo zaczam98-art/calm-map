@@ -6,12 +6,25 @@
  * 실행:
  *   node node_modules/esbuild/bin/esbuild scripts/eval_sound.ts --bundle --platform=node --format=cjs --outfile=.tmp/eval_sound.cjs
  *   node .tmp/eval_sound.cjs <ESC-50 audio 폴더> <meta/esc50.csv> <결과 json> [분류당 최대 개수]
+ *
+ * 환경변수 YAMNET_LOCAL=public/models/yamnet/model.json 이 있으면 TF Hub 대신 그 파일과 같은 폴더의 샤드를 읽는다(내려받기 없음).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { classifyWindow, resample, SAMPLE_RATE, setTagAgg, summarize, WINDOW_SEC, type WindowResult } from '../src/lib/sound'
+import { dirname, join } from 'node:path'
+import { classifyWindow, resample, SAMPLE_RATE, setTagAgg, summarize, WINDOW_SEC, YAMNET_URL, type WindowResult } from '../src/lib/sound'
 import { SENSE_TAGS, type SenseTag } from '../src/types'
 import tagMap from './esc50_tag_map.json'
+
+const localModel = process.env.YAMNET_LOCAL
+if (localModel) {
+  // 모델 주소(YAMNET_URL 아래)로 가는 요청만 로컬 파일로 돌려주고, 나머지 요청은 그대로 보낸다
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input)
+    if (!url.startsWith(YAMNET_URL)) return realFetch(input, init)
+    return new Response(readFileSync(join(dirname(localModel), url.slice(YAMNET_URL.length + 1).split('?')[0])))
+  }) as typeof fetch
+}
 
 const [audioDir, metaCsv, outPath, limitArg] = process.argv.slice(2)
 const limit = limitArg ? Number(limitArg) : Infinity

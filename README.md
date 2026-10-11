@@ -79,11 +79,28 @@ npm run build
 
 - 빌드 뒤 `node scripts/gen_precache.mjs dist`(`pages.yml`에 단계가 있습니다)가 `dist/sw.js`의 자리표시를 채웁니다. 미리 받는 목록은 `index.html`, `manifest.webmanifest`, 아이콘, 해시가 붙은 `assets/*`(필수)와 `data/snapshot-demo.json`, `data/cards.json`, `data/card_modules.json`, `samples/*.wav`(받지 못해도 설치를 막지 않음)입니다. 캐시 이름에는 이 목록의 이름과 내용에서 만든 빌드 해시가 들어가고, 새 워커가 켜질 때 옛 캐시를 지웁니다. 로컬에서 `npm run build`만 하면 자리표시가 비어 있어 미리 받기 없이 방문한 파일만 캐시하므로, 오프라인 시험은 `gen_precache`까지 실행한 `dist`로 합니다.
 - 해시가 붙은 `assets/*`와 `samples/*`는 캐시를 먼저 쓰고, `index.html`과 `manifest.webmanifest`, `data/*`는 네트워크를 먼저 받아 보고 안 될 때 캐시를 씁니다.
-- 지도 타일, `raw.githubusercontent.com`, `data-mirror/`, TF Hub(Kaggle, Google Cloud Storage) 요청은 서비스 워커가 응답하지 않고 브라우저가 그대로 처리합니다. 소리 분류 모델은 앱이 이미 IndexedDB에 저장합니다.
+- 지도 타일, `raw.githubusercontent.com`, `data-mirror/`, `models/`(자체 호스팅 소리 분류 모델), TF Hub(Kaggle, Google Cloud Storage) 요청은 서비스 워커가 응답하지 않고 브라우저가 그대로 처리합니다. 소리 분류 모델은 앱이 IndexedDB에 저장합니다.
+
+### 소리 분류 모델 (자체 호스팅)
+
+`public/models/yamnet/`에 YAMNet(TensorFlow.js graph-model)의 `model.json`과 샤드 4개(합계 16,038,316바이트)를 수정 없이 넣었고, 배포하면 `https://zaczam98-art.github.io/calm-map/models/yamnet/model.json`으로 열립니다. 출처(TF Hub `google/tfjs-model/yamnet/tfjs/1`), 파일별 SHA-256, 라이선스(Apache-2.0)와 확인한 근거 주소는 `public/models/yamnet/NOTICE.md`에 있습니다.
+
+- 모델이 저장되어 있지 않은 기기에서 처음 측정할 때 `src/lib/sound.ts`가 앱과 같은 출처의 이 파일(요청 5건)을 먼저 받습니다. 받지 못하면(404, 차단, JSON이 아닌 응답) 기존 TF Hub 주소(Kaggle과 Google Cloud Storage로 넘어갑니다)로 한 번 더 시도합니다. 받은 모델은 IndexedDB(`calm-yamnet`)에 저장해서 다음 방문부터 다시 받지 않고, 진행률 표시와 무응답 45초 끊기도 두 경로에 똑같이 적용됩니다.
+- 서비스 워커는 `models/` 요청에 응답하지 않고 `scripts/gen_precache.mjs`도 이 폴더를 미리 받기 목록에서 뺍니다. IndexedDB 저장본과 서비스 워커 캐시에 같은 16MB가 두 벌 쌓이지 않게 하기 위해서입니다.
+- 저장소 크기: 바이너리 약 16MB(15.3MiB)가 git 이력에 한 번 들어갑니다. 파일을 바꾸지 않으면 더 늘지 않고, 배포 산출물 `dist`와 새로 clone하는 크기는 그만큼 커집니다.
+- Node 평가: `YAMNET_LOCAL=public/models/yamnet/model.json`을 주고 `scripts/eval_sound.ts`를 실행하면 TF Hub 대신 이 파일을 읽습니다. 환경변수가 없으면 이전처럼 TF Hub에서 받습니다.
 
 ## 투표 기간 운영 규칙
 
 투표 기간에는 배포를 하루 한 번 이하로 묶어서 하고, 긴급 수정만 예외로 합니다. main에 push할 때마다 `pages.yml`이 돌아 해시가 붙은 JS 파일 이름이 바뀌는데, `index.html`은 최대 10분 동안 캐시되어 이전 `index.html`을 가진 방문자가 삭제된 JS를 요청할 수 있기 때문입니다. 투표를 시작하기 전에는 게시 주소(https://zaczam98-art.github.io/calm-map/)에서 부하 시험을 한 번 하고, 첫 화면이 뜨는 시간과 실패 건수를 "측정 결과"에 적습니다. 수집 정체는 `watchdog.yml`이 3시간마다 `snapshot.json`의 `updatedAt`을 확인해서 180분을 넘으면 `[watchdog] 수집 정체: 마지막 갱신 …` 이슈를 한 건 여는 방식으로 알립니다. 투표 기간에는 하루 한 번 저장소 Issues에서 열린 watchdog 이슈가 있는지 확인하고, 있으면 Actions의 `collect-seoul-citydata`를 Run workflow로 실행합니다(정상으로 돌아오면 다음 점검에서 이슈가 자동으로 닫힙니다). 메일 알림을 받으려면 저장소의 Watch 설정에서 Issues를 켜야 하고, Issues 기능이 꺼져 있으면 watchdog이 실패합니다. 배포할 때마다 `data` 브랜치의 `snapshot.json`, `noise.json`, `pattern.json`, `metrics.json`, `briefing.json`이 `data-mirror/`에 복사되며, 앱은 raw.githubusercontent.com 요청이 실패한 경우에만 이 사본을 한 번 읽습니다. 사본은 마지막 배포 시점의 자료라서 오래될 수 있고, 그때도 화면의 갱신 시각 경고는 그대로 작동합니다.
+
+## 지수 산식 (가설 v1.1)
+
+지수는 0~100이고 낮을수록 편안합니다. 장소와 시간대마다 혼잡 점수 C, 소음 점수 N, 소리 점수 S를 차례로 합치며, 전체 식은 정보 화면과 `src/lib/index.ts`에 있습니다. 이 절은 혼잡 점수 C의 비교 범위를 설명합니다.
+
+- C는 서울시 혼잡도 단계의 기준값(여유 15, 보통 40, 약간 붐빔 65, 붐빔 90)에서 시작해, 같은 단계 안에서 예상 인구 중앙값의 위치로 ±10점을 보정한 값입니다. C = 기준값 + (위치 - 0.5) × 20이고, 위치는 (그 칸의 인구 중앙값 - 범위의 최솟값) / (범위의 최댓값 - 범위의 최솟값)을 0~1로 제한한 값입니다.
+- 비교 범위는 스냅샷에 담긴 12시간 예측 전체입니다(실시간 관측값이 있으면 함께 넣습니다). 지금 시각으로 자르지 않기 때문에, 같은 스냅샷으로 계산하는 동안에는 정각이 지나도 같은 칸의 C와 지수가 바뀌지 않습니다. 새 스냅샷을 받으면 범위가 바뀌므로 값도 바뀝니다.
+- 변경 이유와 전후 수치는 `docs/eval/index_v1_1_window.md`에 있습니다. 정각 전후 안정성은 `node scripts/recommend_check.mjs <snapshot.json>`의 [4]가 확인합니다.
 
 ## 측정 결과
 
@@ -105,7 +122,7 @@ node .tmp/eval_sound.cjs <ESC-50 audio 폴더> <meta/esc50.csv> <결과.json>
 
 | 스크립트 | 확인하는 것 | 실행 |
 |---|---|---|
-| `scripts/recommend_check.mjs` | 장소 시트와 추천 목록이 같은 `recommend`를 쓰는지, 한국 시각과 맞춤과 기록 보정 조합마다 권고 문장과 시각이 같은지, `scoreAt`이 시계열의 칸과 같은지 | `node scripts/recommend_check.mjs [snapshot.json]` |
+| `scripts/recommend_check.mjs` | 장소 시트와 추천 목록이 같은 `recommend`를 쓰는지, 한국 시각과 맞춤과 기록 보정 조합마다 권고 문장과 시각이 같은지, `scoreAt`이 시계열의 칸과 같은지, 정각 전후에도 같은 칸의 혼잡 점수가 바뀌지 않는지 | `node scripts/recommend_check.mjs [snapshot.json]` |
 | `scripts/rule_test.ts` | 카드 규칙 검사기(`shared/cardRules.ts`)가 통과 사례와 금지어 사례를 가려내는지 | `node scripts/rule_test.ts` |
 | `scripts/assemble_check.ts` | 카드 366장에 민감 태그 부분집합 64가지와 시간대 요인 4가지 조합을 조립해 검사 통과율, 서로 다른 결과 수, 5단계 초과 건수를 셉니다. | 파일 머리의 esbuild 명령으로 묶은 뒤 `node` |
 | `scripts/sound_score_test.ts` | 소리 점수 S의 속성 시험 10개(0~100 범위, 태그 값과 민감도가 커져도 줄지 않음, 태그가 모두 0이면 0, 표본이 없으면 null 등)와 수정 전 식과의 비교 | `node scripts/sound_score_test.ts` |
@@ -118,7 +135,7 @@ node .tmp/eval_sound.cjs <ESC-50 audio 폴더> <meta/esc50.csv> <결과.json>
 
 - 서울 열린데이터광장 "서울시 실시간 도시데이터"(citydata, OA-21285)와 "스마트서울 도시데이터 센서(S-DoT) 환경정보"(IotVdata017, OA-15969). 공공누리 제1유형(출처 표시)이며, 본 서비스는 서울특별시 공공데이터를 사용한 결과입니다. 센서 위치는 같은 데이터셋의 "설치 위치정보" 파일로 장소와 대응시켰고, 저장소에는 좌표 없이 시리얼과 거리만 실었습니다(`scripts/sdot_place_sensors.json`). 인증키는 이용약관 제7조에 따라 공개하지 않고 GitHub Actions Secrets에만 둡니다.
 - OpenStreetMap 타일(ODbL, 기여자 표기)
-- YAMNet: Apache-2.0 (tfhub.dev/google/tfjs-model/yamnet/tfjs/1)
+- YAMNet: Apache-2.0 (tfhub.dev/google/tfjs-model/yamnet/tfjs/1). 모델 파일을 `public/models/yamnet/`에 함께 배포하며 고지는 같은 폴더의 `NOTICE.md`에 있습니다.
 - ESC-50 (K. J. Piczak, 2015, CC BY-NC 3.0): 소리 분류 평가에만 썼고 저장소에는 싣지 않았습니다. `public/samples/`의 샘플 6개는 ESC-50에 실린 음원 가운데 개별 라이선스가 CC0인 것이며, 출처는 `src/data/samples.json`에 있습니다.
 
 ## 개인정보

@@ -72,6 +72,7 @@ self.addEventListener('fetch', (event) => {
   // 다른 출처(타일, raw.githubusercontent.com, 모델)와 이 앱 범위 밖 요청은 응답하지 않아 브라우저가 평소처럼 처리한다
   if (url.origin !== self.location.origin || !url.pathname.startsWith(SCOPE_PATH)) return
   const rel = url.pathname.slice(SCOPE_PATH.length)
-  if (rel.startsWith('data-mirror/') || rel.startsWith('api/')) return
+  // models/(약 16MB 소리 분류 모델)는 앱이 IndexedDB에 따로 저장하므로 서비스 워커 캐시에 중복해서 두지 않는다
+  if (rel.startsWith('data-mirror/') || rel.startsWith('api/') || rel.startsWith('models/')) return
   event.respondWith(rel.startsWith('assets/') || rel.startsWith('samples/') ? cacheFirst(event) : networkFirst(event))
 })
