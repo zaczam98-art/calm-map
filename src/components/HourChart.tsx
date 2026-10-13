@@ -92,6 +92,11 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
     }
     return best.x
   }
+  // '내일' 글자는 위쪽 모서리에 두지만, 막대가 모두 낮아(yMax 70) '붐빔 65' 기준선 글자가 위쪽까지 올라와 같은 자리에 겹치면 기준선 아래로 내린다
+  const busyX = labelX(65, 54)
+  const dayX = padL + dayBreak * bw + 3
+  const dayCollides = dayBreak > 0 && yOf(65) - 3 - 16 < 14 && dayX + 32 > busyX && busyX + 54 > dayX
+  const dayY = dayCollides ? yOf(65) + 18 : 14
   const caption = [
     '추천 시간은 외출 시간(8~21시) 안에서 골라요.',
     hasNight && '옅은 막대는 밤 시간이라 추천 비교에서 뺐어요.',
@@ -145,12 +150,12 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
           })}
           {/* 기준선 글자는 막대 위에 얹히지 않는 자리에, 막대보다 앞에 그려 가려지지 않게 한다 */}
           {[35, 65].map((y) => (
-            <text key={y} x={labelX(y, y === 35 ? 68 : 54)} y={yOf(y) - 3} style={HALO}>{y === 35 ? '무던함 35' : '붐빔 65'}</text>
+            <text key={y} x={y === 35 ? labelX(35, 68) : busyX} y={yOf(y) - 3} style={HALO}>{y === 35 ? '무던함 35' : '붐빔 65'}</text>
           ))}
           {dayBreak > 0 && (
             <g>
               <line x1={padL + dayBreak * bw} x2={padL + dayBreak * bw} y1={2} y2={H - padB} stroke="#5f6b7a" strokeDasharray="2 3" />
-              <text x={padL + dayBreak * bw + 3} y={14} style={HALO}>내일</text>
+              <text x={dayX} y={dayY} style={HALO}>내일</text>
             </g>
           )}
         </svg>
