@@ -256,11 +256,13 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         <div role="status" className="muted">{shareMsg}</div>
       </div>
       <HourChart scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
-      <p className="muted">
-        막대는 혼잡도 예측{shown?.noise ? '과 평소 소음 실측' : ''}{totalN > 0 ? '과 소리 종류 측정' : ''}으로 계산한 감각부하 지수예요. 점이 있는 시간대는 소리 종류 측정 표본이 있어요.
-        {' '}소리 표본 {totalN}개{totalN === 0 ? ' (소리 미측정)' : shownTags.length ? `, ${shortLabel} 시간대 주요 소리: ${shownTags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.
-        {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
-      </p>
+      {/* 지수의 구성은 아래 WhyIndex가 설명하므로 여기서는 이 기기에서 잰 소리와 데모 안내만 짧게 둔다 */}
+      {(totalN > 0 || snap?.source === 'demo') && (
+        <p className="muted">
+          {totalN > 0 && `이 기기에서 잰 소리 표본 ${totalN}개${shownTags.length ? `, ${shortLabel} 주요 소리: ${shownTags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.`}
+          {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
+        </p>
+      )}
       {shown && (
         <WhyIndex
           cell={shown}

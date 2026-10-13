@@ -2,10 +2,20 @@ import { useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { HourScore } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
 import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 추천 비교에서 빼므로 옅게 그린다
-// 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준 16. 320px 화면에서 줄어든 뒤에도 12px 안팎이 된다)
-const TEXT = { fontSize: 16 }
-const TEXT_SEL = { fontSize: 16, fontWeight: 700 } as const
-const HALO = { fontSize: 16, paintOrder: 'stroke', stroke: '#ffffff', strokeWidth: 3, strokeLinejoin: 'round' } as const
+import '../styles/chart.css'
+// 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준. 375px 화면에서 거의 같은 px가 되고 320px에서도 12px 안팎이다)
+const TEXT = { fontSize: 15 }
+const TEXT_SEL = { fontSize: 15, fontWeight: 700 } as const
+const TICK = { fontSize: 13, paintOrder: 'stroke', stroke: '#ffffff', strokeWidth: 3, strokeLinejoin: 'round' } as const
+const INK = '#1f2933'
+const GRID = '#e3e7ec'
+const SEL_BG = '#e9f1f6'
+
+/** 위만 둥근 막대. 바닥은 각지게 두어 기준선에서 자라는 모양이 된다. */
+const barPath = (x: number, y: number, w: number, h: number) => {
+  const r = Math.min(4, h / 2, w / 2)
+  return `M${x},${y + h} V${y + r} a${r},${r} 0 0 1 ${r},-${r} H${x + w - r} a${r},${r} 0 0 1 ${r},${r} V${y + h} Z`
+}
 
 interface Props {
   scores: HourScore[]
@@ -23,9 +33,10 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
   const H = 160
   const padL = 6
   const padB = 22
-  const padT = 16
+  const padT = 14
   const n = Math.max(scores.length, 1)
   const bw = (W - padL - 4) / n
+  const barW = Math.min(24, bw - 2) // 막대는 24px까지만 굵게, 칸 사이는 2px 이상 비운다
   const barMax = Math.max(0, ...scores.map((s) => s.index ?? 0))
   const yMax = Math.min(100, Math.max(70, Math.ceil((barMax + 10) / 10) * 10))
   const plotH = H - padB - padT
@@ -33,23 +44,24 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
   const hasNoise = scores.some((s) => s.noise)
   const missingNoise = (s: HourScore) => hasNoise && !s.noise && s.index !== null
   const first = scores[0]
-  const nowLabel = first && first.forecast === false && first.obs ? `지금(관측 ${first.obs})` : null
-  const nowEnd = nowLabel ? padL + nowLabel.length * 11 : 0
-  const labelOf = (s: HourScore, i: number) => (i === 0 && nowLabel ? nowLabel : `${s.hour}시`)
+  // 관측 시각은 시트 머리에 있으므로 축에는 '지금'만 쓴다
+  const nowLabel = first && first.forecast === false && first.obs ? '지금' : null
+  const nowEnd = nowLabel ? padL + 32 : 0
   const dayBreak = scores.findIndex((s, i) => i > 0 && s.time.slice(0, 10) !== scores[i - 1].time.slice(0, 10))
   const tomorrow = (i: number) => dayBreak > 0 && i >= dayBreak
+  const labelOf = (s: HourScore, i: number) => (i === 0 && nowLabel ? nowLabel : `${i === dayBreak ? '내일 ' : ''}${s.hour}시`)
   const desc = scores
-    .map((s, i) => `${i > 0 && i === dayBreak ? '내일 ' : ''}${labelOf(s, i)} ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 추천' : ''}`)
+    .map((s, i) => `${i > 0 && i === dayBreak ? '내일 ' : ''}${i === 0 && nowLabel ? `지금(관측 ${first.obs})` : `${s.hour}시`} ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 추천' : ''}`)
     .join(', ')
   // 단추의 이름: '9시 보통 지수 42'. 내일 칸은 '내일'을 붙인다.
   const buttonName = (s: HourScore, i: number) =>
     `${tomorrow(i) ? '내일 ' : ''}${s.hour}시 ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` 지수 ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 추천' : ''}`
   const selIdx = selectedHour === null ? -1 : scores.findIndex((s) => s.hour === selectedHour)
-  // 고른 막대의 글자가 '지금(관측 …)' 글자와 겹치면, 고른 쪽 글자를 보이고 지금 글자는 뺀다
-  const selCx = selIdx >= 0 ? padL + selIdx * bw + 2 + (bw - 4) / 2 : 0
+  // 고른 막대의 글자가 '지금' 글자와 겹치면, 고른 쪽 글자를 보이고 지금 글자는 뺀다
+  const selCx = selIdx >= 0 ? padL + selIdx * bw + bw / 2 : 0
   const nowShown = nowLabel !== null && !(selIdx > 0 && selCx - 17 < nowEnd)
   const endX = nowShown ? nowEnd : 0
-  // 막대가 좁은 화면(막대 한 칸 20~30px)에서도 한 시간씩 옮길 수 있는 큰 단추. 고르기 전에는 첫 칸(지금)에서 시작한다.
+  // 막대가 좁은 화면(막대 한 칸 20~30px)에서도 한 시간씩 옮길 수 있는 단추. 고르기 전에는 첫 칸(지금)에서 시작한다.
   const cur = selIdx >= 0 ? selIdx : 0
   const canStep = (dir: 1 | -1) => scores.some((s, i) => (dir > 0 ? i > cur : i < cur) && s.index !== null)
   const stepTo = (dir: 1 | -1) => {
@@ -92,21 +104,6 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
     }
     return best.x
   }
-  // '내일' 글자는 위쪽 모서리에 두지만, 막대가 모두 낮아(yMax 70) '붐빔 65' 기준선 글자가 위쪽까지 올라와 같은 자리에 겹치면 기준선 아래로 내린다
-  const busyX = labelX(65, 54)
-  const dayX = padL + dayBreak * bw + 3
-  const dayCollides = dayBreak > 0 && yOf(65) - 3 - 16 < 14 && dayX + 32 > busyX && busyX + 54 > dayX
-  const dayY = dayCollides ? yOf(65) + 18 : 14
-  const caption = [
-    '추천 시간은 외출 시간(8~21시) 안에서 골라요.',
-    hasNight && '옅은 막대는 밤 시간이라 추천 비교에서 뺐어요.',
-    hasHighlight && '테두리가 있는 막대가 추천 시간이에요.',
-    selIdx >= 0 && '바탕이 칠해진 막대가 지금 보고 있는 시간이에요.',
-    hasHatch && '빗금 막대는 주변 소음 실측이 빠진 시간이라 혼잡도 예측만 반영했어요.',
-    noNoise && '이 장소는 이 시간대의 소음 자료가 없어 혼잡도 예측만 반영했어요.',
-  ]
-    .filter(Boolean)
-    .join(' ')
 
   return (
     <>
@@ -114,50 +111,45 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
         <svg className="chart" viewBox={`0 0 ${W} ${H}`} {...(onSelectHour ? { 'aria-hidden': true } : { role: 'img', 'aria-label': `시간대별 감각부하 지수. ${desc}` })}>
           <defs>
             <pattern id="hc-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <rect x="0" y="0" width="2" height="6" fill="#ffffff" opacity=".7" />
-              <rect x="3" y="0" width="2" height="6" fill="#1f2933" opacity=".35" />
+              <rect x="0" y="0" width="3" height="6" fill="#ffffff" opacity=".6" />
             </pattern>
           </defs>
-          {selIdx >= 0 && <rect x={padL + selIdx * bw} y={1} width={bw} height={H - padB + 1} rx={6} fill="#dcecf4" stroke="#2f6f8f" strokeWidth={1.5} />}
+          {selIdx >= 0 && <rect x={padL + selIdx * bw} y={padT - 6} width={bw} height={H - padB - padT + 8} rx={6} fill={SEL_BG} />}
           {[35, 65].map((y) => (
-            <line key={y} x1={padL} x2={W} y1={yOf(y)} y2={yOf(y)} stroke="#c4ccd6" strokeDasharray="3 3" />
+            <line key={y} x1={padL} x2={W} y1={yOf(y)} y2={yOf(y)} stroke={GRID} />
           ))}
           {scores.map((s, i) => {
             const v = s.index ?? 0
             const h = (v / yMax) * plotH
-            const x = padL + i * bw + 2
-            const w = bw - 4
+            const x = padL + i * bw + (bw - barW) / 2
             const y = H - padB - h
             const hl = highlight !== null && s.hour === highlight
-            const cx = x + w / 2
+            const cx = x + barW / 2
             const sel = i === selIdx
             // 고른 막대의 시각 글자가 이웃 눈금 글자와 겹치지 않게, 바로 옆 눈금은 뺀다
             const nearSel = selIdx >= 0 && Math.abs(i - selIdx) === 1
             const showLabel = sel || (!nearSel && (i === 0 || (s.hour % 3 === 0 && cx - 14 >= endX)))
             return (
               <g key={s.time}>
-                <g opacity={isNight(s.hour) ? 0.45 : 1}>
-                  <rect x={x} y={y} width={w} height={h} rx={3} fill={FILL[s.level]} fillOpacity={s.level === 'nodata' ? 0.7 : 1} stroke={s.level === 'nodata' ? '#5f6b7a' : 'none'} strokeDasharray="3 3" />
-                </g>
-                {missingNoise(s) && <rect x={x} y={y} width={w} height={h} rx={3} fill="url(#hc-hatch)" />}
-                {hl && <rect x={x - 3} y={y - 3} width={w + 6} height={h + 6} rx={5} fill="none" stroke="#1f2933" strokeWidth={2} />}
-                {s.soundN > 0 && <circle cx={cx} cy={y - (hl ? 9 : 5)} r={2.5} fill="#2f6f8f" />}
+                {h > 0 && (
+                  <g opacity={isNight(s.hour) ? 0.45 : 1}>
+                    <path d={barPath(x, y, barW, h)} fill={FILL[s.level]} />
+                    {missingNoise(s) && <path d={barPath(x, y, barW, h)} fill="url(#hc-hatch)" />}
+                  </g>
+                )}
+                {hl && <circle cx={cx} cy={h >= 18 ? y + 9 : y - 7} r={4.5} fill={INK} stroke="#ffffff" strokeWidth={2} />}
                 {showLabel && (
-                  <text x={i === 0 && nowShown ? padL : cx} y={H - 6} textAnchor={i === 0 && nowShown ? 'start' : 'middle'} style={sel ? TEXT_SEL : TEXT}>{i === 0 && nowShown ? nowLabel : `${s.hour}시`}</text>
+                  <text x={i === 0 && nowShown ? padL : cx} y={H - 6} textAnchor={i === 0 && nowShown ? 'start' : 'middle'} style={sel ? TEXT_SEL : TEXT}>
+                    {i === 0 && nowShown ? nowLabel : sel ? `${tomorrow(i) ? '내일 ' : ''}${s.hour}시` : labelOf(s, i)}
+                  </text>
                 )}
               </g>
             )
           })}
           {/* 기준선 글자는 막대 위에 얹히지 않는 자리에, 막대보다 앞에 그려 가려지지 않게 한다 */}
           {[35, 65].map((y) => (
-            <text key={y} x={y === 35 ? labelX(35, 68) : busyX} y={yOf(y) - 3} style={HALO}>{y === 35 ? '무던함 35' : '붐빔 65'}</text>
+            <text key={y} x={labelX(y, y === 35 ? 60 : 48)} y={yOf(y) - 3} style={TICK}>{y === 35 ? '무던함 35' : '붐빔 65'}</text>
           ))}
-          {dayBreak > 0 && (
-            <g>
-              <line x1={padL + dayBreak * bw} x2={padL + dayBreak * bw} y1={2} y2={H - padB} stroke="#5f6b7a" strokeDasharray="2 3" />
-              <text x={dayX} y={dayY} style={HALO}>내일</text>
-            </g>
-          )}
         </svg>
         {onSelectHour && (
           <div className="chart-bars" role="group" aria-label="시간대별 감각부하 지수. 시간을 고르면 그 시각 기준으로 보여 줘요" onKeyDown={onBarsKey} onBlur={onBarsBlur}>
@@ -179,13 +171,45 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
           </div>
         )}
       </div>
-      {onSelectHour && scores.length > 1 && (
-        <div className="chart-step">
-          <button type="button" className="btn" disabled={!canStep(-1)} onClick={() => stepTo(-1)}>‹ 이전 시간</button>
-          <button type="button" className="btn" disabled={!canStep(1)} onClick={() => stepTo(1)}>다음 시간 ›</button>
+      {scores.length > 0 && (
+        <div className="chart-foot">
+          {onSelectHour && scores.length > 1 && (
+            <button type="button" className="chart-nav" disabled={!canStep(-1)} onClick={() => stepTo(-1)}>‹ 이전</button>
+          )}
+          <ul className="chart-legend">
+            {hasHighlight && (
+              <li>
+                <svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill={INK} stroke="#ffffff" strokeWidth="2" /></svg>
+                추천 시간
+              </li>
+            )}
+            {hasNight && (
+              <li>
+                <svg width="14" height="14" aria-hidden="true"><rect x="3" y="2" width="8" height="12" rx="2" fill={FILL.mid} opacity=".45" /></svg>
+                밤(비교에서 뺌)
+              </li>
+            )}
+            {hasHatch && (
+              <li>
+                <svg width="14" height="14" aria-hidden="true">
+                  <defs>
+                    <pattern id="lg-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                      <rect x="0" y="0" width="2" height="4" fill="#ffffff" opacity=".6" />
+                    </pattern>
+                  </defs>
+                  <rect x="3" y="2" width="8" height="12" rx="2" fill={FILL.mid} />
+                  <rect x="3" y="2" width="8" height="12" rx="2" fill="url(#lg-hatch)" />
+                </svg>
+                소음 자료 없는 시간
+              </li>
+            )}
+            {noNoise && <li>소음 자료 없음(혼잡만)</li>}
+          </ul>
+          {onSelectHour && scores.length > 1 && (
+            <button type="button" className="chart-nav" disabled={!canStep(1)} onClick={() => stepTo(1)}>다음 ›</button>
+          )}
         </div>
       )}
-      {scores.length > 0 && <p className="muted">{caption}</p>}
     </>
   )
 }
