@@ -91,8 +91,9 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const visitN = useMemo(() => loadLog().filter((l) => l.place === place.name).length, [place.name, offsets])
   // 보여 주는 칸이 '보통' 이상일 때만, 같은 시각에 단계가 더 낮은 가까운 곳을 찾는다.
-  // 다른 장소의 시계열은 이 장소에 보통 이상인 칸이 있을 때만 쓰고, 후보를 가까운 순으로 보면서 필요한 장소의 것만 그때그때 만들어 둔다
-  // (calmerNearby가 후보 3곳을 채우면 멈춘다). 시각을 바꾸면 만들어 둔 시계열은 두고 후보 고르기만 다시 한다.
+  // 다른 장소의 시계열은 이 장소에 보통 이상인 칸이 있을 때만 쓰고, 6km 안 후보의 것을 필요할 때 만들어 둔다.
+  // 단계 우선(TIER_FIRST)이면 6km 안 후보를 모두 보고 단계, 가까운 순으로 3곳을 고르고, 거리순이면 후보 3곳이 차는 즉시 멈춘다.
+  // 시각을 바꾸면 만들어 둔 시계열은 두고 후보 고르기만 다시 한다.
   const hasMid = scores.some((s) => s.level === 'mid' || s.level === 'busy')
   const allScores = useMemo(() => {
     if (!hasMid) return null

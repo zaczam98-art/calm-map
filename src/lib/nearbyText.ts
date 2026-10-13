@@ -28,9 +28,9 @@ export const TXT = {
   far: `${NEARBY_FAR_KM}km보다 멀어요`,
   farNote: `${NEARBY_FAR_KM}km보다 먼 곳은 이동이 길어질 수 있어요.`,
   isolated: `직선 ${NEARBY_FAR_KM}km 안에는 비교할 수 있는 다른 곳도 없어요.`,
-  safe: '처음 가는 곳이면 곁에서 주변을 먼저 살펴보세요.',
+  safe: '처음 가는 곳이면 아이 곁에서 주변을 먼저 살펴보세요.',
   evidence: `서울시가 실시간으로 공개하는 주요 ${PLACE_COUNT}곳끼리만 비교했어요. 직선 거리만 보여 줘요. 실제 이동 시간은 지도 앱에서 확인해 주세요. 아이에게 편한 정도를 직접 잰 값은 아니에요.`,
-  baseStale: '이 장소는 서울시 자료가 오래돼서 가까운 곳과 비교하지 않았어요.',
+  baseStale: '이곳은 서울시 자료가 오래돼서 가까운 곳과 비교하지 않았어요.',
   back: '← 이전 장소로 돌아가기',
   whySummary: '이유 보기',
   panelSummary: '이 선택지는 어떻게 골랐나요',
@@ -165,7 +165,7 @@ export function whyLines(name: string, base: HourScore, cand: HourScore, opts: {
  */
 export function panelLines(opts: { noiseDays: number | null; baseNoise: NoiseState; deviceSound: boolean; obs: boolean }): string[] {
   const lines = opts.obs
-    ? ['[서울시 관측] 지금 칸은 서울시가 실시간으로 공개하는 혼잡 단계를 썼어요.', '[서울시 예측] 다른 시간은 서울시가 발표한 혼잡 예측 단계를 썼어요. 두 값 모두 지역 단위라 장소 안쪽과 다를 수 있어요.']
+    ? ['[서울시 관측] 지금 시각은 서울시가 실시간으로 공개하는 혼잡 단계를 썼어요.', '[서울시 예측] 다른 시간은 서울시가 발표한 혼잡 예측 단계를 썼어요. 두 값 모두 지역 단위라 장소 안쪽과 다를 수 있어요.']
     : ['[서울시 예측] 서울시가 발표한 혼잡 예측 단계를 썼어요. 지역 단위 값이라 장소 안쪽과 다를 수 있어요.']
   // 이 시간대에 소음 자료가 없다고 카드 위쪽에서 밝힌 경우(allMissing)에는 소음 평균을 썼다고 쓰지 않는다
   if (opts.noiseDays !== null && opts.baseNoise !== 'allMissing') {

@@ -1,7 +1,7 @@
 /* 시간대 막대 그림 아래 줄: 범례 칩과 시간 옮기기 단추를 한 줄에 둔다 */
 .chart-foot { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; }
 .chart-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
-.chart-legend li { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.chart-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .chart-legend svg { flex: 0 0 auto; }
 .chart-nav { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: 0 10px; border: 1px solid var(--ctl-line); border-radius: 10px; background: var(--card); color: var(--ink); font-size: 14px; }
 .chart-nav:disabled { opacity: .45; cursor: default; }

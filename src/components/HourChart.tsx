@@ -1,7 +1,7 @@
 import { useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { HourScore } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
-import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 추천 비교에서 빼므로 옅게 그린다
+import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 권고 시간 비교에서 빼므로 옅게 그린다
 import '../styles/chart.css'
 // 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준. 375px 화면에서 거의 같은 px가 되고 320px에서도 12px 안팎이다)
 const TEXT = { fontSize: 15 }
@@ -51,11 +51,11 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
   const tomorrow = (i: number) => dayBreak > 0 && i >= dayBreak
   const labelOf = (s: HourScore, i: number) => (i === 0 && nowLabel ? nowLabel : `${i === dayBreak ? '내일 ' : ''}${s.hour}시`)
   const desc = scores
-    .map((s, i) => `${i > 0 && i === dayBreak ? '내일 ' : ''}${i === 0 && nowLabel ? `지금(관측 ${first.obs})` : `${s.hour}시`} ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 추천' : ''}`)
+    .map((s, i) => `${i > 0 && i === dayBreak ? '내일 ' : ''}${i === 0 && nowLabel ? `지금(관측 ${first.obs})` : `${s.hour}시`} ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 권고 시간' : ''}`)
     .join(', ')
   // 단추의 이름: '9시 보통 지수 42'. 내일 칸은 '내일'을 붙인다.
   const buttonName = (s: HourScore, i: number) =>
-    `${tomorrow(i) ? '내일 ' : ''}${s.hour}시 ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` 지수 ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 추천' : ''}`
+    `${tomorrow(i) ? '내일 ' : ''}${s.hour}시 ${LEVEL3_LABEL[s.level]}${s.index !== null ? ` 지수 ${s.index}` : ''}${highlight !== null && s.hour === highlight ? ' 권고 시간' : ''}`
   const selIdx = selectedHour === null ? -1 : scores.findIndex((s) => s.hour === selectedHour)
   // 고른 막대의 글자가 '지금' 글자와 겹치면, 고른 쪽 글자를 보이고 지금 글자는 뺀다
   const selCx = selIdx >= 0 ? padL + selIdx * bw + bw / 2 : 0
@@ -174,19 +174,19 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
       {scores.length > 0 && (
         <div className="chart-foot">
           {onSelectHour && scores.length > 1 && (
-            <button type="button" className="chart-nav" disabled={!canStep(-1)} onClick={() => stepTo(-1)}>‹ 이전</button>
+            <button type="button" className="chart-nav" disabled={!canStep(-1)} aria-label="이전 시간" onClick={() => stepTo(-1)}>‹ 이전</button>
           )}
           <ul className="chart-legend">
             {hasHighlight && (
               <li>
                 <svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill={INK} stroke="#ffffff" strokeWidth="2" /></svg>
-                추천 시간
+                권고 시간
               </li>
             )}
             {hasNight && (
               <li>
                 <svg width="14" height="14" aria-hidden="true"><rect x="3" y="2" width="8" height="12" rx="2" fill={FILL.mid} opacity=".45" /></svg>
-                밤(비교에서 뺌)
+                밤(비교 제외)
               </li>
             )}
             {hasHatch && (
@@ -200,13 +200,13 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
                   <rect x="3" y="2" width="8" height="12" rx="2" fill={FILL.mid} />
                   <rect x="3" y="2" width="8" height="12" rx="2" fill="url(#lg-hatch)" />
                 </svg>
-                소음 자료 없는 시간
+                소음 자료 없음
               </li>
             )}
-            {noNoise && <li>소음 자료 없음(혼잡만)</li>}
+            {noNoise && <li>소음 자료 없음(혼잡만 반영)</li>}
           </ul>
           {onSelectHour && scores.length > 1 && (
-            <button type="button" className="chart-nav" disabled={!canStep(1)} onClick={() => stepTo(1)}>다음 ›</button>
+            <button type="button" className="chart-nav" disabled={!canStep(1)} aria-label="다음 시간" onClick={() => stepTo(1)}>다음 ›</button>
           )}
         </div>
       )}

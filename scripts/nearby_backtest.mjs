@@ -1,5 +1,5 @@
 /**
- * 인근 장소 안내의 지난 자료 시험.
+ * 무던한 곳 안내의 지난 자료 시험.
  * 수집 이력(history.json)의 관측과 서울시 예측으로 "그 시각에 앱이 받았을 스냅샷"을 다시 만들고, 저장소의 실제 규칙
  * (src/lib/nearby.ts의 calmerNearby, candidateCell)이 고른 후보가 나중에도 기준 장소보다 단계가 낮았는지 센다.
  * 결과는 src/data/nearbyEvidence.json 이다. 독립 구현(rank 배열로 따로 고른 후보)은 calmerNearby와의 일치 검증에만 쓴다.
@@ -30,7 +30,8 @@ const FIXTURE = {
   to: '2026-10-13 10',
 }
 // 조사 단계 결과(CW, 거리순, 반경별 후보 유무와 기준 장소가 보통 이상인 칸의 1~3시간 뒤 지속)
-const REPRO = { pAny: { 1: '35.7', 2: '75.8', 3: '91.8', 6: '99.4' }, persistence: { 1: '73.2', 2: '60.2', 3: '50.6' } }
+// 지속 2시간 뒤는 조사 문서에 60.2로 적혀 있으나, 4자리로 먼저 맺은 값에서 다시 맺은 결과다. 한 번만 맺으면 60.1이다.
+const REPRO = { pAny: { 1: '35.7', 2: '75.8', 3: '91.8', 6: '99.4' }, persistence: { 1: '73.2', 2: '60.1', 3: '50.6' } }
 const EVIDENCE = 'src/data/nearbyEvidence.json'
 const MIN_CELLS = 300
 const HOUR_KEY = /^\d{4}-\d{2}-\d{2} \d{2}$/
@@ -84,9 +85,9 @@ const placeIdx = new Map(places.map((p, i) => [p.name, i]))
 
 // ---------- 통계 도우미
 const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
-const r4 = (x) => (x === null || Number.isNaN(x) ? null : Math.round(x * 10000) / 10000)
-/** 4자리로 맺은 비율을 퍼센트 한 자리 문자열로(반올림이 부동소수 경계에 걸리지 않게 정수로 한 번 맺는다) */
-const pct1 = (x) => (Math.round(Math.round(x * 1e4) / 10) / 10).toFixed(1)
+const r6 = (x) => (x === null || Number.isNaN(x) ? null : Math.round(x * 1e6) / 1e6)
+/** 6자리로 저장한 비율을 퍼센트 한 자리 문자열로. 저장 자리를 1e6 정수로 먼저 읽고(부동소수 잡음 제거) 거기서 한 번만 반올림한다 */
+const pct1 = (x) => (Math.round(Math.round(x * 1e6) / 1e3) / 10).toFixed(1)
 const share = (n, d) => (d ? n / d : null)
 
 function mulberry32(a) {
@@ -130,7 +131,7 @@ function ci(fn, accs) {
     if (v !== null && isFinite(v)) out.push(v)
   }
   out.sort((a, b) => a - b)
-  return out.length ? [r4(out[Math.floor(out.length * 0.025)]), r4(out[Math.floor(out.length * 0.975)])] : null
+  return out.length ? [r6(out[Math.floor(out.length * 0.025)]), r6(out[Math.floor(out.length * 0.975)])] : null
 }
 const rateCI = (a) => ci((t) => (t[0].d ? t[0].n / t[0].d : null), [a])
 const diffCI = (a, b) => ci((t) => (t[0].d && t[1].d ? t[0].n / t[0].d - t[1].n / t[1].d : null), [a, b])
@@ -273,7 +274,7 @@ function compute(historyPath, noisePath, fromArg, toArg) {
     const pAny = {}
     for (const r of RADII) {
       const hit = cases.filter((c) => (r === L.NEARBY_MAX_KM ? c.picks : pick(c.b, c.hi, c.shown, r, 1)).length > 0).length
-      pAny[r] = r4(share(hit, cases.length))
+      pAny[r] = r6(share(hit, cases.length))
     }
 
     // 지금 관측으로 고른 후보가 k시간 뒤(관측)에도 기준 장소보다 단계가 낮은지
@@ -298,7 +299,7 @@ function compute(historyPath, noisePath, fromArg, toArg) {
         lower.add(c.b, s.rel, s.n)
         busy.add(c.b, s.busy, s.n)
       }
-      persistence[k] = { rate: r4(lower.rate), ci95: rateCI(lower), cells: nCase, picks: nPick, toBusy: r4(busy.rate), sameOrHigher: r4(1 - lower.rate) }
+      persistence[k] = { rate: r6(lower.rate), ci95: rateCI(lower), cells: nCase, picks: nPick, toBusy: r6(busy.rate), sameOrHigher: r6(1 - lower.rate) }
     }
 
     // 도착 시각(k시간 뒤)을 고르고 그 시각의 서울시 예측으로 고른 후보가 그 시각 관측에서 기준 장소보다 단계가 낮은지.
@@ -343,13 +344,13 @@ function compute(historyPath, noisePath, fromArg, toArg) {
           }
         }
       }
-      arrival[k] = { rate: r4(rel.rate), ci95: rateCI(rel), cells: nCase, picks: nPick, toBusy: r4(busy.rate), sameOrHigher: r4(1 - rel.rate) }
-      arrivalVsNow[k] = { pred: r4(cFc.rate), nowObs: r4(cNow.rate), diffCi95: diffCI(cFc, cNow), cells: nCommon }
+      arrival[k] = { rate: r6(rel.rate), ci95: rateCI(rel), cells: nCase, picks: nPick, toBusy: r6(busy.rate), sameOrHigher: r6(1 - rel.rate) }
+      arrivalVsNow[k] = { pred: r6(cFc.rate), nowObs: r6(cNow.rate), diffCi95: diffCI(cFc, cNow), cells: nCommon }
     }
 
     // 배포할 규칙으로 고른 후보까지의 직선 거리
     const kms = cases.flatMap((c) => c.picks.map((it) => it.km))
-    const distance = { within3km: r4(share(kms.filter((km) => km <= L.NEARBY_FAR_KM).length, kms.length)), picks: kms.length, meanKm: kms.length ? Math.round(mean(kms) * 100) / 100 : null }
+    const distance = { within3km: r6(share(kms.filter((km) => km <= L.NEARBY_FAR_KM).length, kms.length)), picks: kms.length, meanKm: kms.length ? Math.round(mean(kms) * 100) / 100 : null }
     return { nCases: cases.length, pAny, persistence, arrival, arrivalVsNow, distance, indep }
   }
 
@@ -497,7 +498,13 @@ function verify(evPath, readmePath) {
   const m = readme.match(/<!-- nearby-evidence:start -->([\s\S]*?)<!-- nearby-evidence:end -->/)
   let readmeNote = 'README에 마커가 없어요'
   if (need(m, 'README에 <!-- nearby-evidence:start --> ... <!-- nearby-evidence:end --> 마커가 없어요')) {
-    const text = m[1].replace(/(?<=\d),(?=\d{3}(?!\d))/g, '') // 천 단위 쉼표는 지우고 읽는다
+    const raw = m[1].replace(/(?<=\d),(?=\d{3}(?!\d))/g, '') // 천 단위 쉼표는 지우고 읽는다
+    need(raw.includes('95% 구간'), "README 마커 사이에 구간의 종류('95% 구간')가 없어요")
+    const text = raw.replace(/95% 구간/g, '구간') // 신뢰수준 표기는 JSON 비율이 아니므로 수치 대조에서 뺀다
+    // JSON의 limits와 reconstruction이 말하는 시험 조건이 README에도 있어야 한다(JSON에만 있으면 독자가 앱 지수의 수치로 읽는다)
+    for (const s of ev.limits ?? []) if (/소리/.test(s) && /민감도 제외/.test(s)) need(/소리/.test(text) && /맞춤/.test(text) && /(뺐|넣지 않|제외)/.test(text), `README 마커 사이에 limits의 '${s}'에 해당하는 문장(소리와 아이 맞춤을 넣지 않았다)이 없어요`)
+    const lags = ev.reconstruction?.match(/시차 ([\d, ]+)의 중앙값/)
+    need(lags && text.includes(lags[1].trim()) && text.includes('중앙값'), `README 마커 사이에 스냅샷 재구성(시차 ${lags ? lags[1].trim() : '?'}의 중앙값) 문장이 없어요`)
     // JSON의 비율 값을 퍼센트 한 자리 문자열로 모은다
     const allowed = new Set()
     const walk = (o) => {

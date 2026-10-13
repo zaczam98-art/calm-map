@@ -1,5 +1,5 @@
 /**
- * 인근 장소 카드의 계산(src/lib/nearby.ts)과 화면 문구(src/lib/nearbyText.ts) 검증.
+ * 무던한 곳 안내의 계산(src/lib/nearby.ts)과 화면 문구(src/lib/nearbyText.ts) 검증.
  * 모델과 외부 주소를 부르지 않고, 받아 둔 공개 스냅샷과 소음 파일로만 돈다.
  *
  * 실행(저장소 루트에서):
@@ -872,7 +872,7 @@ section('C7', '금지어와 문장 부호')
   g(T.far, '3km보다 멀어요')
   g(T.farNote, '3km보다 먼 곳은 이동이 길어질 수 있어요.')
   g(T.isolated, '직선 3km 안에는 비교할 수 있는 다른 곳도 없어요.')
-  g(T.safe, '처음 가는 곳이면 곁에서 주변을 먼저 살펴보세요.')
+  g(T.safe, '처음 가는 곳이면 아이 곁에서 주변을 먼저 살펴보세요.')
   g(T.evidence, '서울시가 실시간으로 공개하는 주요 121곳끼리만 비교했어요. 직선 거리만 보여 줘요. 실제 이동 시간은 지도 앱에서 확인해 주세요. 아이에게 편한 정도를 직접 잰 값은 아니에요.')
   g(T.altNone, '외출 시간(8~21시) 예측 안에는 무던해지는 때가 보이지 않아요.')
   const pc = (index, c, offset, forecast = true) => ({ time: '2026-10-13 19:00', hour: 19, index, level: 'busy', soundN: 0, forecast, noise: false, parts: { c, n: null, s: null, w: 0, offset, base: c } })
@@ -887,7 +887,7 @@ section('C7', '금지어와 문장 부호')
   g(L.whyLines('가나다', pc(60, 60, 0, false), pc(30, 30, 0, false), none).join('|'), '가나다의 지수는 30이고, 이곳(지수 60)보다 30점 낮아요.|혼잡 관측 쪽은 이곳보다 30점 낮아요.')
   const pl = (o) => L.panelLines({ noiseDays: null, baseNoise: 'ok', deviceSound: false, obs: false, ...o })
   g(pl({})[0], '[서울시 예측] 서울시가 발표한 혼잡 예측 단계를 썼어요. 지역 단위 값이라 장소 안쪽과 다를 수 있어요.')
-  g(pl({ obs: true })[0], '[서울시 관측] 지금 칸은 서울시가 실시간으로 공개하는 혼잡 단계를 썼어요.')
+  g(pl({ obs: true })[0], '[서울시 관측] 지금 시각은 서울시가 실시간으로 공개하는 혼잡 단계를 썼어요.')
   const nz = (baseNoise) => pl({ noiseDays: 33, baseNoise }).find((x) => x.startsWith('[소음 평균]'))
   g(nz('ok'), '[소음 평균] 지난 33일 요일·시각별 동네 소음 평균을 썼어요. 센서는 길가에 있어서 장소 안쪽과 다를 수 있어요.')
   g(nz('placeMissing'), '[소음 평균] 지난 33일 요일·시각별 동네 소음 평균을 썼어요. 센서는 길가에 있어서 장소 안쪽과 다를 수 있어요. 다만 이곳은 자료가 없어서 반영하지 않았어요.')
