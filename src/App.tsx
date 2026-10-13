@@ -123,26 +123,29 @@ function ageMinutes(updatedAt: string, now = Date.now()): number {
   return Number.isFinite(m) ? Math.max(0, m) : 0
 }
 
-/** 장소 상세는 '#/place/이름', 나머지는 '#/탭'. 추천 탭에서 연 장소도 주소는 '#/place/이름'이고 어느 탭인지는 history.state에 둔다. */
+/** 장소 상세는 '#/place/이름', 나머지는 '#/탭'. 추천 탭에서 연 장소도 주소는 '#/place/이름'이고 어느 탭인지는 history.state에 둔다.
+ * 가까운 곳 후보로 연 시트가 돌아갈 장소(backTo)도 history.state에 두어, 한 단계씩 보기를 닫거나 앞으로 가기로 돌아와도 돌아가기 단추가 남게 한다. */
 function urlFor(view: View, selected: string | null): string {
   return selected && (view === 'map' || view === 'recommend') ? `#/place/${encodeURIComponent(selected)}` : `#/${view}`
 }
 
-function readLocation(): { view: View; selected: string | null } {
-  const st = history.state as { view?: unknown; selected?: unknown } | null
+function readLocation(): { view: View; selected: string | null; backTo: string | null } {
+  const st = history.state as { view?: unknown; selected?: unknown; backTo?: unknown } | null
   if (st && VIEWS.includes(st.view as View)) {
-    return { view: st.view as View, selected: typeof st.selected === 'string' && PLACE_NAMES.has(st.selected) ? st.selected : null }
+    const selected = typeof st.selected === 'string' && PLACE_NAMES.has(st.selected) ? st.selected : null
+    const backTo = selected && typeof st.backTo === 'string' && st.backTo !== selected && PLACE_NAMES.has(st.backTo) ? st.backTo : null
+    return { view: st.view as View, selected, backTo }
   }
   const h = location.hash.replace(/^#\/?/, '')
   if (h.startsWith('place/')) {
     try {
       const name = decodeURIComponent(h.slice(6))
-      return { view: 'map', selected: PLACE_NAMES.has(name) ? name : null }
+      return { view: 'map', selected: PLACE_NAMES.has(name) ? name : null, backTo: null }
     } catch {
-      return { view: 'map', selected: null }
+      return { view: 'map', selected: null, backTo: null }
     }
   }
-  return { view: VIEWS.includes(h as View) ? (h as View) : 'map', selected: null }
+  return { view: VIEWS.includes(h as View) ? (h as View) : 'map', selected: null, backTo: null }
 }
 
 /** 맞춤을 켰어도 고른 것이 없어 지수가 그대로인 프로필인지 */
@@ -159,6 +162,7 @@ export default function App() {
   const [offsets, setOffsets] = useState<Record<string, number>>(() => loadOffsets())
   const [selected, setSelected] = useState<string | null>(null)
   const [selectedHour, setSelectedHour] = useState<number | null>(null) // 지도 슬라이더와 장소 시트가 함께 쓰는 시각(0~23, null=지금)
+  const [backTo, setBackTo] = useState<string | null>(initialLoc.backTo) // 가까운 곳 후보를 눌러 열었을 때 돌아갈 장소(직접 연 시트는 null). 새로고침해도 history.state에서 되살린다.
   const [soundVersion, setSoundVersion] = useState(0)
   const [pattern, setPattern] = useState<WeekPattern | null>(null)
   const [metrics, setMetrics] = useState<ForecastMetrics | null>(null)
@@ -186,13 +190,13 @@ export default function App() {
   const mainRef = useRef<HTMLElement>(null)
   const dragStart = useRef<{ x: number; y: number } | null>(null)
 
-  const navigate = useCallback((v: View, sel: string | null, replace = false) => {
+  const navigate = useCallback((v: View, sel: string | null, replace = false, back?: string) => {
     pendingPlace.current = null
     if (!sel) setIntroHold(false)
     setView(v)
     setSelected(sel)
     const hash = urlFor(v, sel)
-    const state = { view: v, selected: sel }
+    const state = back ? { view: v, selected: sel, backTo: back } : { view: v, selected: sel }
     try {
       if (replace) history.replaceState(state, '', hash)
       else if (location.hash !== hash) history.pushState(state, '', hash)
@@ -200,13 +204,23 @@ export default function App() {
       /* 주소를 바꿀 수 없는 환경에서는 화면만 바꾼다 */
     }
   }, [])
-  const openPlace = useCallback((name: string) => navigate(viewRef.current === 'recommend' ? 'recommend' : 'map', name), [navigate])
-  const closeSheet = () => navigate(view, null, true) // 뒤로 가기가 사이트를 떠나지 않도록 기록을 쌓지 않고 바꾼다
+  const openPlace = useCallback(
+    (name: string, from?: string) => {
+      setBackTo(from ?? null)
+      navigate(viewRef.current === 'recommend' ? 'recommend' : 'map', name, false, from)
+    },
+    [navigate],
+  )
+  const closeSheet = () => {
+    setBackTo(null)
+    navigate(view, null, true) // 뒤로 가기가 사이트를 떠나지 않도록 기록을 쌓지 않고 바꾼다
+  }
   const go = (v: View) => {
     if (v === view) return
     if (view === 'measure' && measureRunning) {
       if (!window.confirm(MEASURE_LEAVE_MSG)) return
     }
+    setBackTo(null)
     navigate(v, v === 'recommend' || (v === 'map' && view === 'recommend') ? null : selected)
   }
 
@@ -226,6 +240,7 @@ export default function App() {
         return
       }
       pendingPlace.current = null
+      setBackTo(loc.backTo)
       if (!loc.selected) setIntroHold(false)
       setView(loc.view)
       setSelected(loc.selected)
@@ -485,6 +500,8 @@ export default function App() {
             onGoChild={() => go('child')}
             selectedHour={selectedHour}
             onSelectHour={setSelectedHour}
+            backTo={backTo}
+            onBack={() => window.history.back()}
           />
         )}
         {view === 'recommend' && (

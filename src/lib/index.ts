@@ -12,8 +12,8 @@ export const TAG_WEIGHT: Record<SenseTag, number> = {
 }
 
 /** 가족이 실제로 외출하는 시간대. 권고는 이 범위의 칸만 비교한다. */
-const DAY_FROM = 8
-const DAY_TO = 21
+export const DAY_FROM = 8
+export const DAY_TO = 21
 
 const LEVEL_BASE: Record<CongestLevel, number> = { 여유: 15, 보통: 40, '약간 붐빔': 65, 붐빔: 90 }
 

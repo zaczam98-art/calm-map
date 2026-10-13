@@ -7,11 +7,12 @@ import { loadLog, recordVisit, undoVisit } from '../lib/profile'
 import { assembleCard, getCard, loadCardModules, type CardModule } from '../lib/cards'
 import { HAS_API } from '../lib/publicData'
 import { topTags } from '../lib/tags'
-import { calmerNearby, NEARBY_MAX_KM } from '../lib/nearby'
+import { altCell, calmerNearby, calmRun, candidateCell, distanceKm, hasNeighborWithin, hoursAfter, NEARBY_FAR_KM, NEARBY_MAX_KM, noiseState } from '../lib/nearby'
+import { altButton, basisText, customText, emptyText, makeLabel, metaText, midText, noiseLineText, panelLines, runText, selectedCalmText, summaryAlt, summaryText, TXT, whyLines } from '../lib/nearbyText'
 import { noiseLookup } from '../lib/noise'
 import HourChart from './HourChart'
 import CardView from './CardView'
-import NearbyCalm from './NearbyCalm'
+import NearbyCalm, { type NearbyRow } from './NearbyCalm'
 import WeekPattern from './WeekPattern'
 import Factors from './Factors'
 import NoiseCard from './NoiseCard'
@@ -32,7 +33,8 @@ interface Props {
   places: Place[]
   pattern: WeekPatternData | null
   noise: NoiseData | null
-  onSelect: (name: string) => void
+  /** from은 후보를 눌러 열 때 넘기는 지금 장소의 이름(원래 장소로 돌아가기 단추에 쓴다) */
+  onSelect: (name: string, from?: string) => void
   nowKey: string | undefined
   snap: Snapshot | null
   sound: SoundStore
@@ -46,9 +48,12 @@ interface Props {
   /** 지도 슬라이더와 함께 쓰는 선택 시각(0~23, null=지금). 주지 않으면 이 시트 안에서만 기억한다. */
   selectedHour?: number | null
   onSelectHour?: (hour: number | null) => void
+  /** 후보를 눌러 이 시트가 열렸을 때 돌아갈 장소의 이름. 지도나 목록에서 직접 열었으면 null */
+  backTo?: string | null
+  onBack?: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
@@ -63,7 +68,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const sel = selectedHour !== null ? scoreAt(scores, selectedHour) : undefined
   const shown = sel ?? now // 머리 줄, 소리 종류, '왜 이 지수인가'가 설명하는 칸
   const today = (nowKey ?? now?.time ?? '').slice(0, 10)
-  const hourName = (c: HourScore) => `${c.time.slice(0, 10) === today ? '' : '내일 '}${c.hour}시`
+  const label = useMemo(() => makeLabel(today), [today])
+  const hourName = (c: HourScore) => label(c.time)
   // '지금'이라고 부르는 것은 첫 칸이 현재 시각일 때만(nowKey가 없는 데모는 첫 칸을 지금으로 본다)
   const nowIsCurrent = !nowKey || now?.time.slice(0, 13) === nowKey
   const shortLabel = sel ? hourName(sel) : nowIsCurrent || !now ? '지금' : hourName(now)
@@ -84,11 +90,81 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   // 기록을 남기거나 취소하면 offsets가 새 객체로 바뀌므로 그때 이 장소의 기록 건수를 다시 센다
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const visitN = useMemo(() => loadLog().filter((l) => l.place === place.name).length, [place.name, offsets])
-  // 지금 '보통' 이상일 때만, 가까운 곳 중 지수가 뚜렷이 낮은 곳을 찾는다
+  // 보여 주는 칸이 '보통' 이상일 때만, 같은 시각에 단계가 더 낮은 가까운 곳을 찾는다.
+  // 다른 장소의 시계열은 이 장소에 보통 이상인 칸이 있을 때만 쓰고, 후보를 가까운 순으로 보면서 필요한 장소의 것만 그때그때 만들어 둔다
+  // (calmerNearby가 후보 3곳을 채우면 멈춘다). 시각을 바꾸면 만들어 둔 시계열은 두고 후보 고르기만 다시 한다.
+  const hasMid = scores.some((s) => s.level === 'mid' || s.level === 'busy')
+  const allScores = useMemo(() => {
+    if (!hasMid) return null
+    const m = new Map<string, HourScore[]>([[place.name, scores]])
+    return {
+      get(name: string): HourScore[] | undefined {
+        let s = m.get(name)
+        if (!s) {
+          s = hourScores(snap?.places[name], (h, d) => sound[name]?.[bucketKey(d, h)], profile, offsets[name] ?? 0, nowKey, noiseLookup(noise, name))
+          m.set(name, s)
+        }
+        return s
+      },
+    }
+  }, [hasMid, place.name, scores, snap, sound, profile, offsets, nowKey, noise])
+  const picked = !!sel && sel !== now // 지금 칸을 직접 고른 경우는 고르지 않은 것과 같게 본다
+  const midUp = !!shown && shown.index !== null && (shown.level === 'mid' || shown.level === 'busy')
+  const baseStale = ps?.stale === true
   const nearby = useMemo(() => {
-    if (!now || now.index === null || now.level === 'calm' || now.level === 'nodata') return null
-    return calmerNearby(place, now.level, places, (p) => hourScores(snap?.places[p.name], (h, d) => sound[p.name]?.[bucketKey(d, h)], profile, offsets[p.name] ?? 0, nowKey, noiseLookup(noise, p.name))[0])
-  }, [now, place, places, snap, sound, profile, offsets, nowKey, noise])
+    if (!allScores || !shown || shown.index === null || shown.level === 'calm' || shown.level === 'nodata') return null
+    if (snap?.places[place.name]?.stale) return null
+    return calmerNearby(place, shown.level, places, (p) => (snap?.places[p.name]?.stale === true ? undefined : candidateCell(allScores.get(p.name), shown, false)))
+  }, [allScores, shown, place, places, snap])
+  // 카드에 보이는 줄과 후보 행. 계산은 nearby.ts, 문장은 nearbyText.ts가 맡고 여기서는 이어 붙이기만 한다.
+  const recFrom = rec.from
+  const nearbyView = useMemo(() => {
+    if (!nearby || !allScores || !shown || !now) return null
+    const baseNoise = noiseState(noise, place.name, shown)
+    const noiseNote = noiseLineText(noise === null ? 'noFile' : baseNoise, shown.forecast)
+    const tagNoise = noise !== null && baseNoise !== 'allMissing' // 소음 자료가 없는 시간대는 후보마다 표지를 붙이지 않고 한 줄로만 알린다
+    const isNow = !picked && nowIsCurrent // 기준 칸이 지금 칸이면 관측 칸은 시각 대신 '지금'이라고 부른다
+    // 맞춤을 켰어도 고른 민감도도, 비교에 든 6km 안 장소의 기록 보정도 없으면 지수가 기본 기준과 같다
+    const customApplied = profile.enabled && (chosen || places.some((p) => (offsets[p.name] ?? 0) !== 0 && (p.name === place.name || distanceKm(place, p) <= NEARBY_MAX_KM)))
+    const rows: NearbyRow[] = nearby.map((it) => {
+      const ns = noiseState(noise, it.place.name, it.cell)
+      return {
+        name: it.place.name,
+        level: it.level,
+        meta: metaText(it.km, it.index),
+        sub: it.level === 'calm' ? runText(calmRun(allScores.get(it.place.name)!, it.cell), it.cell, label, isNow) : midText(it.cell.forecast),
+        far: it.km > NEARBY_FAR_KM,
+        noNoise: tagNoise && (ns === 'placeMissing' || ns === 'hourMissing'),
+        why: whyLines(it.place.name, shown, it.cell, { baseNoise, candNoise: ns }),
+      }
+    })
+    const a = altCell(scores, recFrom, shown)
+    const toNow = a === now && nowIsCurrent
+    const aLabel = a ? (toNow ? '지금' : label(a.time)) : ''
+    const aRun = a ? calmRun(scores, a) : null
+    return {
+      title: rows.length > 0 || a ? TXT.title : TXT.titleNeutral,
+      basis: `${basisText(shown, picked, nowIsCurrent, label)} ${customText(profile.enabled, customApplied)}`,
+      noiseNote,
+      farTime: hoursAfter(now, shown) >= 4,
+      alt: a && aRun ? { text: runText(aRun, a, label, toNow), button: altButton(aLabel), hour: toNow ? null : a.hour } : null,
+      rows,
+      empty: emptyText(NEARBY_MAX_KM, picked || !nowIsCurrent ? label(shown.time) : null),
+      isolated: rows.length === 0 && !hasNeighborWithin(place, places, NEARBY_FAR_KM),
+      panel: panelLines({
+        noiseDays: noise?.days ?? null,
+        baseNoise,
+        deviceSound: [shown, ...nearby.map((it) => it.cell)].some((c) => (c.parts?.w ?? 0) > 0),
+        obs: [shown, ...(a ? [a] : []), ...nearby.map((it) => it.cell)].some((c) => !c.forecast),
+      }),
+      summary: rows.length > 0 ? summaryText(rows.length, !shown.forecast) : a && aRun ? summaryAlt(aLabel, !a.forecast, aRun) : null,
+    }
+  }, [nearby, allScores, shown, now, noise, place, places, scores, recFrom, nowIsCurrent, label, picked, profile.enabled, chosen, offsets])
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const jumpToCard = () => {
+    headingRef.current?.scrollIntoView({ block: 'start' })
+    headingRef.current?.focus({ preventScroll: true })
+  }
   const [card, setCard] = useState<{ card: Card; note: string; key: string } | null>(null)
   const [modules, setModules] = useState<CardModule[]>([])
   const [loading, setLoading] = useState(false)
@@ -223,6 +299,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     >
       <div className="handle" />
       <button className="close" onClick={onClose} aria-label="닫기">×</button>
+      {backTo && backTo !== place.name && <button className="btn nearby-back" onClick={onBack}>{TXT.back}</button>}
       <h2>{place.name}{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
       <p>
         <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
@@ -240,6 +317,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         </div>
       )}
       <p><b>{rec.text}</b></p>
+      {nearbyView?.summary && <button className="nearby-summary" onClick={jumpToCard}>{nearbyView.summary}</button>}
       <div className="sel-row">
         {sel ? (
           <b role="status">{hourName(sel)} 기준</b>
@@ -282,7 +360,30 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       {factorsNote && <p className="muted">{factorsNote}</p>}
       <Factors extra={factorsExtra} fromHour={sel && selToday ? sel.hour : undefined} />
       <NoiseCard noise={noise} place={place.name} />
-      {nearby && <NearbyCalm items={nearby} maxKm={NEARBY_MAX_KM} onSelect={onSelect} />}
+      {nearbyView && (
+        <NearbyCalm
+          title={nearbyView.title}
+          basis={nearbyView.basis}
+          noiseNote={nearbyView.noiseNote}
+          farTime={nearbyView.farTime}
+          alt={nearbyView.alt && {
+            text: nearbyView.alt.text,
+            button: nearbyView.alt.button,
+            onPick: () => {
+              pickHour(nearbyView.alt!.hour)
+              sheet.current?.focus({ preventScroll: true }) // 눌린 단추가 사라지므로 포커스를 시트로 옮긴다
+            },
+          }}
+          rows={nearbyView.rows}
+          empty={nearbyView.empty}
+          isolated={nearbyView.isolated}
+          panel={nearbyView.panel}
+          onSelect={(name) => onSelect(name, place.name)}
+          headingRef={headingRef}
+        />
+      )}
+      {midUp && baseStale && <p className="muted">{TXT.baseStale}</p>}
+      {shown?.level === 'calm' && picked && <p className="muted">{selectedCalmText(label(shown.time))}</p>}
       <WeekPattern pattern={pattern} place={place.name} />
       <div className="card" style={{ marginTop: 12 }}>
         <h3>다녀온 뒤 기록</h3>
