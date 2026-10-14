@@ -111,7 +111,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
         <p className="muted">
           서울 {places.length}곳을 지금 무던한 순서로 보여 줘요{profile.enabled ? '(우리 아이 맞춤 적용)' : ''}. {sourceNote(snap, loading)}
         </p>
-        {snap !== null && <p className="muted">각 줄 오른쪽의 점수가 지수예요. 지수는 0~100이고 낮을수록 편안해요.</p>}
+        {snap !== null && <p className="muted">각 줄 오른쪽의 점수가 지수예요. 지수는 0~100이고 낮을수록 무던해요.</p>}
         <div className="search">
           <label>
             이름으로 찾기{' '}

@@ -10,6 +10,7 @@ import { topTags } from '../lib/tags'
 import { altCell, calmerNearby, calmRun, candidateCell, distanceKm, hasNeighborWithin, hoursAfter, NEARBY_FAR_KM, NEARBY_MAX_KM, noiseState } from '../lib/nearby'
 import { altButton, basisText, customText, emptyText, makeLabel, metaText, midText, noiseLineText, panelLines, runText, selectedCalmText, summaryAlt, summaryText, TXT, whyLines } from '../lib/nearbyText'
 import { noiseLookup } from '../lib/noise'
+import { SHARED_BAND } from '../lib/landingCopy'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm, { type NearbyRow } from './NearbyCalm'
@@ -52,9 +53,11 @@ interface Props {
   /** 후보를 눌러 이 시트가 열렸을 때 돌아갈 장소의 이름. 지도나 목록에서 직접 열었으면 null */
   backTo?: string | null
   onBack?: () => void
+  /** 공유 링크로 연 시트일 때만 준다. 시트 위에 소개 화면으로 가는 한 줄 띠를 둔다. */
+  onIntro?: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
@@ -306,11 +309,26 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     >
       <div className="handle" />
       <button className="close" onClick={onClose} aria-label="닫기">×</button>
+      {onIntro && (
+        <div className="share-band">
+          <span>{SHARED_BAND.text}</span>
+          <a
+            href="#/start"
+            onClick={(e) => {
+              if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+              e.preventDefault()
+              onIntro()
+            }}
+          >
+            {SHARED_BAND.link}
+          </a>
+        </div>
+      )}
       {backTo && backTo !== place.name && <button className="btn nearby-back" onClick={onBack}>{TXT.back}</button>}
       <h2>{place.name}{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
       <p>
         <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
-        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 {shown.index}점(0~100, 낮을수록 편안)</span>}
+        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 {shown.index}점(0~100, 낮을수록 무던)</span>}
         {noise !== null && !noise.places[place.name] && <>{' '}<span className="nonoise">소음 미반영</span></>}
       </p>
       {plain?.index != null && shown?.index != null && (

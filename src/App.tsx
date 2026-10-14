@@ -12,7 +12,10 @@ import ChildProfileView from './components/ChildProfile'
 import Briefing from './components/Briefing'
 import Recommend, { type RecommendUi } from './components/Recommend'
 import LazyBoundary from './components/LazyBoundary'
-import Onboarding, { shouldShowIntro } from './components/Onboarding'
+import Onboarding from './components/Onboarding'
+import Landing from './components/Landing'
+import { isBlankHash, markLandingDone, shouldAutoShowLanding } from './lib/landing'
+import { HEADER_LINK_LABEL, LANDING_TITLE, TIP_TEXT } from './lib/landingCopy'
 import './styles/nav.css'
 
 // 소리 측정(TensorFlow.js)과 정보 화면은 처음 화면에 필요 없으므로 열 때 내려받는다
@@ -23,6 +26,8 @@ export const PLACES = (placesRaw as Place[]).filter((p) => p.tracked)
 const PLACE_NAMES = new Set(PLACES.map((p) => p.name))
 
 type View = 'map' | 'recommend' | 'child' | 'measure' | 'info'
+/** 랜딩('start')은 탭이 아니라서 View에 넣지 않는다(VIEW_LABEL과 NAV_ICON이 View만 키로 쓴다) */
+type Screen = View | 'start'
 
 const NAV: [View, string][] = [
   ['map', '지도'],
@@ -32,6 +37,7 @@ const NAV: [View, string][] = [
   ['info', '정보'],
 ]
 const VIEWS = NAV.map(([v]) => v)
+const SCREENS: Screen[] = [...VIEWS, 'start']
 const VIEW_LABEL = Object.fromEntries(NAV) as Record<View, string>
 
 /** 하단 탭 아이콘(24x24 선 아이콘). 선 굵기와 색은 nav.css가 정한다. */
@@ -125,27 +131,29 @@ function ageMinutes(updatedAt: string, now = Date.now()): number {
 
 /** 장소 상세는 '#/place/이름', 나머지는 '#/탭'. 추천 탭에서 연 장소도 주소는 '#/place/이름'이고 어느 탭인지는 history.state에 둔다.
  * 가까운 곳 후보로 연 시트가 돌아갈 장소(backTo)도 history.state에 두어, 한 단계씩 보기를 닫거나 앞으로 가기로 돌아와도 돌아가기 단추가 남게 한다. */
-function urlFor(view: View, selected: string | null): string {
+function urlFor(view: Screen, selected: string | null): string {
   return selected && (view === 'map' || view === 'recommend') ? `#/place/${encodeURIComponent(selected)}` : `#/${view}`
 }
 
-function readLocation(): { view: View; selected: string | null; backTo: string | null } {
-  const st = history.state as { view?: unknown; selected?: unknown; backTo?: unknown } | null
-  if (st && VIEWS.includes(st.view as View)) {
+/** shared: 공유 링크가 연 기록 칸인지. 칸의 state에 남겨 두므로 소개 화면을 거쳐 뒤로 가기로 돌아와도 알 수 있다. fresh는 문서를 처음 열 때만 true로 부른다. */
+function readLocation(fresh = false): { view: Screen; selected: string | null; backTo: string | null; shared: boolean } {
+  const st = history.state as { view?: unknown; selected?: unknown; backTo?: unknown; shared?: unknown } | null
+  if (st && SCREENS.includes(st.view as Screen)) {
     const selected = typeof st.selected === 'string' && PLACE_NAMES.has(st.selected) ? st.selected : null
     const backTo = selected && typeof st.backTo === 'string' && st.backTo !== selected && PLACE_NAMES.has(st.backTo) ? st.backTo : null
-    return { view: st.view as View, selected, backTo }
+    return { view: st.view as Screen, selected, backTo, shared: selected !== null && st.shared === true }
   }
   const h = location.hash.replace(/^#\/?/, '')
   if (h.startsWith('place/')) {
     try {
       const name = decodeURIComponent(h.slice(6))
-      return { view: 'map', selected: PLACE_NAMES.has(name) ? name : null, backTo: null }
+      const selected = PLACE_NAMES.has(name) ? name : null
+      return { view: 'map', selected, backTo: null, shared: fresh && selected !== null }
     } catch {
-      return { view: 'map', selected: null, backTo: null }
+      return { view: 'map', selected: null, backTo: null, shared: false }
     }
   }
-  return { view: VIEWS.includes(h as View) ? (h as View) : 'map', selected: null, backTo: null }
+  return { view: SCREENS.includes(h as Screen) ? (h as Screen) : 'map', selected: null, backTo: null, shared: false }
 }
 
 /** 맞춤을 켰어도 고른 것이 없어 지수가 그대로인 프로필인지 */
@@ -154,8 +162,12 @@ function isDefaultSens(p: ChildProfile): boolean {
 }
 
 export default function App() {
-  const [initialLoc] = useState(readLocation)
-  const [view, setView] = useState<View>(initialLoc.view)
+  const [initialLoc] = useState(() => readLocation(true))
+  // 주소가 비어 있는 첫 방문이면 주소를 바꾸지 않고 랜딩만 그린다. 단추로 나가면 꺼지고, 정보 링크로 나갔다가 뒤로 가기로 빈 주소에 돌아오면 다시 그린다.
+  const [autoLanding, setAutoLanding] = useState(() => initialLoc.view === 'map' && initialLoc.selected === null && shouldAutoShowLanding())
+  const [screen, setScreen] = useState<Screen>(() => (autoLanding ? 'start' : initialLoc.view))
+  const onStart = screen === 'start'
+  const view: View = onStart ? 'map' : screen // 랜딩 뒤에는 숨은 지도가 그대로 있다
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [sound, setSound] = useState<SoundStore>({})
   const [profile, setProfile] = useState<ChildProfile>(() => loadProfile())
@@ -170,16 +182,19 @@ export default function App() {
   const [noise, setNoise] = useState<NoiseData | null>(null)
   const [loading, setLoading] = useState(true)
   const [briefingCollapsed, setBriefingCollapsedState] = useState(initialBriefingCollapsed)
-  const [introOpen, setIntroOpen] = useState(shouldShowIntro)
-  // 공유 링크(#/place/이름)로 처음 들어오면 장소 시트를 먼저 보여 주고, 온보딩은 그 시트를 닫거나 다른 화면으로 옮긴 뒤에 띄운다
-  const [introHold, setIntroHold] = useState(initialLoc.selected !== null)
-  // 첫 방문 안내 시트가 뜨는 방문에서는 같은 내용의 막대를 띄우지 않는다(시트를 닫을 때 TIP_KEY도 기록한다)
-  const [tipOpen, setTipOpen] = useState(() => lsGet(TIP_KEY) === null && !introOpen)
+  const [introOpen, setIntroOpen] = useState(false) // 칩 질문 시트: 랜딩의 '아이가 힘들어하는 것 고르기'로만 열린다
+  // 공유 링크(#/place/이름)가 연 기록 칸의 장소. 그 칸의 시트 위에만 소개 띠를 보여 준다. 다른 칸으로 옮기면 지우고, 뒤로 가기로 그 칸에 돌아오면 state에서 되살린다.
+  const [sharedPlace, setSharedPlace] = useState(initialLoc.shared ? initialLoc.selected : null)
+  const [tipOpen, setTipOpen] = useState(() => lsGet(TIP_KEY) === null)
   const [tileErr, setTileErr] = useState(0) // 0 없음, 1 안내 중, 2 닫음
   const [measureRunning, setMeasureRunning] = useState(false)
 
   const viewRef = useRef(view)
   viewRef.current = view
+  const autoLandingRef = useRef(autoLanding)
+  autoLandingRef.current = autoLanding
+  const startFocus = useRef(false) // 헤더 제목, 링크, 뒤로 가기로 랜딩에 들어올 때만 제목으로 초점을 보낸다
+  const leaveFocus = useRef<'map' | 'child' | 'nav' | null>(null) // 랜딩을 떠난 뒤 초점을 보낼 곳
   const measureRunningRef = useRef(measureRunning)
   measureRunningRef.current = measureRunning
   const ignorePop = useRef(false) // 뒤로 가기를 되돌리느라 일어난 popstate는 건너뛴다
@@ -190,12 +205,13 @@ export default function App() {
   const mainRef = useRef<HTMLElement>(null)
   const dragStart = useRef<{ x: number; y: number } | null>(null)
 
-  const navigate = useCallback((v: View, sel: string | null, replace = false, back?: string) => {
+  const navigate = useCallback((v: Screen, sel: string | null, replace = false, back?: string) => {
     pendingPlace.current = null
-    if (!sel) setIntroHold(false)
-    setView(v)
+    if (v === 'start') startFocus.current = true
+    setScreen(v)
     setSelected(sel)
     const hash = urlFor(v, sel)
+    if (replace || location.hash !== hash) setSharedPlace(null) // 같은 칸에 머무는 동안(같은 장소를 다시 누름)만 띠를 둔다
     const state = back ? { view: v, selected: sel, backTo: back } : { view: v, selected: sel }
     try {
       if (replace) history.replaceState(state, '', hash)
@@ -223,7 +239,33 @@ export default function App() {
     setBackTo(null)
     navigate(v, v === 'recommend' || (v === 'map' && view === 'recommend') ? null : selected)
   }
+  /** 소개 화면(#/start)을 연다. 헤더 제목과 공유 링크 띠가 쓰고, 측정 중이면 탭을 옮길 때와 같은 확인을 거친다. */
+  const openStart = () => {
+    if (onStart) return
+    if (view === 'measure' && measureRunning && !window.confirm(MEASURE_LEAVE_MSG)) return
+    setBackTo(null)
+    navigate('start', null)
+  }
+  /** 랜딩의 진입 단추. 자동으로 띄운 랜딩은 주소가 없으므로 기록을 쌓지 않고 바꾸고(뒤로 가기가 막다른 길이 되지 않게), 직접 연 #/start에서는 기록을 쌓는다. */
+  const enterApp = (kind: 'map' | 'pick' | 'child') => {
+    markLandingDone()
+    const replace = autoLanding && isBlankHash()
+    if (replace) setAutoLanding(false) // 빈 주소 칸을 바꿨을 때만 끈다. 직접 연 #/start에서 쌓은 기록 아래에는 빈 주소 칸이 남아 있어 뒤로 가면 랜딩이 다시 뜬다.
+    setBackTo(null)
+    leaveFocus.current = kind === 'pick' ? null : kind // 시트는 스스로 첫 칩으로 초점을 가져간다
+    navigate(kind === 'child' ? 'child' : 'map', null, replace)
+    if (kind === 'pick') setIntroOpen(true)
+  }
 
+  // 공유 링크가 연 기록 칸에 표시를 남긴다. 소개 화면을 거쳐 뒤로 가기로 이 칸에 돌아오면 onPop이 이 표시를 읽어 띠를 되살린다.
+  useEffect(() => {
+    if (!initialLoc.shared || history.state) return
+    try {
+      history.replaceState({ view: 'map', selected: initialLoc.selected, shared: true }, '', location.href)
+    } catch {
+      /* 주소를 바꿀 수 없는 환경에서는 표시를 남기지 않는다 */
+    }
+  }, [initialLoc])
   useEffect(() => {
     const onPop = () => {
       if (ignorePop.current) {
@@ -233,16 +275,20 @@ export default function App() {
       // 한 단계씩 보기가 열려 있으면 뒤로 가기는 그것만 닫는다(CardView가 닫는다). 장소 시트는 그대로 둔다.
       if (document.querySelector('.cs-back')) return
       const loc = readLocation()
+      // 자동으로 띄운 랜딩의 주소(빈 해시)로 돌아오면 지도 대신 랜딩을 다시 보여 준다
+      const next: Screen = autoLandingRef.current && isBlankHash() ? 'start' : loc.view
       // 측정 중에 브라우저 뒤로 가기로 나가려 하면 탭을 누를 때와 같은 확인을 거친다. 취소하면 한 칸 앞으로 돌아온다.
-      if (viewRef.current === 'measure' && measureRunningRef.current && loc.view !== 'measure' && !window.confirm(MEASURE_LEAVE_MSG)) {
+      if (viewRef.current === 'measure' && measureRunningRef.current && next !== 'measure' && !window.confirm(MEASURE_LEAVE_MSG)) {
         ignorePop.current = true
         history.go(1)
         return
       }
       pendingPlace.current = null
       setBackTo(loc.backTo)
-      if (!loc.selected) setIntroHold(false)
-      setView(loc.view)
+      setSharedPlace(loc.shared && next !== 'start' ? loc.selected : null)
+      if (next === 'start') startFocus.current = true
+      setIntroOpen(false) // 주소가 바뀌면 칩 질문 시트는 닫는다
+      setScreen(next)
       setSelected(loc.selected)
     }
     window.addEventListener('popstate', onPop)
@@ -258,8 +304,8 @@ export default function App() {
     if (view !== 'measure') setMeasureRunning(false) // 측정 화면을 벗어나면(뒤로 가기 포함) 측정은 끝난 것이다
   }, [view])
   useEffect(() => {
-    document.title = `${selected && (view === 'map' || view === 'recommend') ? selected : VIEW_LABEL[view]} · 무던한 지도`
-  }, [view, selected])
+    document.title = onStart ? LANDING_TITLE : `${selected && (view === 'map' || view === 'recommend') ? selected : VIEW_LABEL[view]} · 무던한 지도`
+  }, [view, selected, onStart])
   // 추천 탭 위에 뜬 시트는 목록 위에 맞는 모양(.on-list)으로 그린다
   useEffect(() => {
     mainRef.current?.querySelector('.sheet')?.classList.toggle('on-list', view === 'recommend')
@@ -345,15 +391,16 @@ export default function App() {
   const stampLabel = !snap ? '' : today ? `서울시 ${hhmm} 기준` : `${snap.updatedAt.slice(5, 7)}/${snap.updatedAt.slice(8, 10)} ${hhmm} 기준`
 
   const selPlace = selected ? PLACES.find((p) => p.name === selected) : undefined
-  const showSheet = (view === 'map' || view === 'recommend') && !!selPlace
-  const showData = view === 'map' || view === 'recommend'
+  const showSheet = !onStart && (view === 'map' || view === 'recommend') && !!selPlace
+  const showData = !onStart && (view === 'map' || view === 'recommend')
   const lazyFallback = <p className="page muted" role="status">불러오는 중이에요</p>
 
   const chip = personalOn ? appliedParts(profile) : null
   const chipLabel = chip ? chip.lead + chip.rest : ''
 
-  // 첫 방문 안내 시트가 떠 있는 동안 뒤 화면은 inert로 막고(Tab, 클릭, 스크린리더 탐색 모두), 안내를 닫으면 inert를 푼 뒤 포커스를 지도로 보낸다
-  const introShown = introOpen && !introHold
+  // 칩 질문 시트가 떠 있는 동안 뒤 화면은 inert로 막고(Tab, 클릭, 스크린리더 탐색 모두), 시트를 닫으면 inert를 푼 뒤 포커스를 지도로 보낸다
+  // 랜딩이 떠 있는 동안에는 앱 화면 전체를 hidden으로 두므로 시트와 랜딩 중 하나만 떠 있다
+  const introShown = introOpen && !onStart
   const introWasShown = useRef(introShown)
   useEffect(() => {
     if (introWasShown.current && !introShown) {
@@ -362,11 +409,53 @@ export default function App() {
     }
     introWasShown.current = introShown
   }, [introShown])
+  // 랜딩을 떠나면 도착 화면으로 초점을 보내 body로 떨어지지 않게 한다(시트는 스스로 첫 칩으로 가져간다)
+  const wasStart = useRef(onStart)
+  useEffect(() => {
+    if (wasStart.current && !onStart) {
+      const to = leaveFocus.current
+      leaveFocus.current = null
+      if (to === 'map') {
+        document.getElementById('map')?.focus()
+      } else if (to === 'child') {
+        const h = mainRef.current?.querySelector<HTMLElement>('h2')
+        h?.setAttribute('tabindex', '-1')
+        h?.focus()
+      } else if (to === 'nav') {
+        document.querySelector<HTMLElement>('.nav button[aria-current="page"]')?.focus()
+      }
+    }
+    wasStart.current = onStart
+  }, [onStart])
 
   return (
     <div className="app">
-      <header className={personalOn ? 'topbar has-chip' : 'topbar'} inert={introShown}>
-        <h1>무던한 지도</h1>
+      {onStart && (
+        <Landing
+          placeCount={PLACES.length}
+          focusHeading={startFocus.current}
+          onMap={() => enterApp('map')}
+          onPick={(hasProfile) => enterApp(hasProfile ? 'child' : 'pick')}
+          onInfo={() => {
+            leaveFocus.current = 'nav'
+            navigate('info', null)
+          }}
+        />
+      )}
+      <header className={personalOn ? 'topbar has-chip' : 'topbar'} hidden={onStart} inert={introShown}>
+        <h1>
+          <a
+            href="#/start"
+            aria-label={HEADER_LINK_LABEL}
+            onClick={(e) => {
+              if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+              e.preventDefault()
+              openStart()
+            }}
+          >
+            무던한 지도
+          </a>
+        </h1>
         {loadState === 'loading' && <span className="badge">자료 불러오는 중…</span>}
         {loadState === 'demo' && <span className="badge demo">데모 데이터</span>}
         {loadState === 'fail' && <span className="badge warn">자료 없음</span>}
@@ -401,9 +490,9 @@ export default function App() {
           </button>
         )}
       </header>
-      {view === 'map' && tipOpen && !selected && (
-        <div className="tip" inert={introShown}>
-          <span>연한 점일수록 무던해요. 점을 누르면 시간대별 지수가 나와요</span>
+      {view === 'map' && !onStart && !introShown && tipOpen && !selected && (
+        <div className="tip">
+          <span>{TIP_TEXT}</span>
           <button onClick={closeTip}>닫기</button>
         </div>
       )}
@@ -418,13 +507,13 @@ export default function App() {
           <span>자료가 오래돼 예측을 보여 드리지 못해요 ({stampLabel})</span>
         </div>
       )}
-      {view === 'map' && tileErr === 1 && (
+      {view === 'map' && !onStart && tileErr === 1 && (
         <div className="banner warn" role="status" inert={introShown}>
           <span>지도 이미지를 불러오지 못했어요. 연결을 확인해 주세요</span>
           <button onClick={() => setTileErr(2)}>닫기</button>
         </div>
       )}
-      <main className="main" ref={mainRef} inert={introShown}>
+      <main className="main" ref={mainRef} hidden={onStart} inert={introShown}>
         {/* 지도는 탭을 옮겨도 닫지 않고 숨기기만 해서 확대와 위치가 유지된다 */}
         <div
           hidden={view !== 'map'}
@@ -472,7 +561,7 @@ export default function App() {
             noise={noise}
             onSelect={openPlace}
             selected={selected}
-            active={view === 'map'}
+            active={view === 'map' && !onStart}
             onTileError={onTileError}
             selectedHour={selectedHour}
             onSelectHour={setSelectedHour}
@@ -502,6 +591,7 @@ export default function App() {
             onSelectHour={setSelectedHour}
             backTo={backTo}
             onBack={() => window.history.back()}
+            onIntro={view === 'map' && selected === sharedPlace ? openStart : undefined}
           />
         )}
         {view === 'recommend' && (
@@ -550,7 +640,7 @@ export default function App() {
           </LazyBoundary>
         )}
       </main>
-      <nav className="nav" aria-label="주 메뉴" inert={introShown}>
+      <nav className="nav" aria-label="주 메뉴" hidden={onStart} inert={introShown}>
         {NAV.map(([v, label]) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => go(v)} aria-label={label} aria-current={view === v ? 'page' : undefined}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -560,7 +650,7 @@ export default function App() {
           </button>
         ))}
       </nav>
-      {introOpen && !introHold && (
+      {introShown && (
         <Onboarding
           places={PLACES}
           snap={viewSnap}
@@ -569,8 +659,7 @@ export default function App() {
           noise={noise}
           nowKey={nowKey}
           onFinish={(applied) => {
-            if (applied) setProfile(applied) // 저장은 Onboarding이 마쳤다
-            lsSet(TIP_KEY, '1') // 안내 시트가 같은 내용을 알렸으므로 지도 위 안내 막대는 띄우지 않는다
+            if (applied) setProfile(applied) // 저장은 Onboarding이 마쳤다. 안내 막대(TIP_KEY)는 지도에서 처음 한 번 띄우므로 여기서 기록하지 않는다
             setIntroOpen(false)
           }}
         />

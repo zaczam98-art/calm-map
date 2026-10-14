@@ -8,6 +8,10 @@ ul.plain { margin: 4px 0 8px; padding-left: 20px; font-size: 15px; line-height: 
 ul.plain li + li { margin-top: 2px; }
 p.plain-p { margin: 4px 0 8px; font-size: 15px; line-height: 1.7; }
 
+/* 맨 위 소개 화면 링크: 44px 이상이고, 키보드 포커스가 보인다 */
+.info-intro { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 4px; color: var(--accent); font-weight: 700; }
+.info-intro:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
 /* 맨 아래 접이식: 요약 줄은 44px 이상이고, 키보드 포커스가 보인다 */
 .info-more > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; list-style: none; color: var(--accent); font-size: 17px; font-weight: 700; }
 .info-more > summary::-webkit-details-marker { display: none; }

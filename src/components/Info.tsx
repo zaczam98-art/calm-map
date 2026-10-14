@@ -5,6 +5,7 @@ import samplesRaw from '../data/samples.json'
 import { HAS_API, loadPublicJson } from '../lib/publicData'
 import { level3, noiseScore, NOISE_WEIGHT } from '../lib/index'
 import { noiseLookup } from '../lib/noise'
+import { NOT_COLLECTED } from '../lib/landingCopy'
 import soundEval from '../data/sound_eval.json'
 import { FEEDBACK_EMAIL } from './FeedbackMail'
 import '../styles/child.css'
@@ -89,10 +90,11 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
   const popLines = metrics ? populationLines(metrics) : []
   return (
     <div className="page">
+      <a href="#/start" className="info-intro">소개 화면 다시 보기</a>
       <div className="card">
         <h2>무던한 지도란</h2>
         <p>소리나 사람 많은 곳에 예민한 아이와 함께 나서는 가족이 출발 전에 "이 장소는 오늘 몇 시가 무던한가"를 보는 지도예요. 같은 장소도 시간대에 따라 지수가 달라져서, 장소와 시간대의 조합마다 지수를 보여 줘요.</p>
-        <p className="muted">이 서비스는 AI 라이프 솔루션 챌린지 출품작으로 만든 시제품이에요.</p>
+        <p className="muted">2026 AI 라이프 아이디어 챌린지 수상 후보작 "무던한 지도(Calm Map)"를 AI 라이프 솔루션 챌린지 출품작으로 구현한 시제품이에요.</p>
       </div>
 
       <div className="card">
@@ -110,7 +112,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
       <div className="card">
         <h2>지수는 이렇게 계산해요</h2>
         <ul className="plain">
-          <li>지수는 0~100이고 낮을수록 편안해요. 35 미만은 무던함, 35 이상 65 미만은 보통, 65 이상은 붐빔이에요.</li>
+          <li>지수는 0~100이고 낮을수록 무던해요. 35 미만은 무던함, 35 이상 65 미만은 보통, 65 이상은 붐빔이에요.</li>
           <li>서울시의 12시간 혼잡도 예측에, 장소 가까이 있는 센서가 같은 요일·시간대에 잰 평소 소음을 합쳐요(혼잡 6, 소음 4의 비율). 소음 자료가 없는 곳은 혼잡만 써요.</li>
           <li>소리를 측정해 둔 시간대에는 소리 종류도 더해서 계산해요.</li>
           <li>맞춤 지수를 켜면 아이의 민감도와 다녀온 뒤 기록이 지수에 반영돼요.</li>
@@ -132,7 +134,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
       <div className="card">
         <h2>개인정보 처리 안내</h2>
         <h3 className="sub">받지 않는 정보</h3>
-        <p className="plain-p">아이의 이름, 병력, 행동 기록은 받지 않습니다.</p>
+        <p className="plain-p">{NOT_COLLECTED}</p>
         <h3 className="sub">이 기기에 저장하는 정보</h3>
         <ul className="plain">
           <li>프로필(민감 요인 7개의 3단계 값), 다녀온 뒤 기록, 장소별 지수 보정, 소리 측정 요약을 이 기기의 저장소에 보관합니다.</li>
@@ -204,7 +206,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
             </table>
 
             <h3>지수 산식(가설 v1.1)</h3>
-            <p>지수는 0~100이고 낮을수록 편안합니다. 장소와 시간대마다 아래 순서로 계산합니다.</p>
+            <p>지수는 0~100이고 낮을수록 무던합니다. 장소와 시간대마다 아래 순서로 계산합니다.</p>
             <ol className="formula">
               <li>
                 혼잡 점수 C는 서울시 혼잡도 단계의 기준값에서 시작합니다.
@@ -251,7 +253,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
                 <h4 className="sub">소음을 더하면 단계가 달라지는 칸</h4>
                 <p>
                   칸은 장소·요일·시간대 한 조합입니다. 혼잡 평균과 소음 평균이 모두 있는 8~21시 {shift.cells}칸 가운데 {shift.changed}칸({Math.round((shift.changed / shift.cells) * 1000) / 10}%)에서, 소음까지 더한 지수의 단계가 혼잡만으로 정한 단계와 달랐습니다.
-                  더 편안한 단계로 바뀐 칸은 {shift.down}칸, 더 붐비는 단계로 바뀐 칸은 {shift.up}칸입니다.
+                  더 무던한 단계로 바뀐 칸은 {shift.down}칸, 더 붐비는 단계로 바뀐 칸은 {shift.up}칸입니다.
                 </p>
                 <p className="muted">
                   혼잡 평균은 {pattern.days}일 동안 관측한 값이므로 참고용으로만 보시기 바랍니다. 혼잡 점수는 단계 기준값만 써서(±10 보정 제외) 소리 측정과 맞춤 지수 없이 계산했습니다.

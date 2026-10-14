@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ChildProfile, SenseTag, Sensitivity } from '../types'
 import { SENSE_TAGS, TAG_LABEL } from '../types'
 import { clearAll, defaultProfile, loadLog, removeVisit } from '../lib/profile'
+import { PRIVACY_ASK } from '../lib/landingCopy'
 import '../styles/child.css'
 import '../styles/onboarding.css'
 
@@ -66,7 +67,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
     <div className="page">
       <div className="card">
         <h2>우리 아이 맞춤</h2>
-        <p className="muted">이름이나 진단명은 묻지 않아요. 아이가 어떤 소리와 상황에 예민한지만 고르면, 지도의 지수가 그에 맞춰 다시 계산돼요. 이 기기에만 저장돼요.</p>
+        <p className="muted">{PRIVACY_ASK} 아이가 어떤 소리와 상황에 예민한지만 고르면, 지도의 지수가 그에 맞춰 다시 계산돼요. 이 기기에만 저장돼요.</p>
         <div className="child-toggle">
           <label className="toggle">
             <input type="checkbox" checked={profile.enabled} onChange={(e) => onChange({ ...profile, enabled: e.target.checked })} />
