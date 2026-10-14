@@ -1,0 +1,9 @@
+/* 다녀온 뒤 기록 아래의 의견 입력란 */
+.feedback { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.feedback-label { display: block; font-weight: 600; margin-bottom: 6px; }
+.feedback textarea { display: block; width: 100%; box-sizing: border-box; min-height: 88px; padding: 10px 12px; border: 1px solid var(--ctl-line); border-radius: 10px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; }
+.feedback textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.feedback-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.feedback-row .btn:disabled { opacity: .5; cursor: default; }
+.feedback-count { margin-left: auto; font-size: 13px; }
+.feedback-note { margin: 8px 0 0; font-size: 13px; }

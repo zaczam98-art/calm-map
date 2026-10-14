@@ -18,6 +18,7 @@ import Factors from './Factors'
 import NoiseCard from './NoiseCard'
 import WhyIndex from './WhyIndex'
 import ShareImage from './ShareImage'
+import FeedbackMail from './FeedbackMail'
 import '../styles/detail.css'
 import '../styles/nonoise.css'
 
@@ -247,13 +248,18 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     }
     onRecorded(r.offsets, r.profile)
     setUndoable({ prev: r.prev })
-    const applied = profile.enabled ? '' : ' 맞춤을 켜면 이 기록이 지수에 반영돼요.'
+    const applied = profile.enabled ? '' : ' 맞춤 지수를 꺼 둔 상태라 지금 보이는 지수는 그대로이고, 켜면 반영돼요.'
     const off = r.offsets[place.name] ?? 0
-    const offsetText = ` 이 장소 보정 ${off > 0 ? '+' : ''}${off}(한도 ±20).`
+    const delta = off - r.prev.offset
+    const offLabel = `${off > 0 ? '+' : ''}${off}점`
+    const offsetText = delta === 0
+      ? `이 장소의 지수 보정이 이미 한도(±20)에 닿아 더 바뀌지 않아요(지금 ${offLabel}).`
+      : `이 장소의 지수 보정을 ${Math.abs(delta)}점 ${delta > 0 ? '올렸어요' : '내렸어요'}(지금 ${offLabel}, 한도 ±20).`
+    const raised = nowTags.slice(0, 2).filter((t) => r.profile.tags[t] !== r.prev.tags[t])
     setRecorded(
       ok
-        ? `고마워요. 이 장소의 맞춤 보정을 조금 낮췄어요.${offsetText}${applied}`
-        : `기록했어요. 이 장소의 맞춤 보정을 조금 올렸어요.${offsetText}${nowTags.length ? ' 그 시간에 측정된 소리 요인의 민감도도 올렸어요.' : ''}${applied}`,
+        ? `기록했어요. ${offsetText}${applied}`
+        : `기록했어요. ${offsetText}${raised.length ? ` 지금 시간대에 측정해 둔 소리(${raised.map((t) => TAG_LABEL[t]).join(', ')})의 민감도도 한 단계 올렸어요.` : ''}${applied}`,
     )
   }
 
@@ -388,7 +394,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       <WeekPattern pattern={pattern} place={place.name} />
       <div className="card" style={{ marginTop: 12 }}>
         <h3>다녀온 뒤 기록</h3>
-        <p className="muted">버튼 두 개로 끝나요. 이 기기에만 저장되고 서버로 가지 않아요.</p>
+        <p className="muted">"괜찮았어요"를 누르면 이 장소의 지수 보정이 5점 내려가고, "힘들었어요"를 누르면 5점 올라가요(장소마다 ±20까지). "힘들었어요"를 누른 때의 요일·시간대에 측정해 둔 소리가 있으면, 그중 주요 소리(최대 2개)의 민감도도 한 단계 올라가요. 보정과 민감도 변화는 맞춤 지수를 켜 둔 때만 지수에 반영돼요.</p>
+        <p className="muted">기록은 이 기기에만 남고 서버로 가지 않아요. 우리 아이 탭의 "최근 기록"에서 최근 10건을 보고 지울 수 있고, 지워도 올라간 소리 민감도는 우리 아이 탭에서 직접 바꿔야 해요.</p>
         <div className="row">
           <button className="btn big" onClick={() => record(true)}><span aria-hidden>😊</span> 괜찮았어요</button>
           <button className="btn big" onClick={() => record(false)}><span aria-hidden>😣</span> 힘들었어요</button>
@@ -402,6 +409,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
             <span className="muted">10분 안에는 되돌릴 수 있어요.</span>
           </div>
         )}
+        <FeedbackMail place={place.name} timeLabel={shortLabel} />
       </div>
     </section>
   )
