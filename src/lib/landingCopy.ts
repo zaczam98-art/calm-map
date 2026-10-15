@@ -14,13 +14,17 @@ export const STORED_HERE_DONE = '고른 내용은 이 기기에만 저장돼 있
 export const LANDING_TITLE = '소개 · 무던한 지도'
 
 export const HERO = {
-  h1: '오늘 몇 시에 가면 무던할까요?',
+  h1: '오늘의 무던한 시간',
   lead: '시끄럽거나 붐비는 곳이 힘든 아이와 외출하는 가족을 위한 지도예요.',
   /** 장소 수는 앱의 추적 장소 수를 넣는다. 지수가 재는 것은 혼잡과 소음이라 '편안'으로 말하지 않는다. */
   sub: (placeCount: number) => `서울 ${placeCount}곳이 시간대마다 얼마나 무던한지 0~100점의 지수로 보여 줘요. 지수가 낮을수록 덜 붐비고 덜 시끄러워요.`,
   dotNote: '점 하나가 장소 하나예요.',
   legendLabel: '점 색깔 읽는 법',
   legend: ['무던함', '보통', '붐빔'],
+  /** 첫 화면 그림: 한 장소의 하루를 막대로 그린 예시. 실제 자료가 아니므로 예시라고 밝힌다. */
+  stripLabel: '한 장소의 시간대별 지수를 그린 예시예요. 오전과 저녁이 무던하고 한낮과 퇴근 무렵이 붐벼요.',
+  stripCaption: '그림은 예시예요. 장소마다, 날마다 달라요.',
+  stripCalm: '무던한 시간',
 }
 
 export const START = {
@@ -30,8 +34,8 @@ export const START = {
   mapDesc: '점을 누르면 지금부터 최대 12시간 안의 시간대별 지수가 나와요.',
   pickTitle: '아이가 힘들어하는 것 고르기',
   pickDesc: '고른 것이 지수에 반영돼요. 고르지 않아도 지도는 그대로 볼 수 있어요.',
-  savedTitle: '우리 아이 설정 보기',
-  savedDesc: '저장해 둔 설정을 확인하고 바꿀 수 있어요.',
+  savedTitle: '우리 아이 맞춤 보기',
+  savedDesc: '저장해 둔 맞춤을 확인하고 바꿀 수 있어요.',
   note: `${PRIVACY_ASK} ${STORED_HERE}`,
   noteSaved: STORED_HERE_DONE,
 }

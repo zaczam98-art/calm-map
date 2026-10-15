@@ -131,7 +131,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
             }
           }}
         >
-          이 기기의 프로필·기록 지우기
+          이 기기의 맞춤·기록 지우기
         </button>
       </div>
       <div className="card">

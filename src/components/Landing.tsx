@@ -13,6 +13,12 @@ interface Props {
   onInfo: () => void
 }
 
+/** 첫 화면 그림의 막대: [시, 높이(%), 단계]. 실제 자료가 아닌 예시다(그림 아래에 예시라고 적는다). */
+const STRIP: [number, number, 'calm' | 'mid' | 'busy'][] = [
+  [8, 22, 'calm'], [9, 28, 'calm'], [10, 46, 'mid'], [11, 62, 'mid'], [12, 82, 'busy'], [13, 90, 'busy'], [14, 70, 'busy'],
+  [15, 52, 'mid'], [16, 48, 'mid'], [17, 74, 'busy'], [18, 58, 'mid'], [19, 30, 'calm'], [20, 20, 'calm'],
+]
+
 export default function Landing({ placeCount, focusHeading, onMap, onPick, onInfo }: Props) {
   const h1 = useRef<HTMLHeadingElement>(null)
   const [saved] = useState(hasStoredProfile)
@@ -33,16 +39,30 @@ export default function Landing({ placeCount, focusHeading, onMap, onPick, onInf
               <h1 id="lp-h1" ref={h1} tabIndex={-1}>{HERO.h1}</h1>
               <p className="lp-lead">{HERO.lead}</p>
               <p className="lp-sub">{HERO.sub(placeCount)}</p>
-              <p className="lp-dotnote">{HERO.dotNote}</p>
-              <ul className="lp-legend" aria-label={HERO.legendLabel}>
-                {(['calm', 'mid', 'busy'] as const).map((k, i) => (
-                  <li key={k}>
-                    <span className={`lp-dot ${k}`} aria-hidden="true" />
-                    {HERO.legend[i]}
-                  </li>
-                ))}
-              </ul>
             </div>
+
+            {/* 첫 화면의 단 하나의 그림: 한 장소의 하루 막대. 서비스가 실제로 보여 주는 장소 시트의 막대와 같은 모양이다. */}
+            <figure className="lp-day">
+              <div className="lp-strip" role="img" aria-label={HERO.stripLabel}>
+                <span className="lp-calmband" aria-hidden="true">{HERO.stripCalm}</span>
+                {STRIP.map(([h, v, k], i) => (
+                  <span key={h} className={`lp-bar ${k}`} style={{ height: `${v}%`, animationDelay: `${i * 40}ms` }} aria-hidden="true">
+                    {h % 3 === 2 && <i>{h}시</i>}
+                  </span>
+                ))}
+              </div>
+              <figcaption>
+                <ul className="lp-legend" aria-label={HERO.legendLabel}>
+                  {(['calm', 'mid', 'busy'] as const).map((k, i) => (
+                    <li key={k}>
+                      <span className={`lp-dot ${k}`} aria-hidden="true" />
+                      {HERO.legend[i]}
+                    </li>
+                  ))}
+                </ul>
+                <span className="lp-cap">{HERO.stripCaption}</span>
+              </figcaption>
+            </figure>
 
             <div className="lp-act" role="group" aria-labelledby="lp-q">
               <p className="lp-q" id="lp-q">{START.question}</p>
@@ -60,14 +80,15 @@ export default function Landing({ placeCount, focusHeading, onMap, onPick, onInf
 
           <section className="lp-section" aria-labelledby="lp-h-use">
             <h2 id="lp-h-use">{CARDS_TITLE}</h2>
-            <ul className="lp-cards">
+            {/* 지도에서 시간 고르기, 아이에 맞추기, 다녀온 뒤 남기기는 실제로 쓰는 순서라 번호 목록으로 둔다 */}
+            <ol className="lp-steps">
               {CARDS.map((c) => (
-                <li className="lp-card" key={c.title}>
+                <li className="lp-step" key={c.title}>
                   <h3>{c.title}</h3>
                   <p>{c.body}</p>
                 </li>
               ))}
-            </ul>
+            </ol>
           </section>
 
           <section className="lp-section" aria-labelledby="lp-h-info">

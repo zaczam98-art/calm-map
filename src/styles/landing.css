@@ -1,76 +1,98 @@
-/* 랜딩(#/start): 헤더와 하단 탭을 숨기고 .app 안에서 혼자 스크롤한다. 색은 앱 팔레트를 그대로 쓴다. */
-.lp { flex: 1 1 auto; min-height: 0; overflow-y: auto; background: var(--bg); font-size: 16px; line-height: 1.6; padding-bottom: env(safe-area-inset-bottom); -webkit-text-size-adjust: 100%; }
-.lp p, .lp h1, .lp h2, .lp h3, .lp ul, .lp dl, .lp dd { margin: 0; } /* 전역 p, h1~h3 여백을 지운다. 여백이 필요한 규칙은 아래에서 .lp를 앞에 붙여 이긴다. */
-.lp ul { padding: 0; list-style: none; }
-.lp :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.lp a { color: var(--accent); }
-.lp-wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+/* 랜딩(#/start): 헤더와 하단 탭을 숨기고 .app 안에서 혼자 스크롤한다. 색은 앱 팔레트를 그대로 쓴다.
+   구성 원칙: 눈에 띄는 것은 하루 막대 그림 하나뿐이고, 나머지(설명, 단추, 순서, 자료)는 상자 없이 여백과 가는 선으로 나눈다. */
+.lp { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--card); color: var(--ink); font-size: 16px; line-height: 1.6; padding-bottom: env(safe-area-inset-bottom); -webkit-text-size-adjust: 100%; }
+.lp p, .lp h1, .lp h2, .lp h3, .lp ul, .lp ol, .lp dl, .lp dd, .lp figure { margin: 0; } /* 전역 p, h1~h3 여백을 지운다. 여백이 필요한 규칙은 아래에서 .lp를 앞에 붙여 이긴다. */
+.lp ul, .lp ol { padding: 0; list-style: none; }
+.lp :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.lp a { color: var(--accent); text-underline-offset: 3px; }
+.lp-wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
 
-.lp-top { min-height: 48px; display: flex; align-items: center; }
-.lp-brand { font-size: 17px; font-weight: 700; }
+.lp-top { min-height: 52px; display: flex; align-items: center; }
+.lp-brand { font-size: 15px; font-weight: 700; color: var(--muted); }
 
-.lp-hero { display: grid; gap: 14px; padding: 6px 0 28px; }
-.lp-hero-text, .lp-act { max-width: 560px; }
-.lp h1 { font-size: 27px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; }
-.lp .lp-lead { text-wrap: balance; margin-top: 8px; font-size: 15px; line-height: 1.55; }
-.lp .lp-sub { text-wrap: pretty; margin-top: 6px; font-size: 15px; line-height: 1.55; color: var(--muted); }
-.lp .lp-dotnote { margin-top: 10px; font-size: 14px; line-height: 1.5; }
-.lp .lp-legend { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
-.lp-legend li { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; }
-.lp-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--ink); flex: none; }
+/* 첫 영역: 제목은 글자 자체가 그림의 일부가 되도록 크고 무겁게, 설명은 한 단계 작게 */
+.lp-hero { display: grid; gap: 18px; padding: 0 0 36px; }
+.lp h1 { font-size: 34px; line-height: 1.18; font-weight: 800; letter-spacing: -0.035em; text-wrap: balance; }
+.lp .lp-lead { margin-top: 12px; font-size: 16px; line-height: 1.55; text-wrap: pretty; }
+.lp .lp-sub { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+
+/* 하루 막대: 장소 시트의 막대와 같은 모양(위만 둥근 막대, 2px 간격). 오전과 저녁의 무던한 구간 위에 옅은 띠를 깐다. */
+.lp-day { display: grid; gap: 6px; }
+.lp-strip { position: relative; display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; align-items: end; height: 96px; padding: 20px 0 18px; border-bottom: 1px solid var(--line); }
+.lp-bar { position: relative; display: block; border-radius: 4px 4px 0 0; transform-origin: bottom; animation: lp-grow 520ms cubic-bezier(.2, .7, .2, 1) both; }
+.lp-bar.calm { background: var(--calm); }
+.lp-bar.mid { background: var(--mid); }
+.lp-bar.busy { background: var(--busy); }
+.lp-bar i { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; font-style: normal; font-size: 11px; line-height: 1.4; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lp-calmband { position: absolute; left: 0; top: 0; font-size: 12px; font-weight: 700; color: #1f6b52; } /* 무던함 막대 색(#9ddbc8)은 글자 대비가 낮아 같은 계열의 짙은 초록을 글자에 쓴다(흰 바탕 6.4:1) */
+@keyframes lp-grow { from { transform: scaleY(0.08); opacity: 0.4; } to { transform: scaleY(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lp-bar { animation: none; } }
+.lp-day figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.lp .lp-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--ink); }
+.lp-legend li { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; }
+.lp-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(31, 41, 51, .35); flex: none; }
 .lp-dot.calm { background: var(--calm); }
 .lp-dot.mid { background: var(--mid); }
 .lp-dot.busy { background: var(--busy); }
+.lp-cap { flex: 1 1 auto; }
 @media (forced-colors: active) {
-  .lp-dot { forced-color-adjust: none; border-color: CanvasText; } /* 점의 색이 범례의 뜻이라 색은 유지하고, 어두운 팔레트에서도 윤곽이 보이도록 테두리만 시스템 글자색으로 둔다 */
+  .lp-dot, .lp-bar { forced-color-adjust: none; } /* 막대와 점의 색이 뜻이라 색은 유지한다 */
+  .lp-dot { box-shadow: 0 0 0 1px CanvasText; }
 }
 
+/* 시작 선택: 주 단추 하나를 채우고, 두 번째는 테두리만. 단추 안 두 줄(이름, 설명)은 간격으로만 나눈다. */
 .lp-act { display: grid; gap: 10px; align-content: start; }
-.lp-q { font-size: 15px; font-weight: 700; }
-.lp-go { display: block; width: 100%; min-height: 64px; padding: 12px 16px; border-radius: 12px; text-align: left; border: 2px solid var(--accent); font: inherit; line-height: 1.4; }
-.lp-go b { display: block; font-size: 17px; font-weight: 700; }
+.lp-q { font-size: 14px; font-weight: 700; color: var(--muted); }
+.lp-go { display: block; width: 100%; min-height: 64px; padding: 13px 18px; border-radius: 14px; text-align: left; font: inherit; line-height: 1.4; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease; }
+.lp-go b { display: block; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .lp-go span { display: block; margin-top: 2px; font-size: 14px; }
-.lp-go.primary { background: var(--accent); color: var(--accent-ink); }
-.lp-go.secondary { background: var(--card); color: var(--accent); }
+.lp-go:active { transform: scale(0.99); }
+.lp-go.primary { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+.lp-go.primary span { color: #e3eef4; }
+.lp-go.primary:hover { background: #275d78; border-color: #275d78; }
+.lp-go.secondary { border: 1px solid var(--ctl-line); background: var(--card); color: var(--ink); }
 .lp-go.secondary span { color: var(--muted); }
-.lp-note { font-size: 14px; color: var(--muted); line-height: 1.5; }
+.lp-go.secondary:hover { border-color: var(--accent); background: #f3f8fb; }
+@media (prefers-reduced-motion: reduce) { .lp-go { transition: none; } .lp-go:active { transform: none; } }
+.lp-note { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
-.lp-section { padding: 8px 0 24px; }
-.lp-section h2 { font-size: 20px; line-height: 1.4; margin-bottom: 12px; }
-.lp-cards { display: grid; gap: 12px; }
-.lp-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-.lp-card h3 { font-size: 16px; line-height: 1.4; margin-bottom: 6px; }
-.lp-card p { font-size: 15px; line-height: 1.6; }
+/* 아래 구역: 상자 없이 가는 선과 여백으로 나눈다 */
+.lp-section { padding: 28px 0; border-top: 1px solid var(--line); }
+.lp-section h2 { font-size: 19px; line-height: 1.4; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+.lp-steps { display: grid; gap: 20px; counter-reset: lp-step; }
+.lp-step { position: relative; padding-left: 40px; counter-increment: lp-step; }
+.lp-step::before { content: counter(lp-step); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--bg); color: var(--accent); font-size: 14px; font-weight: 700; line-height: 26px; text-align: center; font-variant-numeric: tabular-nums; }
+.lp-step h3 { font-size: 16px; line-height: 1.5; margin-bottom: 4px; }
+.lp-step p { font-size: 15px; line-height: 1.65; color: #3a4654; }
 
-.lp-info { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 32px; }
-.lp-info dl { display: grid; gap: 12px; }
+.lp-info { padding-bottom: 12px; }
+.lp-info dl { display: grid; gap: 14px; }
 .lp-info dt { font-size: 14px; font-weight: 700; color: var(--ink); }
-.lp-info dd { margin-top: 2px; font-size: 14px; line-height: 1.6; color: var(--muted); }
-.lp-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; font-size: 14px; }
+.lp-info dd { margin-top: 2px; font-size: 14px; line-height: 1.65; color: var(--muted); }
+.lp-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; font-size: 14px; font-weight: 700; }
+.lp-more:hover { text-decoration-thickness: 2px; }
 
 @media (min-width: 800px) {
-  .lp-cards { grid-template-columns: repeat(3, 1fr); }
+  .lp-steps { grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .lp-step { padding-left: 0; padding-top: 38px; }
 }
 @media (min-width: 960px) {
-  .lp-wrap { padding: 0 32px; }
-  .lp-top { min-height: 64px; }
-  .lp-hero { grid-template-columns: 1.1fr 0.9fr; gap: 64px; align-items: center; padding: 56px 0 56px; min-height: 480px; }
-  .lp-hero-text, .lp-act { max-width: none; }
-  .lp h1 { font-size: 40px; }
-  .lp .lp-lead { font-size: 18px; margin-top: 16px; }
-  .lp .lp-sub { font-size: 16px; margin-top: 8px; }
-  .lp .lp-dotnote { margin-top: 20px; font-size: 15px; }
-  .lp .lp-legend { font-size: 15px; }
-  .lp-act { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; gap: 12px; }
-  .lp-q { font-size: 16px; }
-  .lp-go { padding: 14px 18px; }
-  .lp-go b { font-size: 18px; }
-  .lp-go span { font-size: 15px; }
-  .lp-section { padding: 16px 0 40px; }
-  .lp-section h2 { font-size: 22px; margin-bottom: 16px; }
-  .lp-card { padding: 20px; }
-  .lp-info { padding: 24px; }
-  .lp-info dl { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .lp-wrap { padding: 0 40px; }
+  .lp-top { min-height: 72px; }
+  /* 왼쪽: 제목, 설명, 단추 / 오른쪽: 하루 막대. 그림이 제목과 같은 높이에서 시작한다. */
+  .lp-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'text day' 'act day'; column-gap: 72px; row-gap: 32px; align-items: start; padding: 40px 0 64px; }
+  .lp-hero-text { grid-area: text; }
+  .lp-day { grid-area: day; align-self: center; padding: 28px; border-radius: 20px; background: var(--bg); }
+  .lp-act { grid-area: act; max-width: 460px; }
+  .lp h1 { font-size: 56px; line-height: 1.1; }
+  .lp .lp-lead { margin-top: 20px; font-size: 19px; }
+  .lp .lp-sub { margin-top: 8px; font-size: 15px; max-width: 34em; }
+  .lp-strip { height: 220px; gap: 6px; padding-top: 28px; }
+  .lp-bar i { font-size: 12px; }
+  .lp-calmband { font-size: 13px; }
+  .lp-section { padding: 48px 0; }
+  .lp-section h2 { font-size: 22px; margin-bottom: 24px; }
+  .lp-info dl { grid-template-columns: repeat(3, 1fr); gap: 32px; }
 }
 
 /* 헤더 제목: 소개 화면으로 가는 링크. 보이는 모습은 그대로 두고 44px 높이를 지킨다. 좌우 여백과 음수 마진은 초점 링이 글자에 닿지 않게 하면서 글자 위치는 그대로 둔다. */
