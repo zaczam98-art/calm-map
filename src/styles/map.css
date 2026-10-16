@@ -78,3 +78,7 @@
   .main:has(.sheet:not(.on-list)) .sbx-panel { bottom: 10px; }
   .main:has(.sheet:not(.on-list)) .tslider { left: 432px; }
 }
+
+/* 선택한 지도 점: 지도는 그대로 두고 그 점만 살짝 커진다(동작 줄이기에서는 styles.css가 전환을 꺼서 바로 커진다) */
+path.mk { transform-box: fill-box; transform-origin: center; transition: transform 160ms ease-out; }
+path.mk.mk-sel { transform: scale(1.25); }

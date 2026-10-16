@@ -11,6 +11,8 @@ import { altCell, calmerNearby, calmRun, candidateCell, distanceKm, hasNeighborW
 import { altButton, basisText, customText, emptyText, makeLabel, metaText, midText, noiseLineText, panelLines, runText, selectedCalmText, summaryAlt, summaryText, TXT, whyLines } from '../lib/nearbyText'
 import { noiseLookup } from '../lib/noise'
 import { SHARED_BAND } from '../lib/landingCopy'
+import { basisLine } from '../lib/trustText'
+import { placeVt, useChangeTick, useCountUp } from '../lib/motion'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm, { type NearbyRow } from './NearbyCalm'
@@ -55,9 +57,11 @@ interface Props {
   onBack?: () => void
   /** 공유 링크로 연 시트일 때만 준다. 시트 위에 소개 화면으로 가는 한 줄 띠를 둔다. */
   onIntro?: () => void
+  /** 시트가 닫혀 있다가 열릴 때만 true. 열린 채 다른 장소로 바꾼 경우는 false라서 올라오는 애니메이션 없이 내용만 바뀐다. */
+  enter?: boolean
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro, enter: enterProp = true }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
@@ -85,6 +89,10 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const shownTags = tagsOf(shown)
   const nowTags = tagsOf(now) // 방문 기록은 지금 있었던 시간대의 소리로 남긴다
   const plain = profile.enabled && shown ? scoreAt(plainScores, shown.hour) : undefined
+  const scoreShown = useCountUp(shown?.index ?? null, shown?.hour ?? -1) // 같은 시각의 지수가 맞춤 때문에 바뀌면 이전 값에서 새 값으로 센다(다른 시각을 고르면 세지 않는다)
+  const profileTick = useChangeTick(profile) // 맞춤 설정이 바뀔 때마다 오르는 번호: 맞춤 전후 줄을 새로 그려 배경 강조를 한 번 돌린다
+  const placeIdx = places.findIndex((p) => p.name === place.name) // 추천 목록의 카드와 같은 view-transition-name을 만드는 번호
+  const [enter] = useState(() => enterProp && document.documentElement.dataset.vt !== 'place') // 닫혀 있다가 열릴 때만 올라온다. 추천 카드에서 이어져 열리는 시트는 전환이 움직이므로 따로 쓰지 않는다.
   // 맞춤을 켰어도 지수가 하나도 달라지지 않았으면 공유 이미지에 '맞춤 반영'을 붙이지 않는다
   const adapted = profile.enabled && scores.some((s, i) => s.index !== plainScores[i]?.index)
   const chosen = profile.crowd !== 1 || profile.loud !== 1 || Object.values(profile.tags).some((v) => v !== 1)
@@ -296,7 +304,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   return (
     <section
       ref={sheet}
-      className="sheet"
+      className={enter ? 'sheet enter' : 'sheet'}
       role="dialog"
       aria-label={place.name}
       tabIndex={-1}
@@ -325,14 +333,14 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         </div>
       )}
       {backTo && backTo !== place.name && <button className="btn nearby-back" onClick={onBack}>{TXT.back}</button>}
-      <h2>{place.name}{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
+      <h2><span className="vt-box" style={placeVt(placeIdx, 'name')}>{place.name}</span>{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
       <p>
         <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
-        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 {shown.index}점(0~100, 낮을수록 무던)</span>}
+        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 <span className="vt-box" style={placeVt(placeIdx, 'score')}>{scoreShown}점</span>(0~100, 낮을수록 무던)</span>}
         {noise !== null && !noise.places[place.name] && <>{' '}<span className="nonoise">소음 미반영</span></>}
       </p>
       {plain?.index != null && shown?.index != null && (
-        <div className="adapt">
+        <div key={profileTick} className={profileTick ? 'adapt flash' : 'adapt'}>
           <span className="muted">
             {plain.index !== shown.index
               ? `맞춤 전 ${plain.index}점 → 후 ${shown.index}점${plain.level !== shown.level ? ` (${LEVEL3_LABEL[plain.level]} → ${LEVEL3_LABEL[shown.level]})` : ''}`
@@ -342,6 +350,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         </div>
       )}
       <p><b>{rec.text}</b></p>
+      {snap && shown?.index != null && <p className="muted" style={{ margin: '-6px 0 6px', fontSize: 13 }}>{basisLine(snap, shown)}</p>}
       {nearbyView?.summary && <button className="nearby-summary" onClick={jumpToCard}>{nearbyView.summary}</button>}
       <div className="sel-row">
         {sel ? (
@@ -358,7 +367,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         <ShareImage place={place} scores={scores} nowKey={nowKey} updatedAt={snap?.source === 'seoul' ? snap.updatedAt : undefined} selectedHour={sel ? sel.hour : null} adapted={adapted} />
         <div role="status" className="muted">{shareMsg}</div>
       </div>
-      <HourChart scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
+      <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
       {/* 지수의 구성은 아래 WhyIndex가 설명하므로 여기서는 이 기기에서 잰 소리와 데모 안내만 짧게 둔다 */}
       {(totalN > 0 || snap?.source === 'demo') && (
         <p className="muted">

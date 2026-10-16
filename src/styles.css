@@ -189,6 +189,11 @@ select, input[type=file] { font: inherit; padding: 8px; border-radius: 8px; bord
 .rec-item { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid var(--ctl-line); background: var(--card); border-radius: var(--radius); padding: 12px 14px; color: var(--ink); min-height: 56px; }
 .rec-main { flex: 1; min-width: 0; }
 .rec-index { font-size: 20px; font-weight: 700; color: var(--muted); min-width: 32px; flex: none; text-align: right; }
+/* 자료를 받는 동안에도 도착 뒤 머리 문장과 같은 줄 수만큼 자리를 두어, 자료가 도착할 때 아래 항목이 밀리는 폭을 줄인다. 14px 글자(줄 높이 1.5)에서 화면 폭별 줄 수는 640px 이상 2줄, 471~640px 3줄, 361~470px 4줄, 360px 이하 5줄이다. */
+.rec-head-wait { min-height: 3em; }
+@media (max-width: 640px) { .rec-head-wait { min-height: 4.5em; } }
+@media (max-width: 470px) { .rec-head-wait { min-height: 6em; } }
+@media (max-width: 360px) { .rec-head-wait { min-height: 7.5em; } }
 
 /* 오늘의 요인 꼬리표와 소음 카드 */
 .factor-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }

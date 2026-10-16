@@ -1,6 +1,7 @@
-import { useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { HourScore } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
+import { reducedMotion } from '../lib/motion'
 import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 권고 시간 비교에서 빼므로 옅게 그린다
 import '../styles/chart.css'
 // 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준. 375px 화면에서 거의 같은 px가 되고 320px에서도 12px 안팎이다)
@@ -24,11 +25,18 @@ interface Props {
   selectedHour?: number | null
   /** 주면 막대가 누를 수 있는 단추가 된다. 이미 고른 막대를 다시 누르면 null로 부른다. */
   onSelectHour?: (hour: number | null) => void
+  /** false면 막대가 처음부터 서 있다. 시트가 이미 열린 채 다른 장소로 바꿀 때 막대가 바닥에서 다시 자라지 않게 한다. */
+  animateIn?: boolean
 }
 
-export default function HourChart({ scores, highlight, selectedHour = null, onSelectHour }: Props) {
+export default function HourChart({ scores, highlight, selectedHour = null, onSelectHour, animateIn = true }: Props) {
   const barRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [focusAt, setFocusAt] = useState<number | null>(null) // 방향키로 옮기는 동안만 쓰는 칸 번호. 막대 밖으로 포커스가 나가면 비운다.
+  const [grown, setGrown] = useState(() => !animateIn || reducedMotion()) // 시트가 열릴 때 막대가 바닥에서 한 번 자란다. 동작 줄이기와 열린 채 바뀐 장소에서는 처음부터 서 있다.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
   const W = 360
   const H = 160
   const padL = 6
@@ -113,6 +121,7 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
             <pattern id="hc-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <rect x="0" y="0" width="3" height="6" fill="#ffffff" opacity=".6" />
             </pattern>
+            <clipPath id="hc-clip"><rect x="0" y="0" width={W} height={H - padB} /></clipPath>
           </defs>
           {selIdx >= 0 && <rect x={padL + selIdx * bw} y={padT - 6} width={bw} height={H - padB - padT + 8} rx={6} fill={SEL_BG} />}
           {[35, 65].map((y) => (
@@ -122,7 +131,6 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
             const v = s.index ?? 0
             const h = (v / yMax) * plotH
             const x = padL + i * bw + (bw - barW) / 2
-            const y = H - padB - h
             const hl = highlight !== null && s.hour === highlight
             const cx = x + barW / 2
             const sel = i === selIdx
@@ -131,13 +139,16 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
             const showLabel = sel || (!nearSel && (i === 0 || (s.hour % 3 === 0 && cx - 14 >= endX)))
             return (
               <g key={s.time}>
-                {h > 0 && (
-                  <g opacity={isNight(s.hour) ? 0.45 : 1}>
-                    <path d={barPath(x, y, barW, h)} fill={FILL[s.level]} />
-                    {missingNoise(s) && <path d={barPath(x, y, barW, h)} fill="url(#hc-hatch)" />}
+                {/* 막대는 가장 큰 높이로 한 번 그려 두고 위치(translateY)만 옮긴다. 높이를 바꾸는 방식과 달리 위쪽 둥근 모양이 일그러지지 않고, 기준선 아래로 내려간 부분은 clipPath가 자른다. */}
+                <g clipPath="url(#hc-clip)">
+                  <g className="hc-bar" style={{ transform: `translateY(${grown ? plotH - h : plotH}px)` }}>
+                    <g opacity={isNight(s.hour) ? 0.45 : 1}>
+                      <path d={barPath(x, padT, barW, plotH)} fill={FILL[s.level]} />
+                      {missingNoise(s) && <path d={barPath(x, padT, barW, plotH)} fill="url(#hc-hatch)" />}
+                    </g>
+                    {hl && <circle cx={cx} cy={h >= 18 ? padT + 9 : padT - 7} r={4.5} fill={INK} stroke="#ffffff" strokeWidth={2} />}
                   </g>
-                )}
-                {hl && <circle cx={cx} cy={h >= 18 ? y + 9 : y - 7} r={4.5} fill={INK} stroke="#ffffff" strokeWidth={2} />}
+                </g>
                 {showLabel && (
                   <text x={i === 0 && nowShown ? padL : cx} y={H - 6} textAnchor={i === 0 && nowShown ? 'start' : 'middle'} style={sel ? TEXT_SEL : TEXT}>
                     {i === 0 && nowShown ? nowLabel : sel ? `${tomorrow(i) ? '내일 ' : ''}${s.hour}시` : labelOf(s, i)}

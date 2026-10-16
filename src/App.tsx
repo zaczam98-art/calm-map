@@ -16,6 +16,7 @@ import Onboarding from './components/Onboarding'
 import Landing from './components/Landing'
 import { isBlankHash, markLandingDone, shouldAutoShowLanding } from './lib/landing'
 import { HEADER_LINK_LABEL, LANDING_TITLE, TIP_TEXT } from './lib/landingCopy'
+import { tagCard, useChangeTick, withViewTransition } from './lib/motion'
 import './styles/nav.css'
 
 // 소리 측정(TensorFlow.js)과 정보 화면은 처음 화면에 필요 없으므로 열 때 내려받는다
@@ -191,6 +192,8 @@ export default function App() {
 
   const viewRef = useRef(view)
   viewRef.current = view
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
   const autoLandingRef = useRef(autoLanding)
   autoLandingRef.current = autoLanding
   const startFocus = useRef(false) // 헤더 제목, 링크, 뒤로 가기로 랜딩에 들어올 때만 제목으로 초점을 보낸다
@@ -221,9 +224,18 @@ export default function App() {
     }
   }, [])
   const openPlace = useCallback(
-    (name: string, from?: string) => {
-      setBackTo(from ?? null)
-      navigate(viewRef.current === 'recommend' ? 'recommend' : 'map', name, false, from)
+    (name: string, from?: string, card?: Element) => {
+      const open = () => {
+        setBackTo(from ?? null)
+        navigate(viewRef.current === 'recommend' ? 'recommend' : 'map', name, false, from)
+      }
+      // 추천 목록에서 누른 카드는 장소명과 지수가 시트 머리로 이어지는 전환을 쓴다. 이미 열린 장소의 카드를 다시 누르면 시트 머리와 카드가 같은 이름이 되어 전환이 중단되므로 그대로 연다. 지도와 가까운 곳 후보로 여는 경우도 그대로 연다.
+      if (card && viewRef.current === 'recommend' && from === undefined && name !== selectedRef.current) {
+        const before = selectedRef.current
+        tagCard(card, PLACES.findIndex((p) => p.name === name))
+        // 옛 화면을 찍은 뒤에 update가 불리므로, 그 사이에 다른 화면이나 장소로 옮겨 갔으면 카드를 열지 않고 마지막 동작을 따른다
+        withViewTransition(() => viewRef.current === 'recommend' && selectedRef.current === before, open)
+      } else open()
     },
     [navigate],
   )
@@ -368,6 +380,8 @@ export default function App() {
     saveProfile(p)
   }
   const personalOn = profile.enabled
+  const chipTick = useChangeTick(profile) // 맞춤 설정이 바뀔 때마다 오르는 번호: 칩을 새로 그려 배경 강조를 한 번 돌린다
+  const screenTick = useChangeTick(screen) // 화면이 바뀔 때마다 오르는 번호: 짝수와 홀수가 번갈아 main의 페이드를 다시 시작한다
 
   const setBriefingCollapsed = (collapsed: boolean) => {
     setBriefingCollapsedState(collapsed)
@@ -392,6 +406,12 @@ export default function App() {
 
   const selPlace = selected ? PLACES.find((p) => p.name === selected) : undefined
   const showSheet = !onStart && (view === 'map' || view === 'recommend') && !!selPlace
+  // 시트는 닫혀 있다가 열릴 때만 올라오는 애니메이션을 쓴다. 열린 채 다른 장소로 바꿀 때는 새로 마운트되어도 내용만 바뀐다.
+  const sheetWasShown = useRef(false)
+  const sheetEnter = !sheetWasShown.current
+  useEffect(() => {
+    sheetWasShown.current = showSheet
+  })
   const showData = !onStart && (view === 'map' || view === 'recommend')
   const lazyFallback = <p className="page muted" role="status">불러오는 중이에요</p>
 
@@ -476,7 +496,7 @@ export default function App() {
         </label>
         {chip && (
           <button className={chip.count ? 'applied-chip has-count' : 'applied-chip'} onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
-            <span>
+            <span key={chipTick} className={chipTick ? 'flash' : undefined}>
               {chip.lead && <span className="applied-lead">{chip.lead}</span>}
               {chip.count ? (
                 <>
@@ -513,7 +533,7 @@ export default function App() {
           <button onClick={() => setTileErr(2)}>닫기</button>
         </div>
       )}
-      <main className="main" ref={mainRef} hidden={onStart} inert={introShown}>
+      <main className="main" ref={mainRef} hidden={onStart} inert={introShown} data-fade={screenTick ? screenTick % 2 : undefined}>
         {/* 지도는 탭을 옮겨도 닫지 않고 숨기기만 해서 확대와 위치가 유지된다 */}
         <div
           hidden={view !== 'map'}
@@ -570,6 +590,7 @@ export default function App() {
         {showSheet && (
           <PlaceDetail
             key={selected}
+            enter={sheetEnter}
             place={selPlace!}
             places={PLACES}
             pattern={pattern}
@@ -635,7 +656,7 @@ export default function App() {
         {view === 'info' && (
           <LazyBoundary onBack={() => go('map')}>
             <Suspense fallback={lazyFallback}>
-              <Info snap={snap} metrics={metrics} noise={noise} pattern={pattern} placeCount={PLACES.length} />
+              <Info snap={snap} loading={loading} metrics={metrics} noise={noise} pattern={pattern} placeCount={PLACES.length} />
             </Suspense>
           </LazyBoundary>
         )}

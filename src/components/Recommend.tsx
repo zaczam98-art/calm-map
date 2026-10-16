@@ -6,6 +6,7 @@ import { activeControls, factorTags } from '../lib/factors'
 import { noiseLookup } from '../lib/noise'
 import { matchesPlace } from '../lib/hangul'
 import { kstNow } from '../lib/publicData'
+import { basisLine } from '../lib/trustText'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import '../styles/nonoise.css'
 
@@ -21,19 +22,18 @@ interface Props {
   noise: NoiseData | null
   ui: RecommendUi
   onUi: (u: RecommendUi) => void
-  onOpen: (name: string) => void
+  /** card는 누른 카드 단추. 장소명과 지수가 시트 머리로 이어지는 전환에 쓴다. */
+  onOpen: (name: string, from?: string, card?: Element) => void
 }
 
 const CATEGORIES = ['공원', '고궁·문화유산', '발달상권', '관광특구', '인구밀집지역']
 const GROUPS: [string, string[]][] = [['전체', []], ...CATEGORIES.map((c): [string, string[]] => [CATEGORY_LABEL[c] ?? c, [c]])]
 const RANK: Record<Level3, number> = { calm: 0, mid: 1, busy: 2, nodata: 3 }
 
-/** 목록 위 안내 문장의 자료 출처 부분. 자료 날짜가 오늘이 아니면 월/일을 함께 밝힌다. */
+/** 목록 위 안내 문장의 자료 출처 부분. 자료 시각과 예측 기반 참고값이라는 점을 함께 밝힌다. */
 function sourceNote(snap: Snapshot | null, loading: boolean): string {
   if (snap === null) return loading ? '자료를 불러오는 중이에요.' : '자료를 불러오지 못했어요.'
-  if (snap.source !== 'seoul') return '지금은 예시 자료예요.'
-  const day = snap.updatedAt.slice(0, 10) === kstNow().date ? '' : `${snap.updatedAt.slice(5, 10).replace('-', '/')} `
-  return `서울시 ${day}${snap.updatedAt.slice(11, 16)} 자료 기준이에요.`
+  return basisLine(snap)
 }
 
 /** 탭을 옮겼다 돌아와도 유지할 추천 화면의 선택 상태(부모가 보관) */
@@ -108,7 +108,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
     <div className="page">
       <div className="card">
         <h2>지금 가기 좋은 곳</h2>
-        <p className="muted">
+        <p className={snap === null && loading ? 'muted rec-head-wait' : 'muted'}>
           서울 {places.length}곳을 지금 무던한 순서로 보여 줘요{profile.enabled ? '(우리 아이 맞춤 적용)' : ''}. {sourceNote(snap, loading)}
         </p>
         {snap !== null && <p className="muted">각 줄 오른쪽의 점수가 지수예요. 지수는 0~100이고 낮을수록 무던해요.</p>}
@@ -142,7 +142,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
       <ul className="rec-list">
         {shown.map((r) => (
           <li key={r.place.name}>
-            <button className="rec-item" onClick={() => onOpen(r.place.name)}>
+            <button className="rec-item" onClick={(e) => onOpen(r.place.name, undefined, e.currentTarget)}>
               <span className={`pill ${r.level}`}>{LEVEL3_LABEL[r.level]}</span>
               <span className="rec-main">
                 <b>{r.place.name}</b> <span className="muted">{[placeLabel(r.place), r.km !== null ? `직선 ${r.km.toFixed(1)}km` : ''].filter(Boolean).join(' · ')}</span>

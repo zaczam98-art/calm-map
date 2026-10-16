@@ -12,7 +12,7 @@ import '../styles/map.css'
 
 const FILL: Record<Level3, string> = { calm: '#9ddbc8', mid: '#46739e', busy: '#2e2a5e', nodata: '#ffffff' }
 const OUTLINE = '#1f2933' // 어두운 테두리: 무던함(연한 채움)이 밝은 지도 배경에서도 모양으로 보이게 한다
-const SELECTED: L.CircleMarkerOptions = { radius: 13, weight: 4, color: '#0b1a22', dashArray: undefined }
+const SELECTED: L.CircleMarkerOptions = { weight: 4, color: '#0b1a22', dashArray: undefined } // 커지는 모양은 반지름이 아니라 map.css의 .mk-sel(scale)이 맡는다
 const CENTER: L.LatLngTuple = [37.5565, 126.98]
 const START_ZOOM = 12 // 11이면 도심 마커가 서로 겹쳐 누르기 어렵다
 const PICK_PX = 24 // 누른 곳에서 이 거리 안에 마커가 둘 이상이면 고르는 목록을 띄운다
@@ -118,12 +118,20 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
 
   const applySelection = (name: string | null) => {
     const prev = styledRef.current && markersRef.current.get(styledRef.current)
-    if (prev && styledRef.current !== name) prev.m.setStyle(prev.base)
+    if (prev && styledRef.current !== name) {
+      prev.m.setStyle(prev.base)
+      prev.m.getElement()?.classList.remove('mk-sel')
+    }
     styledRef.current = name
     const cur = name ? markersRef.current.get(name) : undefined
     if (cur) {
       cur.m.setStyle({ ...cur.base, ...SELECTED })
-      cur.m.bringToFront()
+      cur.m.bringToFront() // 점을 맨 앞으로 옮기느라 요소를 다시 끼워 넣으므로, 아래에서 한 번 읽어 서식을 확정한 뒤에 클래스를 더해야 커지는 전환이 돈다
+      const el = cur.m.getElement()
+      if (el) {
+        el.getBoundingClientRect()
+        el.classList.add('mk-sel')
+      }
     }
   }
 
@@ -232,7 +240,8 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
       // 공사·통제 테두리는 지금 시각의 자료다(서울시가 내일 통제는 주지 않는다). 시각을 옮겨도 그대로 둔다.
       const ctrlLabels = factorTags(activeControls(ps?.extra, nowStr)).filter((t) => t.key.startsWith('control')).map((t) => t.label)
       const base = baseStyle(level, ctrlLabels.length > 0)
-      const m = L.circleMarker([p.lat, p.lng], { ...base, className: `mk ${level}`, bubblingMouseEvents: false })
+      // 마커를 다시 만들 때(맞춤 변경, 자료 갱신) 선택한 점은 처음부터 커진 모양으로 만들어 다시 부풀어 오르지 않게 한다
+      const m = L.circleMarker([p.lat, p.lng], { ...base, className: p.name === selectedRef.current ? `mk ${level} mk-sel` : `mk ${level}`, bubblingMouseEvents: false })
       m.bindTooltip(tipHtml(p.name, level, cellAt(scores, h), at, ctrlLabels), { direction: 'top', offset: [0, -8] })
       m.on('click', (e) => pickAt(mapRef.current!.latLngToContainerPoint(e.latlng)))
       m.addTo(layer)

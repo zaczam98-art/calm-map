@@ -6,6 +6,7 @@ import { HAS_API, loadPublicJson } from '../lib/publicData'
 import { level3, noiseScore, NOISE_WEIGHT } from '../lib/index'
 import { noiseLookup } from '../lib/noise'
 import { NOT_COLLECTED } from '../lib/landingCopy'
+import { accuracyPending, accuracyText, BUSY_FROM, LEADS, lowerLeads, meaningNote, MID_FROM, MIN_PAIRS, pct, stampText } from '../lib/trustText'
 import soundEval from '../data/sound_eval.json'
 import { FEEDBACK_EMAIL } from './FeedbackMail'
 import '../styles/child.css'
@@ -14,21 +15,13 @@ import '../styles/info.css'
 const SAMPLES = samplesRaw.samples
 const CLASS_KO: Record<string, string> = { chainsaw: '전기톱', wind: '바람', car_horn: '자동차 경적', laughing: '웃음소리', crickets: '귀뚜라미', clapping: '박수' }
 
-const pct = (a: number, n: number) => (n > 0 ? `${Math.round((a / n) * 100)}%` : '자료 없음')
-const LEADS = ['1', '2', '3', '6', '12']
 const NO_PAIRS: LeadMetric = { n: 0, exact: 0, within1: 0, persistN: 0, persistExact: 0 }
 /** 적중률 계산이 나중에 더한 필드. 옛 metrics.json에는 없어서 선택 필드로 읽는다. */
 type LeadExtra = LeadMetric & { over?: number; biasSum?: number; popHit?: number; persistPopHit?: number }
 
 /** 서울시 예측의 단계 일치율이 '그대로 유지 가정'보다 낮은 시차(표에 보이는 정수 %로 비교)를 'N시간 전(예측 a%, 유지 가정 b%)' 꼴로 돌려준다. */
 function lowerThanPersist(metrics: ForecastMetrics): string[] {
-  return LEADS.flatMap((k) => {
-    const m = metrics.byLead[k]
-    if (!m || m.n <= 0 || m.persistN <= 0) return []
-    const a = Math.round((m.exact / m.n) * 100)
-    const b = Math.round((m.persistExact / m.persistN) * 100)
-    return a < b ? [`${k}시간 전(예측 ${a}%, 유지 가정 ${b}%)`] : []
-  })
+  return lowerLeads(metrics).map(({ lead, a, b }) => `${lead}시간 전(예측 ${a}%, 유지 가정 ${b}%)`)
 }
 
 /** 예측 단계가 실제 관측 단계보다 높았던 비교의 비율과 평균 차이를 한 문장으로 돌려준다. 값이 없는 옛 metrics.json에서는 null이다. */
@@ -72,7 +65,7 @@ function noiseShift(pattern: WeekPattern, noise: NoiseData): { cells: number; ch
   return cells > 0 ? { cells, changed: up + down, up, down } : null
 }
 
-export default function Info({ snap, metrics, noise, placeCount, pattern: patternProp }: { snap: Snapshot | null; metrics: ForecastMetrics | null; noise: NoiseData | null; placeCount: number; pattern?: WeekPattern | null }) {
+export default function Info({ snap, loading = false, metrics, noise, placeCount, pattern: patternProp }: { snap: Snapshot | null; /** 자료를 받는 중인지. snap이 없을 때 '불러오는 중'과 '불러오지 못함'을 가른다 */ loading?: boolean; metrics: ForecastMetrics | null; noise: NoiseData | null; placeCount: number; pattern?: WeekPattern | null }) {
   // 부모가 pattern을 넘기지 않으면(undefined) 이 화면이 직접 받는다
   const [fetched, setFetched] = useState<WeekPattern | null>(null)
   useEffect(() => {
@@ -88,13 +81,44 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
   const lower = metrics ? lowerThanPersist(metrics) : []
   const bias = metrics ? biasSentence(metrics) : null
   const popLines = metrics ? populationLines(metrics) : []
+  const accuracy = accuracyText(metrics)
+  const stampLine = snap ? (snap.source === 'seoul' ? `지금 보는 자료는 서울시 ${stampText(snap)} 기준이에요.` : '지금 보는 자료는 데모 데이터예요.') : loading ? '자료를 불러오는 중이에요.' : '지금은 자료를 불러오지 못했어요.'
   return (
     <div className="page">
       <a href="#/start" className="info-intro">소개 화면 다시 보기</a>
       <div className="card">
         <h2>무던한 지도란</h2>
         <p>소리나 사람 많은 곳에 예민한 아이와 함께 나서는 가족이 출발 전에 "이 장소는 오늘 몇 시가 무던한가"를 보는 지도예요. 같은 장소도 시간대에 따라 지수가 달라져서, 장소와 시간대의 조합마다 지수를 보여 줘요.</p>
-        <p className="muted">2026 AI 라이프 아이디어 챌린지 수상 후보작 "무던한 지도(Calm Map)"를 AI 라이프 솔루션 챌린지 출품작으로 구현한 시제품이에요.</p>
+        <p className="muted">2026 AI 라이프 아이디어 챌린지 수상 후보작 "무던한 지도(Calm Map)"를 기반으로 한 AI 라이프 솔루션 챌린지 출품작이에요.</p>
+      </div>
+
+      <div className="card">
+        <h2>한눈에 보기</h2>
+        <table className="simple def">
+          <tbody>
+            <tr><th>점수의 뜻</th><td>지수는 0~100이고 낮을수록 무던해요. {MID_FROM} 미만은 무던함, {MID_FROM} 이상 {BUSY_FROM} 미만은 보통, {BUSY_FROM} 이상은 붐빔이에요. {meaningNote(snap)}</td></tr>
+            <tr><th>자료 시각</th><td>{stampLine} 서울시 자료는 매시 새로 모아서 올리지만 늦을 때가 있어요.</td></tr>
+            <tr><th>개인정보</th><td>아이의 이름, 병원 기록, 행동 기록은 받지 않아요. 고른 내용과 다녀온 뒤 기록은 이 기기에만 저장해요.</td></tr>
+            <tr>
+              <th>검증 범위</th>
+              <td>
+                <p className="scope"><b>검증한 것</b></p>
+                <ul className="plain">
+                  {accuracy && <li>{accuracy}</li>}
+                  <li>공개 음원 시험에서는 {soundEval.dataset} 음원 {soundEval.overall.n}개({soundEval.classes}개 분류) 중 {soundEval.overall.correct}개({pct(soundEval.overall.correct, soundEval.overall.n)})의 태그가 미리 정해 둔 정답표와 같았어요. 말소리 태그는 시험하지 못했고, 실제 장소에서는 이보다 낮을 수 있어요.</li>
+                  <li>지수와 적중률은 설계한 계산식대로 나오는지 프로그램으로 검사했어요(아이에게 맞는지는 아직 확인하지 못했어요).</li>
+                </ul>
+                <p className="scope"><b>아직 검증 전인 것</b></p>
+                <ul className="plain">
+                  {!accuracy && <li>{accuracyPending(metrics)}</li>}
+                  <li>실제 외출에서 아이가 편했는지는 확인하지 못했어요.</li>
+                  <li>지수가 아이가 느끼는 정도와 맞는지는 확인하지 못했어요.</li>
+                  <li>휴대폰 실기기에서의 동작은 확인하지 못했어요. 컴퓨터 브라우저에서 화면 크기를 줄여 확인했어요.</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div className="card">
@@ -124,7 +148,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
         <h2>이용 시 확인사항</h2>
         <ul className="plain">
           <li>혼잡도는 공원, 상권, 역 같은 지역 단위로 나와요. 가려는 가게나 시설 안의 상황과 다를 수 있어요.</li>
-          <li>지수는 장소와 시간대의 예측값이에요. 예측이 얼마나 맞았는지는 맨 아래 "자세한 계산 방법과 검증 기록"에서 볼 수 있어요.</li>
+          <li>지수는 장소와 시간대의 예측값이나 관측값을 바탕으로 계산해요. 예측이 얼마나 맞았는지는 맨 아래 "자세한 계산 방법과 검증 기록"에서 볼 수 있어요.</li>
           <li>스마트폰 마이크는 기종마다 측정값이 달라요. 현장 측정 결과를 다른 기기의 값과 그대로 견주기는 어려워요.</li>
           <li>카드와 브리핑의 안내 문장은 참고용 제안이에요. 실제로 갈 때는 그날 아이의 상태와 현장 분위기를 보고 정해 주세요.</li>
           <li>공사·행사 정보는 지수에 넣지 않아요. 장소 화면의 "오늘 이 장소 주변"에서 따로 확인할 수 있어요.</li>
@@ -262,7 +286,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
             )}
 
             <h3>예측이 얼마나 맞았나</h3>
-            {metrics && metrics.overall.n >= 100 ? (
+            {metrics && metrics.overall.n >= MIN_PAIRS ? (
               <>
                 <table className="simple metrics">
                   <thead>
@@ -280,14 +304,14 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
                 </table>
                 <p className="muted">
                   서울시가 제공한 혼잡도 예측(4단계)을 그 시각의 실제 관측과 비교한 값입니다. 이 서비스의 지수는 이 예측을 입력으로 쓰므로, 예측이 맞은 정도를 위 표에 적었습니다.
-                  "유지 가정"은 예측 없이 그 시간 전의 혼잡 단계가 이어진다고 봤을 때의 일치율입니다.
+                  "유지 가정"은 예측 없이 예측을 낼 때의 혼잡 단계가 그대로 이어진다고 봤을 때의 일치율입니다.
                   "N시간 전"은 서울시 실시간 값이 속한 정시(19시 35분 값이면 19시)에서 N시간 뒤를 맞힌 예측입니다. 값에 적힌 시각이 받은 시각보다 이르기 때문에, 받은 시각부터 계산하면 한 시간쯤 짧습니다.
                   같은 시각의 장소들은 함께 오르내리므로 비교 건수만큼 서로 독립적인 확인은 아닙니다. {metrics.firstObs?.slice(0, 10)}부터 관측이 있었던 {metrics.days}일 동안 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
                   기간이 짧은 동안에는 참고용으로만 보시기 바랍니다.
                 </p>
                 {lower.length > 0 && (
                   <p className="muted">
-                    서울시 예측의 단계 일치율이 "유지 가정"보다 낮은 시차는 {lower.join(', ')}입니다. 이 시차에서는 지금 단계가 이어진다고 본 쪽이 더 자주 맞았습니다.
+                    서울시 예측의 단계 일치율이 "유지 가정"보다 낮은 시차는 {lower.join(', ')}입니다. 이 시차에서는 예측을 낼 때의 단계가 그대로 이어진다고 본 쪽이 더 자주 맞았습니다.
                     지수는 이 예측을 입력으로 쓰므로, 이 시차의 예측으로 계산한 지수는 참고용으로만 보시기 바랍니다.
                   </p>
                 )}
@@ -298,7 +322,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
                 )}
                 {popLines.length > 0 && (
                   <p className="muted">
-                    단계 이름 대신 인구 범위로도 비교했습니다. 예측한 인구(중앙값)가 실제 관측의 인구 범위 안에 든 비율과, "유지 가정"(그 시간 전 관측의 인구 중앙값)이 든 비율은 아래와 같습니다.
+                    단계 이름 대신 인구 범위로도 비교했습니다. 예측한 인구(중앙값)가 실제 관측의 인구 범위 안에 든 비율과, "유지 가정"(예측을 낼 때 관측한 인구 중앙값)이 든 비율은 아래와 같습니다.
                     {popLines.map((line) => (
                       <Fragment key={line}>
                         <br />
@@ -309,7 +333,7 @@ export default function Info({ snap, metrics, noise, placeCount, pattern: patter
                 )}
               </>
             ) : (
-              <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중입니다(지금 {metrics?.overall.n ?? 0}건). 비교가 100건 이상이 되면 여기에 일치율을 보여 줍니다.</p>
+              <p className="muted">서울시 혼잡도 예측과 실제 관측을 비교할 자료를 모으는 중입니다(지금 {metrics?.overall.n ?? 0}건). 비교가 {MIN_PAIRS}건 이상이 되면 여기에 일치율을 보여 줍니다.</p>
             )}
 
             <h3>소리 분류를 공개 음원으로 시험한 결과</h3>
