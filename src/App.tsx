@@ -393,7 +393,7 @@ export default function App() {
   }
   const onTileError = useCallback(() => setTileErr((s) => (s === 0 ? 1 : s)), [])
 
-  // 자료 상태: 받는 중 / 정상 / 예시 자료 / 둘 다 못 받음. 실제 자료가 있으면 다시 읽는 중에도 그대로 둔다.
+  // 자료 상태: 받는 중 / 정상 / 데모 데이터 / 둘 다 못 받음. 실제 자료가 있으면 다시 읽는 중에도 그대로 둔다.
   const loadState: 'loading' | 'ok' | 'demo' | 'fail' = snap?.source === 'seoul' ? 'ok' : loading ? 'loading' : snap ? 'demo' : 'fail'
   const age = snap?.source === 'seoul' ? ageMinutes(snap.updatedAt) : 0
   const stale = age >= STALE_MIN
@@ -453,6 +453,7 @@ export default function App() {
       {onStart && (
         <Landing
           placeCount={PLACES.length}
+          snap={viewSnap}
           focusHeading={startFocus.current}
           onMap={() => enterApp('map')}
           onPick={(hasProfile) => enterApp(hasProfile ? 'child' : 'pick')}
@@ -518,7 +519,7 @@ export default function App() {
       )}
       {showData && (loadState === 'demo' || loadState === 'fail') && (
         <div className="banner warn" role="status" inert={introShown}>
-          <span>{snap ? '서울시 자료를 불러오지 못해 예시 자료를 보여 드려요' : '서울시 자료를 불러오지 못했어요'}</span>
+          <span>{snap ? '서울시 자료를 불러오지 못해 데모 데이터를 보여 드려요' : '서울시 자료를 불러오지 못했어요'}</span>
           <button onClick={() => refresh(false)}>다시 시도</button>
         </div>
       )}
@@ -633,6 +634,12 @@ export default function App() {
         {view === 'child' && (
           <ChildProfileView
             profile={profile}
+            places={PLACES}
+            snap={viewSnap}
+            sound={sound}
+            offsets={offsets}
+            noise={noise}
+            nowKey={nowKey}
             onChange={updateProfile}
             onOffsetsChange={setOffsets}
             onCleared={() => {

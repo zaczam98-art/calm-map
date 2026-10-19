@@ -200,7 +200,7 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
           <li>지도는 OpenStreetMap 타일(ODbL)을 씁니다.</li>
           <li>소리 분류 모델은 YAMNet(Apache-2.0)입니다.</li>
         </ul>
-        {snap && <p className="plain-p">현재 자료는 {snap.source === 'seoul' ? '서울시 API' : '데모 스냅샷'}({snap.updatedAt} 기준)입니다.</p>}
+        {snap && <p className="plain-p">현재 자료는 {snap.source === 'seoul' ? '서울시 API' : '데모 데이터'}({snap.updatedAt} 기준)입니다.</p>}
       </div>
 
       <div className="card">

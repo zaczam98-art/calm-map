@@ -1,9 +1,8 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import type { ChildProfile, HourScore, NoiseData, Place, Snapshot } from '../types'
-import { hourScores } from '../lib/index'
-import { noiseLookup } from '../lib/noise'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ChildProfile, NoiseData, Place, Snapshot } from '../types'
 import { defaultProfile, saveProfile } from '../lib/profile'
-import { bucketKey, type SoundStore } from '../lib/snapshot'
+import { canPreview, isSoundOnly, usePreviewChange } from '../lib/preview'
+import type { SoundStore } from '../lib/snapshot'
 import { INTRO_KEY } from '../lib/landing'
 import { SHEET } from '../lib/landingCopy'
 import '../styles/onboarding.css'
@@ -23,47 +22,6 @@ function profileFor(ids: ReadonlySet<string>): ChildProfile {
   return p
 }
 
-interface IntroChange {
-  place: string
-  /** 보여 주는 칸의 시(지금 칸이 아니면 이 시를 밝힌다) */
-  hour: number
-  now: boolean
-  off: number
-  on: number
-}
-
-/** 장소별 첫 칸(지금 칸)의 점수. profile이 null이면 맞춤을 끈 값이다. 서울시 실제 자료가 아니면 비어 있다. */
-function firstCells(
-  places: Place[],
-  snap: Snapshot | null,
-  sound: SoundStore,
-  offsets: Record<string, number>,
-  noise: NoiseData | null,
-  nowKey: string | undefined,
-  profile: ChildProfile | null,
-): Map<string, HourScore> {
-  const out = new Map<string, HourScore>()
-  if (!snap || snap.source !== 'seoul') return out
-  for (const p of places) {
-    const soundAt = (h: number, d: number) => sound[p.name]?.[bucketKey(d, h)]
-    const first = hourScores(snap.places[p.name], soundAt, profile, profile ? (offsets[p.name] ?? 0) : 0, nowKey, noiseLookup(noise, p.name))[0]
-    if (first) out.set(p.name, first)
-  }
-  return out
-}
-
-/** 맞춤을 켰을 때 첫 칸의 지수가 가장 많이 달라지는 장소. 달라지는 곳이 없으면 null. */
-function biggestChange(off: Map<string, HourScore>, on: Map<string, HourScore>, nowKey: string | undefined): IntroChange | null {
-  let best: IntroChange | null = null
-  for (const [place, o] of off) {
-    const n = on.get(place)
-    if (!n || o.index === null || n.index === null) continue
-    const gap = Math.abs(n.index - o.index)
-    if (gap > 0 && (!best || gap > Math.abs(best.on - best.off))) best = { place, hour: n.hour, now: n.time.slice(0, 13) === nowKey, off: o.index, on: n.index }
-  }
-  return best
-}
-
 interface Props {
   places: Place[]
   snap: Snapshot | null
@@ -79,17 +37,9 @@ export default function Onboarding({ places, snap, sound, offsets, noise, nowKey
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set())
   const ref = useRef<HTMLDivElement>(null)
   const cand = useMemo(() => profileFor(picked), [picked])
-  const canPreview = snap?.source === 'seoul'
-  // 맞춤을 끈 첫 칸은 선택과 무관하므로 한 번만 계산하고, 선택이 바뀔 때는 켠 쪽만 다시 계산한다(칩 누름이 계산을 기다리지 않게 미룬 값을 쓴다)
-  const offCells = useMemo(() => firstCells(places, snap, sound, offsets, noise, nowKey, null), [places, snap, sound, offsets, noise, nowKey])
-  const shown = useDeferredValue(picked)
-  const deferredChange = useMemo(
-    () => (shown.size ? biggestChange(offCells, firstCells(places, snap, sound, offsets, noise, nowKey, profileFor(shown)), nowKey) : null),
-    [shown, offCells, places, snap, sound, offsets, noise, nowKey],
-  )
-  const change = picked.size ? deferredChange : null
-  // 안내방송·기계 소리는 소리 점수에만 곱해지므로, 이 항목만 고르면 현장 측정이 없는 칸의 지수는 바뀌지 않는다
-  const soundOnly = !change && picked.size > 0 && [...picked].every((id) => id === 'music' || id === 'machine')
+  // 맞춤을 끈 쪽은 한 번만 계산하고, 고른 항목이 바뀔 때는 켠 쪽만 다시 계산한다(칩 누름이 계산을 기다리지 않게 미룬 값을 쓴다). 우리 아이 탭도 같은 함수를 쓴다.
+  const { change, settled } = usePreviewChange({ places, snap, sound, offsets, noise, nowKey }, picked.size ? cand : null)
+  const soundOnly = !change && picked.size > 0 && isSoundOnly(cand)
 
   const finish = (apply: boolean) => {
     try {
@@ -166,10 +116,10 @@ export default function Onboarding({ places, snap, sound, offsets, noise, nowKey
                 <span className="ob-pv-note">{SHEET.why}</span>
               </>
             ) : picked.size === 0 ? (
-              <span className="ob-pv-note">{canPreview ? SHEET.promise : SHEET.noPreview}</span>
+              <span className="ob-pv-note">{canPreview(snap) ? SHEET.promise : SHEET.noPreview}</span>
             ) : soundOnly ? (
               <span className="ob-pv-note">{SHEET.soundOnly}</span>
-            ) : shown === picked ? (
+            ) : settled ? (
               <span className="ob-pv-note">{SHEET.noExample}</span> // 미룬 계산이 따라잡은 뒤에도 예가 없을 때만 알린다
             ) : null}
           </div>

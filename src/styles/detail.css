@@ -20,7 +20,7 @@ ol.story { list-style: none; margin: 0; padding: 0; }
 .adapt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
 .why h3 { font-size: 17px; }
 .why-rows { list-style: none; margin: 0 0 8px; padding: 0; }
-.why-rows li { display: grid; grid-template-columns: 7.5em minmax(24px, 1fr) 3.2em 3em; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; }
+.why-rows li { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(12px, 1fr) 3.2em 3em; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; }
 .why-bar { height: 10px; border-radius: 5px; background: #eef2f6; overflow: hidden; }
 .why-bar:empty { background: transparent; }
 .why-bar i { display: block; height: 100%; background: var(--accent); }

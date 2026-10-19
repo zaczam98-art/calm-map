@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { hasStoredProfile } from '../lib/landing'
+import type { Snapshot } from '../types'
 import { CARDS, CARDS_TITLE, DATA_ITEMS, DATA_LINK, DATA_TITLE, HERO, START } from '../lib/landingCopy'
+import DotField from './DotField'
 import '../styles/landing.css'
 
 interface Props {
   placeCount: number
+  /** 장소 점을 칠하는 자료. 서울시 실제 자료일 때만 단계 색이고, 데모 데이터이거나 없으면 점이 회색이다 */
+  snap: Snapshot | null
   /** 헤더 제목이나 링크로 들어왔을 때만 제목으로 초점을 보낸다(처음 열 때는 옮기지 않는다) */
   focusHeading: boolean
   onMap: () => void
@@ -19,7 +23,7 @@ const STRIP: [number, number, 'calm' | 'mid' | 'busy'][] = [
   [15, 52, 'mid'], [16, 48, 'mid'], [17, 74, 'busy'], [18, 58, 'mid'], [19, 30, 'calm'], [20, 20, 'calm'],
 ]
 
-export default function Landing({ placeCount, focusHeading, onMap, onPick, onInfo }: Props) {
+export default function Landing({ placeCount, snap, focusHeading, onMap, onPick, onInfo }: Props) {
   const h1 = useRef<HTMLHeadingElement>(null)
   const [saved] = useState(hasStoredProfile)
 
@@ -35,6 +39,8 @@ export default function Landing({ placeCount, focusHeading, onMap, onPick, onInf
         </header>
         <main>
           <section className="lp-hero" aria-labelledby="lp-h1">
+            {/* 장식: 글자와 겹치지 않는 자리(휴대폰은 머리 줄의 빈 오른쪽, 넓은 화면은 오른쪽 위)에만 놓는다 */}
+            <DotField snap={snap} />
             <div className="lp-hero-text">
               <h1 id="lp-h1" ref={h1} tabIndex={-1}>{HERO.h1}</h1>
               <p className="lp-lead">{HERO.lead}</p>

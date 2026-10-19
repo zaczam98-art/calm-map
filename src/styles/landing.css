@@ -7,7 +7,7 @@
 .lp a { color: var(--accent); text-underline-offset: 3px; }
 .lp-wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
 
-.lp-top { min-height: 52px; display: flex; align-items: center; }
+.lp-top { min-height: 72px; display: flex; align-items: center; }
 .lp-brand { font-size: 15px; font-weight: 700; color: var(--muted); }
 
 /* 첫 영역: 제목은 글자 자체가 그림의 일부가 되도록 크고 무겁게, 설명은 한 단계 작게 */
@@ -15,6 +15,24 @@
 .lp h1 { font-size: 34px; line-height: 1.18; font-weight: 800; letter-spacing: -0.035em; text-wrap: balance; }
 .lp .lp-lead { margin-top: 12px; font-size: 16px; line-height: 1.55; text-wrap: pretty; }
 .lp .lp-sub { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+
+/* 장소 점 그림(장식): 휴대폰은 머리 줄의 빈 오른쪽(제목 위)에 얹고, 넓은 화면은 오른쪽 위에 둔다. 제목·설명·단추 글자가 있는 자리에는 놓지 않는다. 가장자리는 서서히 사라져 배경처럼 보인다.
+   점 색은 지도와 같은 팔레트다. 무던함 색은 옅은 민트라 흰 바탕에서 보이도록 투명도를 높이고, 나머지는 옅게 깐다. 서울시 실제 자료가 아니면(데모 데이터, 자료 없음) 점이 모두 회색이다.
+   휴대폰의 띠는 72px(높이 720px 이상이면 116px)이고, 그보다 낮은 화면에서는 두 번째 시작 단추가 667px 높이 안에 남도록 더 키우지 않는다. */
+.lp-hero { position: relative; }
+.lp-field { position: absolute; top: -72px; right: -20px; left: 0; height: 72px; pointer-events: none; }
+.lp-field svg { position: absolute; top: 0; right: 0; width: min(420px, calc(100% - 160px)); height: 100%; display: block; -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 78%, transparent 100%); mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 78%, transparent 100%); }
+.lp-pt { fill: var(--muted); fill-opacity: 0.28; }
+.lp-pt.calm { fill: var(--calm); fill-opacity: 0.85; }
+.lp-pt.mid { fill: var(--mid); fill-opacity: 0.36; }
+.lp-pt.busy { fill: var(--busy); fill-opacity: 0.3; }
+/* 점이 무엇인지 밝히는 한 줄. 점 그림은 장식이라 이 줄도 읽어 주지 않는다. 휴대폰은 머리 줄의 "무던한 지도" 아래 왼쪽에 놓는다(점 띠는 이 줄에서 160px 떨어져 시작해서 겹치지 않는다). 넓은 화면은 점 그림 바로 아래에 놓는다. 어느 쪽도 글자 뒤에 점이 오지 않는다. */
+.lp-field-note { position: absolute; left: 0; bottom: 10px; width: 160px; margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); white-space: nowrap; }
+/* 휴대폰: 머리 줄 아래쪽에 점 설명 한 줄을 둘 자리를 만들려고 "무던한 지도"를 위쪽에 붙이고, 얇은 띠에서는 같은 점이 작아 보이니 키운다(r을 CSS로 못 읽는 브라우저는 속성값 8을 쓴다). */
+@media (max-width: 959px) { .lp-top { box-sizing: border-box; align-items: flex-start; padding-top: 14px; } .lp-pt { r: 12px; } }
+@media (max-width: 959px) and (min-height: 720px) { .lp-top { min-height: 116px; } .lp-field { top: -116px; height: 116px; } }
+@media (min-width: 560px) and (max-width: 959px) { .lp-pt { r: 8px; } }
+@media (forced-colors: active) { .lp-field { display: none; } }
 
 /* 하루 막대: 장소 시트의 막대와 같은 모양(위만 둥근 막대, 2px 간격). 오전과 저녁의 무던한 구간 위에 옅은 띠를 깐다. */
 .lp-day { display: grid; gap: 6px; }
@@ -79,10 +97,13 @@
 @media (min-width: 960px) {
   .lp-wrap { padding: 0 40px; }
   .lp-top { min-height: 72px; }
-  /* 왼쪽: 제목, 설명, 단추 / 오른쪽: 하루 막대. 그림이 제목과 같은 높이에서 시작한다. */
-  .lp-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'text day' 'act day'; column-gap: 72px; row-gap: 32px; align-items: start; padding: 40px 0 64px; }
+  /* 왼쪽: 제목, 설명, 단추 / 오른쪽: 위는 장소 점 그림, 아래는 하루 막대 */
+  .lp-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'text field' 'act day'; column-gap: 72px; row-gap: 32px; align-items: start; padding: 40px 0 64px; }
   .lp-hero-text { grid-area: text; }
-  .lp-day { grid-area: day; align-self: center; padding: 28px; border-radius: 20px; background: var(--bg); }
+  .lp-field { grid-area: field; position: relative; top: auto; right: auto; left: auto; align-self: stretch; height: auto; min-height: 200px; }
+  .lp-field-note { bottom: 0; width: auto; font-size: 13px; }
+  .lp-field svg { left: 0; right: auto; width: 100%; height: calc(100% - 28px); }
+  .lp-day { grid-area: day; padding: 28px; border-radius: 20px; background: var(--bg); }
   .lp-act { grid-area: act; max-width: 460px; }
   .lp h1 { font-size: 56px; line-height: 1.1; }
   .lp .lp-lead { margin-top: 20px; font-size: 19px; }

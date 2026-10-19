@@ -2,19 +2,36 @@ import type { PlaceExtra } from '../types'
 import { activeControls, controlLabel, factorTags } from '../lib/factors'
 import { kstNow } from '../lib/publicData'
 
-/** 혼잡도 외에 오늘 이 장소 주변에서 일어나는 일(공사·집회 통제, 행사, 날씨, 도로). 서울시 자료에 있는 사실만 옮긴다. */
-export default function Factors({ extra, fromHour }: { extra: PlaceExtra | undefined; fromHour?: number }) {
-  if (!extra) return null
+function activeExtra(extra: PlaceExtra): PlaceExtra {
   const k = kstNow()
   const nowStr = `${k.date} ${String(k.hour).padStart(2, '0')}:00`
   // 해제 예정 시각이 지난 통제는 보여 주지 않는다(수집이 늦어 오래된 스냅샷일 때의 안전장치)
-  const shown = activeControls(extra, nowStr) ?? extra
+  return activeControls(extra, nowStr) ?? extra
+}
+
+/** 접이식 요약 줄의 한 줄('행사 1건 · 통제 없음 · 비 예보 없음'). 카드와 같은 자료에서 센다. fromHour를 주면(고른 시각이 오늘일 때) 비 예보는 그 시각 이후만 본 것이라 기준 시각을 붙인다. 자료가 없으면 null. */
+export function factorsBrief(extra: PlaceExtra | undefined, fromHour?: number): string | null {
+  if (!extra) return null
+  const shown = activeExtra(extra)
+  const tags = factorTags(shown)
+  const controls = shown.controls ?? []
+  const events = shown.eventsN ?? shown.events?.length ?? 0
+  const parts = [events ? `행사 ${events}건` : '행사 없음', controls.length ? `통제 ${shown.controlsN || controls.length}건` : '통제 없음']
+  if (extra.weather) parts.push(tags.find((t) => t.key === 'rain')?.label ?? (fromHour === undefined ? '비 예보 없음' : `${fromHour}시 이후 비 예보 없음`))
+  for (const t of tags) if (t.key === 'uv' || t.key === 'air' || t.key === 'road') parts.push(t.label)
+  return parts.join(' · ')
+}
+
+/** 혼잡도 외에 오늘 이 장소 주변에서 일어나는 일(공사·집회 통제, 행사, 날씨, 도로). 서울시 자료에 있는 사실만 옮긴다. bare는 접이식 안에서 쓸 때 카드 테두리와 제목을 뺀다. */
+export default function Factors({ extra, fromHour, bare }: { extra: PlaceExtra | undefined; fromHour?: number; bare?: boolean }) {
+  if (!extra) return null
+  const shown = activeExtra(extra)
   const controls = shown.controls ?? []
   const tags = factorTags(shown)
   const w = extra.weather
   return (
-    <div className="card" style={{ marginTop: 12 }}>
-      <h3>오늘 이 장소 주변</h3>
+    <div className={bare ? undefined : 'card'} style={bare ? undefined : { marginTop: 12 }}>
+      {!bare && <h3>오늘 이 장소 주변</h3>}
       {tags.length > 0 ? (
         <p className="factor-tags">
           {tags.map((t) => (

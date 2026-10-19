@@ -7,16 +7,33 @@ const DOWS: [number, string][] = [[1, '월'], [2, '화'], [3, '수'], [4, '목']
 const DB_MIN = 30
 const DB_MAX = 80
 
-/** 장소 주변의 소음 실측(서울시 S-DoT 센서). 소리의 크기를 보여 주고, 지수에는 소음 점수(NOISE_WEIGHT 0.4)로 들어간다. */
-export default function NoiseCard({ noise, place }: { noise: NoiseData | null; place: string }) {
+/** 모든 요일의 8~21시 평균 소음(dB)을 한꺼번에 평균한 값. 요약 줄과 본문의 한 줄이 같은 숫자를 쓴다. 값이 없으면 null. */
+function dayAverage(noise: NoiseData, place: string): number | null {
+  const p = noise.places[place]
+  if (!p) return null
+  const vals = Object.values(p.avg).flatMap((day) => day.filter((v, i): v is number => v !== null && noise.hours[0] + i >= 8 && noise.hours[0] + i <= 21))
+  return vals.length === 0 ? null : Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+}
+
+/** 접이식 요약 줄의 한 줄('모든 요일 낮(8~21시) 평균 52dB · 센서 2개'). 본문 맨 아래 문단의 수치와 같은 값이다. 보여 줄 값이 없으면 null. */
+export function noiseBrief(noise: NoiseData | null, place: string): string | null {
+  if (!noise) return null
+  const p = noise.places[place]
+  if (!p) return '가까이에 쓸 수 있는 센서가 없어요'
+  const avg = dayAverage(noise, place)
+  return avg === null ? null : `모든 요일 낮(8~21시) 평균 ${avg}dB · 센서 ${p.sensors}개`
+}
+
+/** 장소 주변의 소음 실측(서울시 S-DoT 센서). 소리의 크기를 보여 주고, 지수에는 소음 점수(NOISE_WEIGHT 0.4)로 들어간다. bare는 접이식 안에서 쓸 때 카드 테두리와 제목을 뺀다. */
+export default function NoiseCard({ noise, place, bare }: { noise: NoiseData | null; place: string; bare?: boolean }) {
   const now = kstNow()
   const [dow, setDow] = useState<number | null>(null)
   if (!noise) return null
   const p = noise.places[place]
   if (!p) {
     return (
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>이 동네의 소리 크기</h3>
+      <div className={bare ? undefined : 'card'} style={bare ? undefined : { marginTop: 12 }}>
+        {!bare && <h3>이 동네의 소리 크기</h3>}
         <p className="muted">이 장소 가까이에는 쓸 수 있는 소음 센서가 없어요(직선 1km 안). 서울시 센서가 없거나, 값이 변하지 않아 고장으로 보이는 센서만 있는 경우예요.</p>
       </div>
     )
@@ -33,6 +50,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
   const quiet = day.length ? day.reduce((a, c) => (c.avg < a.avg ? c : a)) : null
   const loud = day.length ? day.reduce((a, c) => (c.avg > a.avg ? c : a)) : null
   const cur = chosen === now.dow ? cells.find((c) => c.hour === now.hour) : undefined
+  const allDays = dayAverage(noise, place)
 
   // 폭 280 기준: 시트 안에서 320px 화면(그래프 폭 약 238px)에서도 축 글자(14.5px)가 12px 이상으로 보이게 한다(styles/info.css)
   const W = 280
@@ -43,8 +61,8 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
   const y = (db: number) => H - padB - ((Math.max(DB_MIN, Math.min(DB_MAX, db)) - DB_MIN) / (DB_MAX - DB_MIN)) * (H - padB - 14)
 
   return (
-    <div className="card" style={{ marginTop: 12 }}>
-      <h3>이 동네의 소리 크기</h3>
+    <div className={bare ? undefined : 'card'} style={bare ? undefined : { marginTop: 12 }}>
+      {!bare && <h3>이 동네의 소리 크기</h3>}
       <div className="row" role="group" aria-label="요일">
         {DOWS.map(([d, name]) => (
           <button key={d} className={`chip small${d === chosen ? ' on' : ''}`} onClick={() => setDow(d)} disabled={!p.avg[String(d)]} aria-pressed={d === chosen}>{name}</button>
@@ -75,6 +93,7 @@ export default function NoiseCard({ noise, place }: { noise: NoiseData | null; p
       {quiet && loud && loud.avg - quiet.avg >= 3 && (
         <p>{dowName}요일 낮(8~21시)에는 {quiet.hour}시가 상대적으로 낮았고(평균 {quiet.avg}dB), {loud.hour}시가 상대적으로 높았어요(평균 {loud.avg}dB).</p>
       )}
+      {allDays !== null && <p>모든 요일의 낮(8~21시)을 합친 평균은 {allDays}dB예요.</p>}
       <p className="muted">
         가까운 서울시 센서 {p.sensors}개(직선 {p.km[0] === p.km[1] ? `${p.km[0]}km` : `${p.km[0]}~${p.km[1]}km`})가 {noise.from}부터 {noise.to}까지 잰 값이에요({noise.days}일 치, 센서·시간 {p.n}건).
         {p.excluded ? ` 값이 변하지 않아 고장으로 보이는 센서 ${p.excluded}개는 뺐어요.` : ''}{' '}

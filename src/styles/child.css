@@ -1,4 +1,17 @@
-.child-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.child-preset-hint { margin-bottom: 0; }
+/* 간편 선택: 큰 단추 셋. 좁은 화면에서는 한 줄에 하나씩 쌓는다. */
+.child-presets { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 8px 0 12px; }
+.chip.child-preset { min-height: 56px; padding: 10px 14px; border-radius: 12px; font-size: 16px; line-height: 1.35; }
+.chip.child-preset.on { font-weight: 700; }
+@media (min-width: 560px) {
+  .child-presets { grid-template-columns: repeat(3, 1fr); }
+}
+/* 미리 보기는 칩 질문 시트(.ob-preview)와 같은 모양이다. 우리 아이 탭에서는 자리를 조금 줄여 잡는다. */
+.child-preview.ob-preview { min-height: 92px; margin: 0 0 12px; }
+.child-preview .ob-pv-note + .ob-pv-note { margin-top: 2px; }
+/* 세부 민감도를 고르는 동안 위쪽 미리 보기가 화면 밖에 있어도 결과가 보이도록, 접이식 안에서 위에 붙여 둔다(접이식 본문 안에서만 따라온다). */
+.child-stick { position: sticky; top: 0; z-index: 2; margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; background: #eaf3f8; box-shadow: 0 2px 8px rgba(31, 41, 51, .18); font-size: 14px; line-height: 1.45; color: var(--ink); }
+.child-clear { margin-top: 4px; }
 .child-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin-bottom: 12px; }
 .child-toggle .muted { flex: 1 1 220px; }
 ul.easy { margin: 4px 0 12px; padding-left: 20px; font-size: 16px; line-height: 1.7; }

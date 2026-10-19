@@ -2,11 +2,14 @@ import type { Ref } from 'react'
 import type { Level3 } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
 import { TXT } from '../lib/nearbyText'
+import Fold from './Fold'
 
 /** 후보 한 곳의 표시 내용. 문장은 PlaceDetail이 nearbyText.ts의 함수로 만들어 넘긴다. */
 export interface NearbyRow {
   name: string
   level: Level3
+  /** 직선 거리(km) */
+  km: number
   /** '직선 N.Nkm · 지수 N' 조각 */
   meta: string
   /** 무던한 후보는 지속 문구, 보통 후보는 midText 결과 */
@@ -30,12 +33,28 @@ interface Props {
   panel: string[]
   onSelect: (name: string) => void
   headingRef: Ref<HTMLHeadingElement>
+  /** 기준 칸이 관측인지(관측이면 '무던한', 예측이면 '무던할'). 시트 위쪽 요약 단추와 같은 시제를 쓴다 */
+  obs: boolean
+  /** 시트 위쪽의 요약 단추가 이 카드를 펼칠 때 쓰는 접이식 참조 */
+  foldRef: Ref<HTMLDetailsElement>
+  /** 열림 상태가 바뀔 때(요약 단추의 aria-expanded를 맞추는 데 쓴다) */
+  onToggle: (open: boolean) => void
 }
 
-export default function NearbyCalm({ title, basis, noiseNote, farTime, alt, rows, empty, isolated, panel, onSelect, headingRef }: Props) {
+const BRIEF_NAMES = 2 // 요약 줄에 이름을 적는 후보 수
+
+/** 요약 줄 한 줄: 위쪽 요약 단추와 같은 말('더 무던한 곳', 예측이면 '더 무던할 곳')로 후보 수와 가까운 후보 이름을 적고, 같은 곳 다른 시간이 있으면 덧붙인다. 거리는 직선이라는 말을 붙여 이동 거리로 읽히지 않게 한다. */
+function briefText(rows: NearbyRow[], alt: boolean, obs: boolean): string {
+  const altNote = alt ? ' · 같은 곳 다른 시간 있음' : ''
+  const calmer = obs ? '더 무던한 곳' : '더 무던할 곳'
+  if (rows.length === 0) return `${calmer} 없음${altNote}`
+  const names = rows.slice(0, BRIEF_NAMES).map((r) => `${r.name} 직선 ${r.km.toFixed(1)}km`).join(', ')
+  return `${calmer} ${rows.length}곳: ${names}${rows.length > BRIEF_NAMES ? ' 등' : ''}${altNote}`
+}
+
+export default function NearbyCalm({ title, basis, noiseNote, farTime, alt, rows, empty, isolated, panel, onSelect, headingRef, obs, foldRef, onToggle }: Props) {
   return (
-    <div className="card nearby-card" style={{ marginTop: 12 }}>
-      <h3 tabIndex={-1} ref={headingRef}>{title}</h3>
+    <Fold title={title} brief={briefText(rows, !!alt, obs)} className="nearby-card" foldRef={foldRef} headingRef={headingRef} onToggle={onToggle}>
       <p className="muted">{basis}</p>
       {noiseNote && <p className="muted">{noiseNote}</p>}
       {farTime && <p className="muted">{TXT.farTime}</p>}
@@ -103,6 +122,6 @@ export default function NearbyCalm({ title, basis, noiseNote, farTime, alt, rows
           ))}
         </div>
       </details>
-    </div>
+    </Fold>
   )
 }

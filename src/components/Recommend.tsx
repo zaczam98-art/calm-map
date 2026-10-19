@@ -137,7 +137,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
       </div>
       <div role="status">{emptyMsg && <p className="muted">{emptyMsg}</p>}</div>
       {snap === null ? (
-        <p className="muted" role="status">{loading ? '자료를 불러오는 중이에요…' : '서울시 자료도 예시 자료도 받지 못해서 목록을 보여 드릴 수 없어요. 연결을 확인한 뒤 위의 다시 시도를 눌러 주세요.'}</p>
+        <p className="muted" role="status">{loading ? '자료를 불러오는 중이에요…' : '서울시 자료도 데모 데이터도 받지 못해서 목록을 보여 드릴 수 없어요. 연결을 확인한 뒤 위의 다시 시도를 눌러 주세요.'}</p>
       ) : (
       <ul className="rec-list">
         {shown.map((r) => (

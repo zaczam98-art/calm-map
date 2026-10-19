@@ -16,10 +16,11 @@ import { placeVt, useChangeTick, useCountUp } from '../lib/motion'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm, { type NearbyRow } from './NearbyCalm'
-import WeekPattern from './WeekPattern'
-import Factors from './Factors'
-import NoiseCard from './NoiseCard'
-import WhyIndex from './WhyIndex'
+import WeekPattern, { weekBrief } from './WeekPattern'
+import Factors, { factorsBrief } from './Factors'
+import NoiseCard, { noiseBrief } from './NoiseCard'
+import WhyIndex, { whyBrief } from './WhyIndex'
+import Fold from './Fold'
 import ShareImage from './ShareImage'
 import FeedbackMail from './FeedbackMail'
 import '../styles/detail.css'
@@ -144,6 +145,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       return {
         name: it.place.name,
         level: it.level,
+        km: it.km,
         meta: metaText(it.km, it.index),
         sub: it.level === 'calm' ? runText(calmRun(allScores.get(it.place.name)!, it.cell), it.cell, label, isNow) : midText(it.cell.forecast),
         far: it.km > NEARBY_FAR_KM,
@@ -170,11 +172,15 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         deviceSound: [shown, ...nearby.map((it) => it.cell)].some((c) => (c.parts?.w ?? 0) > 0),
         obs: [shown, ...(a ? [a] : []), ...nearby.map((it) => it.cell)].some((c) => !c.forecast),
       }),
+      obs: !shown.forecast,
       summary: rows.length > 0 ? summaryText(rows.length, !shown.forecast) : a && aRun ? summaryAlt(aLabel, !a.forecast, aRun) : null,
     }
   }, [nearby, allScores, shown, now, noise, place, places, scores, recFrom, nowIsCurrent, label, picked, profile.enabled, chosen, offsets])
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const nearbyFoldRef = useRef<HTMLDetailsElement>(null)
+  const [nearbyOpen, setNearbyOpen] = useState(false) // 요약 단추의 aria-expanded용(열림 자체는 details가 가진다)
   const jumpToCard = () => {
+    if (nearbyFoldRef.current) nearbyFoldRef.current.open = true // 접혀 있으면 펼친 뒤 제목으로 간다
     headingRef.current?.scrollIntoView({ block: 'start' })
     headingRef.current?.focus({ preventScroll: true })
   }
@@ -219,6 +225,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   // 요인 카드의 비 예보는 고른 시각 이후만 본다(비 예보 시각은 오늘 자료라 내일 칸에는 적용하지 않는다)
   const baseExtra = ps?.stale ? undefined : ps?.extra
   const selToday = !!sel && sel.time.slice(0, 10) === today
+  const factorsFrom = sel && selToday ? sel.hour : undefined
   const factorsExtra = baseExtra?.weather && sel && selToday ? { ...baseExtra, weather: { ...baseExtra.weather, rainHours: baseExtra.weather.rainHours.filter((r) => r >= sel.hour) } } : baseExtra
   const factorsNote = sel && baseExtra && !selToday ? '날씨, 통제, 행사는 오늘 자료예요. 내일 자료는 서울시에서 받지 못해요.' : ''
 
@@ -301,6 +308,20 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
     window.setTimeout(() => setShareMsg(''), 4000)
   }
 
+  // 접이식의 요약 한 줄. 값이 없으면 그 접이식은 그리지 않는다.
+  const whyText = shown ? whyBrief(shown, profile.enabled) : null
+  const factorsText = factorsBrief(factorsExtra, factorsFrom)
+  const noiseText = noiseBrief(noise, place.name)
+  const weekText = weekBrief(pattern, place.name)
+  // 이 기기에서 잰 소리와 데모 안내. 지수의 구성은 WhyIndex가 설명하므로 여기서는 그 둘만 짧게 둔다(왜 이 지수인가요 안에 넣는다).
+  const soundNote =
+    totalN > 0 || snap?.source === 'demo' ? (
+      <p className="muted">
+        {totalN > 0 && `이 기기에서 잰 소리 표본 ${totalN}개${shownTags.length ? `, ${shortLabel} 주요 소리: ${shownTags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.`}
+        {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
+      </p>
+    ) : null
+
   return (
     <section
       ref={sheet}
@@ -336,7 +357,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       <h2><span className="vt-box" style={placeVt(placeIdx, 'name')}>{place.name}</span>{placeLabel(place) && <> <span className="muted">{placeLabel(place)}</span></>}</h2>
       <p>
         <span className={`pill ${shown?.level ?? 'nodata'}`}>{LEVEL3_LABEL[shown?.level ?? 'nodata']}</span>{' '}
-        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 <span className="vt-box" style={placeVt(placeIdx, 'score')}>{scoreShown}점</span>(0~100, 낮을수록 무던)</span>}
+        {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 <span className="vt-box" style={placeVt(placeIdx, 'score')}>{scoreShown}점</span></span>}
         {noise !== null && !noise.places[place.name] && <>{' '}<span className="nonoise">소음 미반영</span></>}
       </p>
       {plain?.index != null && shown?.index != null && (
@@ -351,78 +372,90 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       )}
       <p><b>{rec.text}</b></p>
       {snap && shown?.index != null && <p className="muted" style={{ margin: '-6px 0 6px', fontSize: 13 }}>{basisLine(snap, shown)}</p>}
-      {nearbyView?.summary && <button className="nearby-summary" onClick={jumpToCard}>{nearbyView.summary}</button>}
-      <div className="sel-row">
-        {sel ? (
-          <b role="status">{hourName(sel)} 기준</b>
-        ) : selectedHour !== null ? (
-          <span className="muted" role="status">지도에서 고른 시각의 예측이 이 장소에는 없어서 지금 기준으로 보여 드려요.</span>
-        ) : (
-          <span className="muted">막대를 누르거나 아래 단추로 시각을 바꿔 볼 수 있어요.</span>
-        )}
-        {selectedHour !== null && <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>}
-      </div>
-      <div className="share">
-        <button className="btn" onClick={share}>링크 복사</button>
-        <ShareImage place={place} scores={scores} nowKey={nowKey} updatedAt={snap?.source === 'seoul' ? snap.updatedAt : undefined} selectedHour={sel ? sel.hour : null} adapted={adapted} />
-        <div role="status" className="muted">{shareMsg}</div>
-      </div>
+      {nearbyView?.summary && <button className="nearby-summary" aria-expanded={nearbyOpen} onClick={jumpToCard}>{nearbyView.summary}</button>}
+      {selectedHour !== null && (
+        <div className="sel-row">
+          {sel ? <b role="status">{hourName(sel)} 기준</b> : <span className="muted" role="status">지도에서 고른 시각의 예측이 이 장소에는 없어서 지금 기준으로 보여 드려요.</span>}
+          <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>
+        </div>
+      )}
       <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
-      {/* 지수의 구성은 아래 WhyIndex가 설명하므로 여기서는 이 기기에서 잰 소리와 데모 안내만 짧게 둔다 */}
-      {(totalN > 0 || snap?.source === 'demo') && (
-        <p className="muted">
-          {totalN > 0 && `이 기기에서 잰 소리 표본 ${totalN}개${shownTags.length ? `, ${shortLabel} 주요 소리: ${shownTags.map((t) => TAG_LABEL[t]).join(', ')}` : ''}.`}
-          {snap?.source === 'demo' && ' 데모 데이터라 예측값은 전형 패턴이에요.'}
-        </p>
-      )}
-      {shown && (
-        <WhyIndex
-          cell={shown}
-          label={shortLabel}
-          crowdLevel={pointAt(shown)?.level}
-          noiseAvg={noiseAt(shown.hour, dowOfTime(shown.time))?.avg}
-          personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud, sudden: profile.tags.sudden } : null}
-          visits={visitN}
-        />
-      )}
       <div className="row">
         <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {card && assembled && <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />}
       {assembled?.reason && <p className="muted">{assembled.reason}</p>}
-      {factorsNote && <p className="muted">{factorsNote}</p>}
-      <Factors extra={factorsExtra} fromHour={sel && selToday ? sel.hour : undefined} />
-      <NoiseCard noise={noise} place={place.name} />
-      {nearbyView && (
-        <NearbyCalm
-          title={nearbyView.title}
-          basis={nearbyView.basis}
-          noiseNote={nearbyView.noiseNote}
-          farTime={nearbyView.farTime}
-          alt={nearbyView.alt && {
-            text: nearbyView.alt.text,
-            button: nearbyView.alt.button,
-            onPick: () => {
-              pickHour(nearbyView.alt!.hour)
-              sheet.current?.focus({ preventScroll: true }) // 눌린 단추가 사라지므로 포커스를 시트로 옮긴다
-            },
-          }}
-          rows={nearbyView.rows}
-          empty={nearbyView.empty}
-          isolated={nearbyView.isolated}
-          panel={nearbyView.panel}
-          onSelect={(name) => onSelect(name, place.name)}
-          headingRef={headingRef}
-        />
-      )}
       {midUp && baseStale && <p className="muted">{TXT.baseStale}</p>}
       {shown?.level === 'calm' && picked && <p className="muted">{selectedCalmText(label(shown.time))}</p>}
-      <WeekPattern pattern={pattern} place={place.name} />
+      {!whyText && soundNote}
+      {(nearbyView || whyText || factorsText || noiseText || weekText) && (
+        <div className="folds">
+          {nearbyView && (
+            <NearbyCalm
+              title={nearbyView.title}
+              basis={nearbyView.basis}
+              noiseNote={nearbyView.noiseNote}
+              farTime={nearbyView.farTime}
+              alt={nearbyView.alt && {
+                text: nearbyView.alt.text,
+                button: nearbyView.alt.button,
+                onPick: () => {
+                  pickHour(nearbyView.alt!.hour)
+                  sheet.current?.focus({ preventScroll: true }) // 눌린 단추가 사라지므로 포커스를 시트로 옮긴다
+                },
+              }}
+              rows={nearbyView.rows}
+              empty={nearbyView.empty}
+              isolated={nearbyView.isolated}
+              panel={nearbyView.panel}
+              onSelect={(name) => onSelect(name, place.name)}
+              headingRef={headingRef}
+              obs={nearbyView.obs}
+              foldRef={nearbyFoldRef}
+              onToggle={setNearbyOpen}
+            />
+          )}
+          {whyText && shown && (
+            <Fold title="왜 이 지수인가요" brief={whyText}>
+              <WhyIndex
+                bare
+                cell={shown}
+                label={shortLabel}
+                crowdLevel={pointAt(shown)?.level}
+                noiseAvg={noiseAt(shown.hour, dowOfTime(shown.time))?.avg}
+                personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud, sudden: profile.tags.sudden } : null}
+                visits={visitN}
+              />
+              {soundNote}
+            </Fold>
+          )}
+          {factorsText && (
+            <Fold title="오늘 이 장소 주변" brief={factorsText}>
+              {factorsNote && <p className="muted">{factorsNote}</p>}
+              <Factors bare extra={factorsExtra} fromHour={factorsFrom} />
+            </Fold>
+          )}
+          {noiseText && (
+            <Fold title="이 동네의 소리 크기" brief={noiseText}>
+              <NoiseCard bare noise={noise} place={place.name} />
+            </Fold>
+          )}
+          {weekText && (
+            <Fold title="요일별 혼잡 패턴" brief={weekText}>
+              <WeekPattern bare pattern={pattern} place={place.name} />
+            </Fold>
+          )}
+        </div>
+      )}
+      <div className="share">
+        <button className="btn" onClick={share}>링크 복사</button>
+        <ShareImage place={place} scores={scores} nowKey={nowKey} updatedAt={snap?.source === 'seoul' ? snap.updatedAt : undefined} selectedHour={sel ? sel.hour : null} adapted={adapted} />
+        <div role="status" className="muted">{shareMsg}</div>
+      </div>
       <div className="card" style={{ marginTop: 12 }}>
         <h3>다녀온 뒤 기록</h3>
-        <p className="muted">"괜찮았어요"를 누르면 이 장소의 지수 보정이 5점 내려가고, "힘들었어요"를 누르면 5점 올라가요(장소마다 ±20까지). "힘들었어요"를 누른 때의 요일·시간대에 측정해 둔 소리가 있으면, 그중 주요 소리(최대 2개)의 민감도도 한 단계 올라가요. 보정과 민감도 변화는 맞춤 지수를 켜 둔 때만 지수에 반영돼요.</p>
-        <p className="muted">기록은 이 기기에만 남고 서버로 가지 않아요. 우리 아이 탭의 "최근 기록"에서 최근 10건을 보고 지울 수 있고, 지워도 올라간 소리 민감도는 우리 아이 탭에서 직접 바꿔야 해요.</p>
+        <p className="muted">맞춤 지수를 켜 둔 때는 "괜찮았어요"를 누르면 이 장소의 지수 보정이 5점 내려가고, "힘들었어요"를 누르면 5점 올라가요(장소마다 ±20까지).</p>
         <div className="row">
           <button className="btn big" onClick={() => record(true)}><span aria-hidden>😊</span> 괜찮았어요</button>
           <button className="btn big" onClick={() => record(false)}><span aria-hidden>😣</span> 힘들었어요</button>
@@ -436,6 +469,10 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
             <span className="muted">10분 안에는 되돌릴 수 있어요.</span>
           </div>
         )}
+        <Fold title="자세히" level={4} brief="소리 민감도, 반영 조건, 기록이 남는 곳, 지우는 방법" className="record-more">
+          <p className="muted">"힘들었어요"를 누른 때의 요일·시간대에 측정해 둔 소리가 있으면, 그중 주요 소리(최대 2개)의 민감도도 한 단계 올라가요. 보정과 민감도 변화는 맞춤 지수를 켜 둔 때만 지수에 반영돼요.</p>
+          <p className="muted">기록은 이 기기에만 남고 서버로 가지 않아요. 우리 아이 탭의 "최근 기록"에서 최근 10건을 보고 지울 수 있고, 지워도 올라간 소리 민감도는 우리 아이 탭에서 직접 바꿔야 해요.</p>
+        </Fold>
         <FeedbackMail place={place.name} timeLabel={shortLabel} />
       </div>
     </section>

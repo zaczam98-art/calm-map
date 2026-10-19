@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import Fold from './Fold'
 import '../styles/feedback.css'
 
 /** 의견을 받는 주소. 서버가 없으므로 기기의 메일 앱으로 넘기고, 보낼지는 보호자가 메일 앱에서 정한다. */
@@ -31,8 +32,8 @@ export default function FeedbackMail({ place, timeLabel }: { place: string; time
     }
   }
   return (
-    <div className="feedback">
-      <label htmlFor={id} className="feedback-label">개발자에게 전할 말(선택)</label>
+    <Fold title="개발자에게 전할 말(선택)" level={4} brief="불편했던 점이나 지수가 실제와 달랐던 점" className="feedback">
+      <label htmlFor={id} className="feedback-label fold-sr">개발자에게 전할 말(선택)</label>
       <textarea
         id={id}
         value={text}
@@ -54,6 +55,6 @@ export default function FeedbackMail({ place, timeLabel }: { place: string; time
         메일로 보내기를 누르면 이 기기의 메일 앱이 열리고, 메일 앱에서 보내기를 눌러야 전달돼요. 메일에는 장소 이름과 보고 있던 시각, 적은 글만 들어가요. 메일 앱이 열리지 않으면 글을 복사해서 {FEEDBACK_EMAIL}로 보내 주세요.
       </p>
       <div role="status" className="muted">{status}</div>
-    </div>
+    </Fold>
   )
 }

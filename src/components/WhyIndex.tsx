@@ -14,13 +14,15 @@ interface Props {
   personal: { crowd: number; loud: number; sudden: number } | null
   /** 이 장소에 남긴 다녀온 기록 건수 */
   visits: number
+  /** 접이식(Fold) 안에서 쓸 때 true: 카드 테두리와 제목을 그리지 않는다(제목은 접이식의 요약 줄이 맡는다) */
+  bare?: boolean
 }
 
 const round = Math.round
 const signed = (v: number) => (v > 0 ? `+${v}` : `${v}`)
 
-/** 선택한 시각의 지수가 혼잡, 소음, 소리, 기록 보정을 차례로 더해 어떻게 만들어졌는지 보여 준다. 값은 모두 hourScores가 계산한 parts에서 온다. */
-export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, visits }: Props) {
+/** 구성 요소별 누적값. 카드와 요약 한 줄이 같은 숫자를 쓰도록 한곳에서 계산한다. */
+function breakdown(cell: HourScore) {
   const p = cell.parts
   if (!p || cell.index === null) return null
   const hasNoise = p.n !== null
@@ -28,7 +30,25 @@ export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, 
   const afterNoise = round(p.base)
   const afterSound = hasSound ? round((1 - p.w) * p.base + p.w * (p.s as number)) : afterNoise
   // 화면에 보이는 정수끼리 더해서 지수가 되도록, 기록 보정은 마지막 단계와 지수의 차이로 보여 준다
-  const adjust = cell.index - afterSound
+  return { p, index: cell.index, hasNoise, hasSound, afterNoise, afterSound, adjust: cell.index - afterSound }
+}
+
+/** 접이식 요약 줄의 한 줄. 카드를 펼치지 않아도 지수가 어떤 요소로 만들어졌는지 보인다. 설명할 칸이 없으면 null. */
+export function whyBrief(cell: HourScore, personal: boolean): string | null {
+  const b = breakdown(cell)
+  if (!b) return null
+  const parts = [`혼잡 ${round(b.p.c)}`]
+  if (b.hasNoise) parts.push(`소음 ${signed(b.afterNoise - round(b.p.c))}`)
+  if (b.hasSound) parts.push(`소리 ${signed(b.afterSound - b.afterNoise)}`)
+  if (personal && b.adjust !== 0) parts.push(`기록 ${signed(b.adjust)}`)
+  return `${parts.join(' · ')} → ${b.index}점`
+}
+
+/** 선택한 시각의 지수가 혼잡, 소음, 소리, 기록 보정을 차례로 더해 어떻게 만들어졌는지 보여 준다. 값은 모두 hourScores가 계산한 parts에서 온다. */
+export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, visits, bare }: Props) {
+  const b = breakdown(cell)
+  if (!b) return null
+  const { p, hasNoise, hasSound, afterNoise, afterSound, adjust } = b
 
   const rows: { key: string; text: string; value: number; delta?: number }[] = [{ key: 'c', text: '혼잡만 보면', value: round(p.c) }]
   if (hasNoise) rows.push({ key: 'n', text: '소음을 더하면', value: afterNoise, delta: afterNoise - round(p.c) })
@@ -45,8 +65,9 @@ export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, 
   if (personal && personal.sudden !== 1 && hasNoise) evidence.push(`소음의 큰 소리 가산에는 사이렌·경적·알람 민감도(${personal.sudden}배)를 곱했어요.`)
 
   return (
-    <div className="card why">
-      <h3>{label} 지수는 왜 {cell.index}점일까요</h3>
+    <div className={bare ? 'why' : 'card why'}>
+      {!bare && <h3>{label} 지수는 왜 {cell.index}점일까요</h3>}
+      <p className="muted">낮을수록 무던해요(0~100).</p>
       <ol className="why-rows">
         {rows.map((r) => (
           <li key={r.key}>
@@ -65,8 +86,8 @@ export default function WhyIndex({ cell, label, crowdLevel, noiseAvg, personal, 
         )}
         <li className="why-sum">
           <span className="why-l">지수</span>
-          <span className="why-bar" aria-hidden><i className={cell.level} style={{ width: `${cell.index}%` }} /></span>
-          <b className="why-v">{cell.index}점</b>
+          <span className="why-bar" aria-hidden><i className={cell.level} style={{ width: `${b.index}%` }} /></span>
+          <b className="why-v">{b.index}점</b>
           <span className="why-d">{LEVEL3_LABEL[cell.level]}</span>
         </li>
       </ol>
