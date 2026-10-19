@@ -253,7 +253,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
         <button
           className="btn child-clear"
           onClick={() => {
-            if (confirm('이 기기에 저장된 프로필과 기록을 모두 지울까요? 소리 측정 요약, 추천 탭에서 고른 기준 장소 이름도 함께 지워요.')) {
+            if (confirm('이 기기에 저장된 프로필과 기록을 모두 지울까요? 소리 측정 요약, 외출 계획 메모, 추천 탭에서 고른 기준 장소 이름도 함께 지워요.')) {
               clearAll()
               onChange(defaultProfile())
               setBase(null)

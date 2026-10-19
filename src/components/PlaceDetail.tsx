@@ -14,6 +14,7 @@ import { noiseLookup } from '../lib/noise'
 import { SHARED_BAND } from '../lib/landingCopy'
 import { basisLine } from '../lib/trustText'
 import { placeVt, useChangeTick, useCountUp } from '../lib/motion'
+import { usePlanOverlay } from '../lib/planOverlay'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm, { type NearbyRow } from './NearbyCalm'
@@ -24,6 +25,7 @@ import WhyIndex, { whyBrief } from './WhyIndex'
 import Fold from './Fold'
 import ShareImage from './ShareImage'
 import FeedbackMail from './FeedbackMail'
+import Plan from './Plan'
 import '../styles/detail.css'
 import '../styles/nonoise.css'
 
@@ -200,7 +202,13 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const cardReq = useRef(0)
   const [cardFocus, setCardFocus] = useState(0) // 카드 만들기를 눌러 만든 경우에만 올라가고, CardView가 제목으로 포커스를 옮기는 신호가 된다
   const sheet = useRef<HTMLElement>(null)
-  const opener = useRef<Element | null>(document.activeElement?.closest('.sheet') && lastOpener?.isConnected ? lastOpener : document.activeElement)
+  const opener = useRef<Element | null>(document.activeElement?.closest('.sheet, .plan-back') && lastOpener?.isConnected ? lastOpener : document.activeElement)
+  const planBtn = useRef<HTMLButtonElement>(null)
+  const plan = usePlanOverlay(planBtn)
+  const canPlan = !tooOld && scores.some((c) => c.index !== null) // 예측이 없거나 자료가 12시간 넘게 묵었으면 외출 계획을 만들지 않는다
+  useEffect(() => {
+    if (plan.open && !canPlan) plan.closePlan()
+  }, [plan.open, plan.closePlan, canPlan])
 
   // 시트가 열리면 시트로 포커스를 옮기고, 닫히면 열기 전 위치로 되돌린다
   useEffect(() => {
@@ -396,11 +404,39 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         </div>
       )}
       {!tooOld && <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />}
-      <div className="row">
+      <div className="row sheet-actions">
         {!tooOld && <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>}
+        {canPlan && <button className="btn" ref={planBtn} aria-haspopup="dialog" onClick={plan.openPlan}>외출 계획 만들기</button>}
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
-      {card && assembled && <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />}
+      {/* 계획이 열려 있는 동안에도 카드를 언마운트하지 않고 감춘다(지역 상태와 포커스 이동을 지키려는 것) */}
+      {card && assembled && <div hidden={plan.open}><CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} /></div>}
+      {plan.open && canPlan && shown && (
+        <Plan
+          place={place}
+          places={places}
+          scores={scores}
+          shown={shown}
+          rec={rec}
+          label={label}
+          nowKey={nowKey}
+          snap={snap}
+          sound={sound}
+          profile={profile}
+          offsets={offsets}
+          noise={noise}
+          adapted={adapted}
+          selectedHour={selectedHour}
+          onPickHour={pickHour}
+          card={card}
+          assembled={assembled}
+          loading={loading}
+          cardFocus={cardFocus}
+          onMakeCard={() => void makeCard(true)}
+          onClose={plan.closePlan}
+          onOpenPlace={(name) => plan.leaveThen(() => onSelect(name, place.name))}
+        />
+      )}
       {assembled?.reason && <p className="muted">{assembled.reason}</p>}
       {midUp && baseStale && <p className="muted">{TXT.baseStale}</p>}
       {shown?.level === 'calm' && picked && <p className="muted">{selectedCalmText(label(shown.time))}</p>}

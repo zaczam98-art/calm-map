@@ -1,0 +1,24 @@
+/* 외출 계획(Plan): 전체 화면 대화상자. 고정 배치와 바탕은 카드 한 단계씩 보기의 .cs-back 규칙(card.css)을 그대로 쓴다. */
+.plan-top { position: sticky; top: -8px; z-index: 2; flex: none; display: flex; justify-content: flex-end; width: 100%; max-width: 560px; margin: -8px auto 0; padding: 8px 0 4px; background: var(--bg); } /* .cs-back의 위쪽 안쪽 여백 8px까지 덮어서, 스크롤한 글이 단추 위로 비치지 않게 한다 */
+.plan-top .btn { min-width: 76px; font-size: 16px; }
+.plan-body { flex: none; width: 100%; max-width: 560px; margin: 0 auto; }
+.plan-back { scroll-padding-top: 72px; } /* 위쪽 고정 닫기 막대(약 58px) 아래로 포커스와 바로 가기 대상이 놓이게 한다 */
+.plan-body h2 { font-size: 20px; }
+.plan-jump { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.plan-body h2:focus, .plan-body h3:focus { outline: none; }
+.plan-body h2:focus-visible, .plan-body h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.plan-back textarea:focus-visible, .plan-back select:focus-visible, .plan-back summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.plan-label { display: block; margin: 8px 0 4px; font-size: 14px; }
+.plan-when select { display: block; width: 100%; min-height: 44px; padding: 8px 10px; font-size: 16px; background: var(--card); color: var(--ink); }
+.plan-when .muted { margin-top: 6px; }
+.plan-head { margin: 12px 0 6px; }
+.plan-card-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.plan-card-row h3 { margin: 0; }
+/* 대안 행: 시트의 무던한 곳 안내(.nearby-btn)와 같은 모양에 '이곳 보기' 단추를 더한다 */
+.plan-alt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--ctl-line); border-radius: 10px; background: var(--card); }
+.plan-alt-go { flex: 1 0 100%; }
+.plan-field textarea { display: block; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--ctl-line); border-radius: 10px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; line-height: 24px; resize: none; overflow: hidden; }
+.plan-field textarea::placeholder { color: var(--muted); opacity: 1; }
+.plan-memo .row { margin-top: 12px; }
+.plan-save { min-height: 1.5em; margin: 8px 0 0; }
+.row.sheet-actions { row-gap: 6px; } /* 시트 단추 줄이 계획 단추로 한 줄 늘어도 시트 높이 증가가 52px(단추 46px + 줄 간격 6px) 안에 들어오게 한다 */

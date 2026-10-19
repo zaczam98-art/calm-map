@@ -69,7 +69,7 @@ export const DATA_ITEMS = [
   },
   {
     term: '개인정보',
-    desc: `${NOT_COLLECTED} 고른 내용과 다녀온 뒤 기록, 추천 탭에서 고른 기준 장소 이름은 이 기기에만 보관합니다.`,
+    desc: `${NOT_COLLECTED} 고른 내용과 다녀온 뒤 기록, 외출 계획 메모, 추천 탭에서 고른 기준 장소 이름은 이 기기에만 보관합니다.`,
   },
   {
     term: '확인사항',
