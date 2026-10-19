@@ -355,7 +355,13 @@ function PickList({ pick, box, levels, onPick, onClose }: { pick: { x: number; y
   const w = box?.clientWidth ?? 0
   const h = box?.clientHeight ?? 0
   const left = Math.max(8, Math.min(pick.x - 110, w - 228))
-  const style: CSSProperties = pick.y > h / 2 ? { left, bottom: h - pick.y + 18 } : { left, top: pick.y + 18 }
+  // 목록 높이(머리 44px + 행마다 45px)가 아래 여유보다 크면 여유가 더 큰 쪽으로 펼치고, 어느 쪽도 모자라면 높이를 여유에 맞춰 목록 안에서 스크롤한다(작은 휴대폰에서 5번째 행이 탭 아래로 잘리지 않게)
+  const need = 44 + pick.names.length * 45
+  const below = h - pick.y - 18
+  const above = pick.y - 18
+  const up = below < need && above > below
+  const room = up ? above : below
+  const style: CSSProperties = { left, ...(up ? { bottom: h - pick.y + 18 } : { top: pick.y + 18 }), ...(need > room ? { maxHeight: Math.max(132, room - 8), overflowY: 'auto' } : {}) }
   return (
     <div className="pick" role="group" aria-label="가까이 겹쳐 있는 장소" style={style}>
       <div className="pick-head">

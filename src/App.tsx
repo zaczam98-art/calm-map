@@ -80,15 +80,14 @@ const APPLIED_TAG: Partial<Record<SenseTag, string>> = {
   ambient: '배경음',
 }
 
-/** 칩 글자를 앞머리('적용 중: ')와 나머지로 나눈다. 아주 좁은 화면에서는 앞머리를 감추고 항목 이름을 보여 준다. */
-function appliedParts(p: ChildProfile): { lead: string; rest: string; count?: string } {
+/** 칩 글자를 앞머리('적용 중: ')와 나머지로 나눈다. 좁은 화면(520px 이하)에서는 이름 대신 짧은 글자(count)만 보여 주고, 이름 전체는 title과 aria-label에 있다. */
+function appliedParts(p: ChildProfile): { lead: string; rest: string; count: string } {
   const items: string[] = []
   for (const t of SENSE_TAGS) if (p.tags[t] === 1.5 && APPLIED_TAG[t]) items.push(APPLIED_TAG[t]!)
   if (p.crowd === 1.5) items.push('사람 많은 곳')
   if (p.loud === 1.5) items.push('큰 소리')
-  // 항목이 둘 이상이면 좁은 화면에서 이름 대신 쓸 개수 글자를 함께 준다(이름 전체는 title과 aria-label에 있다)
-  if (items.length) return { lead: '적용 중: ', rest: items.join(', '), count: items.length > 1 ? `${items.length}개 적용` : undefined }
-  return isDefaultSens(p) ? { lead: '', rest: '아직 고르지 않았어요' } : { lead: '적용 중: ', rest: '직접 고른 값' }
+  if (items.length) return { lead: '적용 중: ', rest: items.join(', '), count: `${items.length}개 적용` }
+  return isDefaultSens(p) ? { lead: '', rest: '아직 고르지 않았어요', count: '0개 적용' } : { lead: '적용 중: ', rest: '직접 고른 값', count: '설정됨' }
 }
 
 const MEASURE_LEAVE_MSG = '측정 중이에요. 나가면 지금까지 결과가 사라져요. 나갈까요?'
@@ -477,13 +476,17 @@ export default function App() {
             무던한 지도
           </a>
         </h1>
-        {loadState === 'loading' && <span className="badge">자료 불러오는 중…</span>}
+        {loadState === 'loading' && (
+          <span className="badge">
+            <span className="pre">자료 </span>불러오는 중…
+          </span>
+        )}
         {loadState === 'demo' && <span className="badge demo">데모 데이터</span>}
         {loadState === 'fail' && <span className="badge warn">자료 없음</span>}
         {loadState === 'ok' &&
           (stale ? (
             <span className="badge warn" title={stampLabel}>
-              {Math.floor(age / 60)}시간 전 자료
+              {Math.floor(age / 60)}시간 전<span className="post"> 자료</span>
             </span>
           ) : (
             <span className="badge" title={stampLabel}>
@@ -496,17 +499,11 @@ export default function App() {
           <span className="toggle-lead">우리 아이 </span>맞춤
         </label>
         {chip && (
-          <button className={chip.count ? 'applied-chip has-count' : 'applied-chip'} onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
+          <button className="applied-chip" onClick={() => go('child')} aria-label={`${chipLabel}. 우리 아이 탭으로 이동`} title={chipLabel}>
             <span key={chipTick} className={chipTick ? 'flash' : undefined}>
               {chip.lead && <span className="applied-lead">{chip.lead}</span>}
-              {chip.count ? (
-                <>
-                  <span className="applied-full">{chip.rest}</span>
-                  <span className="applied-count" aria-hidden>{chip.count}</span>
-                </>
-              ) : (
-                chip.rest
-              )}
+              <span className="applied-full">{chip.rest}</span>
+              <span className="applied-count" aria-hidden>{chip.count}</span>
             </span>
           </button>
         )}
@@ -599,6 +596,7 @@ export default function App() {
             onSelect={openPlace}
             nowKey={nowKey}
             snap={viewSnap}
+            tooOld={tooOld}
             sound={sound}
             profile={profile}
             offsets={offsets}

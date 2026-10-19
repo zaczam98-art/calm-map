@@ -41,7 +41,7 @@
 .lp-bar.calm { background: var(--calm); }
 .lp-bar.mid { background: var(--mid); }
 .lp-bar.busy { background: var(--busy); }
-.lp-bar i { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; font-style: normal; font-size: 11px; line-height: 1.4; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lp-bar i { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; font-style: normal; font-size: 11px; line-height: 1.4; color: #4a5563; white-space: nowrap; font-variant-numeric: tabular-nums; } /* 글자 상자의 아래 끝이 띠 아래 선(--line)에 0.4px 걸쳐 --muted(#5f6b7a)는 그 선 위에서 4.37:1이었다. #4a5563은 흰 바탕 7.6:1, 선 위 6.1:1 */
 .lp-calmband { position: absolute; left: 0; top: 0; font-size: 12px; font-weight: 700; color: #1f6b52; } /* 무던함 막대 색(#9ddbc8)은 글자 대비가 낮아 같은 계열의 짙은 초록을 글자에 쓴다(흰 바탕 6.4:1) */
 @keyframes lp-grow { from { transform: scaleY(0.08); opacity: 0.4; } to { transform: scaleY(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .lp-bar { animation: none; } }
@@ -120,7 +120,7 @@
 .topbar h1 a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; margin: 0 -6px; color: inherit; text-decoration: none; }
 .topbar h1 a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 8px; }
 
-/* 공유 링크로 연 장소 시트 위 한 줄 띠: 오른쪽 닫기(×) 자리를 비워 둔다 */
-.share-band { display: flex; align-items: center; gap: 4px; min-height: 44px; margin: 0 36px 8px 0; padding: 0 4px 0 12px; border-radius: 10px; background: #eaf3f8; font-size: 14px; line-height: 1.4; }
-.share-band span { flex: 1 1 auto; min-width: 0; }
-.share-band a { flex: none; display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 8px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+/* 공유 링크로 연 장소 시트 위 한 줄 띠: 오른쪽 닫기(×) 자리를 비워 둔다. 글자가 한 줄에 다 들어가지 않는 좁은 폭(높이 640px 이하에서 시트가 오른쪽 컨트롤을 비키는 320px 부근)에서는 글자 열이 8em(두 줄로 읽히는 최소 폭)보다 좁아지기 전에 링크를 아래 줄로 내린다 */
+.share-band { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; min-height: 44px; margin: 0 36px 8px 0; padding: 0 4px 0 12px; border-radius: 10px; background: #eaf3f8; font-size: 14px; line-height: 1.4; }
+.share-band span { flex: 1 1 8em; min-width: 0; padding: 2px 0; }
+.share-band a { flex: none; margin-left: auto; display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 8px; color: var(--accent); font-weight: 700; white-space: nowrap; }

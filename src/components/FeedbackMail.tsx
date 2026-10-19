@@ -26,7 +26,7 @@ export default function FeedbackMail({ place, timeLabel }: { place: string; time
   const copy = async () => {
     try {
       await navigator.clipboard.writeText([`장소: ${place}`, `보고 있던 시각: ${timeLabel}`, '', text.trim()].join('\n'))
-      setStatus(`복사했어요. ${FEEDBACK_EMAIL}로 보내 주세요.`)
+      setStatus(`복사했어요. ${FEEDBACK_EMAIL} 주소로 보내 주세요.`)
     } catch {
       setStatus('복사하지 못했어요. 글을 직접 선택해서 복사해 주세요.')
     }
@@ -52,7 +52,7 @@ export default function FeedbackMail({ place, timeLabel }: { place: string; time
         <span className="muted feedback-count" aria-hidden="true">{text.length}/{MAX}</span>
       </div>
       <p id={`${id}-note`} className="muted feedback-note">
-        메일로 보내기를 누르면 이 기기의 메일 앱이 열리고, 메일 앱에서 보내기를 눌러야 전달돼요. 메일에는 장소 이름과 보고 있던 시각, 적은 글만 들어가요. 메일 앱이 열리지 않으면 글을 복사해서 {FEEDBACK_EMAIL}로 보내 주세요.
+        메일로 보내기를 누르면 이 기기의 메일 앱이 열리고, 메일 앱에서 보내기를 눌러야 전달돼요. 메일에는 장소 이름과 보고 있던 시각, 적은 글만 들어가요. 메일 앱이 열리지 않으면 글을 복사해서 {FEEDBACK_EMAIL} 주소로 보내 주세요.
       </p>
       <div role="status" className="muted">{status}</div>
     </Fold>

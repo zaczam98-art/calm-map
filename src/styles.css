@@ -199,6 +199,8 @@ select, input[type=file] { font: inherit; padding: 8px; border-radius: 8px; bord
 .factor-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
 .factor { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; background: #fff3d6; color: #7a5200; border: 1px solid #f0d9a0; }
 .factor.small { font-size: 12px; padding: 2px 8px; margin: 4px 4px 0 0; }
+.rec-main .factor.small { margin-left: 2px; }
+.nw { white-space: nowrap; }
 h3.sub { font-size: 14px; margin: 10px 0 4px; }
 .facts { margin: 0 0 6px; padding-left: 18px; font-size: 14px; }
 .chip.small { min-height: 44px; padding: 6px 12px; }
@@ -214,6 +216,9 @@ h3.sub { font-size: 14px; margin: 10px 0 4px; }
 }
 @media (max-width: 340px) {
   .badge .pre { display: none; }
+}
+@media (max-width: 324px) {
+  .badge .post { display: none; } /* 맞춤 4개를 켠 채 '10시간 전 자료'가 뜨면 320px에서 칩 글자가 1px 모자라 말줄임이 생긴다 */
 }
 @media (max-width: 380px) {
   .topbar { gap: 6px; padding: 4px 8px; }
@@ -247,8 +252,8 @@ h3.sub { font-size: 14px; margin: 10px 0 4px; }
 }
 
 /* 겹친 마커 선택 목록 */
-.pick { position: absolute; z-index: 560; width: 220px; max-width: calc(100% - 16px); background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 14px rgba(0, 0, 0, .22); overflow: hidden; }
-.pick-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 0 0 12px; font-size: 13px; color: var(--muted); }
+.pick { position: absolute; z-index: 560; width: 220px; max-width: calc(100% - 16px); background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 14px rgba(0, 0, 0, .22); overflow: hidden; overscroll-behavior: contain; }
+.pick-head { position: sticky; top: 0; z-index: 1; background: var(--card); display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 0 0 12px; font-size: 13px; color: var(--muted); }
 .pick-head button { flex: none; width: 44px; height: 44px; border: 0; background: transparent; color: var(--ink); font-size: 22px; }
 .pick ul { list-style: none; margin: 0; padding: 0; }
 .pick li button { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 12px; border: 0; border-top: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 14px; text-align: left; }

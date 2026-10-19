@@ -5,7 +5,7 @@ export interface FactorTag {
   label: string
 }
 
-const CONTROL_LABEL: Record<string, string> = { 공사: '공사', 집회및행사: '집회·행사', 사고: '사고', 기타: '통제' }
+const CONTROL_LABEL: Record<string, string> = { 공사: '공사', 집회및행사: '집회·행사', 기타: '통제' }
 const HIGH_UV = ['높음', '매우높음', '위험']
 const BAD_AIR = ['나쁨', '매우나쁨']
 

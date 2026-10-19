@@ -48,6 +48,8 @@ interface Props {
   onClose: () => void
   onRecorded: (offsets: Record<string, number>, profile: ChildProfile) => void
   onMeasure: () => void
+  /** 자료가 12시간 넘게 묵어 예측을 보여 주지 않을 때 true. 그래프와 카드 단추를 감추고 배너와 같은 이유를 말한다. */
+  tooOld?: boolean
   /** 우리 아이 탭으로 이동(맞춤 전후가 같을 때 민감도를 고르러 가는 단추) */
   onGoChild?: () => void
   /** 지도 슬라이더와 함께 쓰는 선택 시각(0~23, null=지금). 주지 않으면 이 시트 안에서만 기억한다. */
@@ -62,7 +64,7 @@ interface Props {
   enter?: boolean
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro, enter: enterProp = true }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, tooOld = false, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro, enter: enterProp = true }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
@@ -370,7 +372,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
           {plain.index === shown.index && !chosen && onGoChild && <button className="btn" onClick={onGoChild}>우리 아이에서 고르기</button>}
         </div>
       )}
-      <p><b>{rec.text}</b></p>
+      <p><b>{tooOld ? '자료가 오래돼 예측을 보여 드리지 못해요.' : rec.text}</b></p>
       {snap && shown?.index != null && <p className="muted" style={{ margin: '-6px 0 6px', fontSize: 13 }}>{basisLine(snap, shown)}</p>}
       {nearbyView?.summary && <button className="nearby-summary" aria-expanded={nearbyOpen} onClick={jumpToCard}>{nearbyView.summary}</button>}
       {selectedHour !== null && (
@@ -379,9 +381,9 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
           <button className="btn" onClick={() => { pickHour(null); sheet.current?.focus({ preventScroll: true }) }}>권고 시간으로</button>
         </div>
       )}
-      <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />
+      {!tooOld && <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />}
       <div className="row">
-        <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>
+        {!tooOld && <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>}
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {card && assembled && <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />}

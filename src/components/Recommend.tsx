@@ -145,11 +145,11 @@ export default function Recommend({ places, snap, loading = false, sound, profil
             <button className="rec-item" onClick={(e) => onOpen(r.place.name, undefined, e.currentTarget)}>
               <span className={`pill ${r.level}`}>{LEVEL3_LABEL[r.level]}</span>
               <span className="rec-main">
-                <b>{r.place.name}</b> <span className="muted">{[placeLabel(r.place), r.km !== null ? `직선 ${r.km.toFixed(1)}km` : ''].filter(Boolean).join(' · ')}</span>
+                <b>{r.place.name}</b> <span className="muted">{[placeLabel(r.place), r.km !== null ? `직선 ${r.km.toFixed(1)}km` : ''].filter(Boolean).map((t, i) => <span key={t}>{i > 0 && ' · '}<span className="nw">{t}</span></span>)}</span>
                 <br />
                 <span>{r.line}</span>
                 {r.tags.map((t) => (
-                  <span key={t.key} className="factor small">{t.label}</span>
+                  <span key={t.key}>{' '}<span className="factor small">{t.label}</span></span>
                 ))}
                 {r.noMeter && <span className="nonoise small">소음 미반영</span>}
               </span>

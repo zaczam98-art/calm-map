@@ -304,9 +304,9 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
                 </table>
                 <p className="muted">
                   서울시가 제공한 혼잡도 예측(4단계)을 그 시각의 실제 관측과 비교한 값입니다. 이 서비스의 지수는 이 예측을 입력으로 쓰므로, 예측이 맞은 정도를 위 표에 적었습니다.
-                  "유지 가정"은 예측 없이 예측을 낼 때의 혼잡 단계가 그대로 이어진다고 봤을 때의 일치율입니다.
+                  "유지 가정"은 예측을 쓰지 않고 예측을 낸 시점의 혼잡 단계가 그대로 이어진다고 봤을 때의 일치율입니다.
                   "N시간 전"은 서울시 실시간 값이 속한 정시(19시 35분 값이면 19시)에서 N시간 뒤를 맞힌 예측입니다. 값에 적힌 시각이 받은 시각보다 이르기 때문에, 받은 시각부터 계산하면 한 시간쯤 짧습니다.
-                  같은 시각의 장소들은 함께 오르내리므로 비교 건수만큼 서로 독립적인 확인은 아닙니다. {metrics.firstObs?.slice(0, 10)}부터 관측이 있었던 {metrics.days}일 동안 {metrics.nObs}건을 모았고({metrics.updatedAt} 계산),
+                  같은 시각의 장소들은 함께 오르내리므로 비교 건수만큼 서로 독립적인 확인은 아닙니다. {metrics.firstObs?.slice(0, 10)}부터 관측이 있었던 {metrics.days}일 동안 {metrics.nObs}건의 관측값을 모았고({metrics.updatedAt} 계산),
                   기간이 짧은 동안에는 참고용으로만 보시기 바랍니다.
                 </p>
                 {lower.length > 0 && (

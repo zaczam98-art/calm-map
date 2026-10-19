@@ -4,13 +4,22 @@ import { LEVEL3_LABEL } from '../lib/index'
 import { reducedMotion } from '../lib/motion'
 import { FILL, isNight } from '../lib/chartStyle' // 밤 시간(22~7시)은 권고 시간 비교에서 빼므로 옅게 그린다
 import '../styles/chart.css'
-// 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준. 375px 화면에서 거의 같은 px가 되고 320px에서도 12px 안팎이다)
+// 글자 크기는 CSS 규칙보다 앞서도록 style로 준다(viewBox 기준. 375px 화면에서 거의 같은 px가 되고 320px 폭에서도 12px 안팎이다. 높이 640px 이하의 작은 화면에서는 시트가 244px로 줄어 기준선 글자 7.7px, 시각 글자 8.8px가 된다)
 const TEXT = { fontSize: 15 }
 const TEXT_SEL = { fontSize: 15, fontWeight: 700 } as const
 const TICK = { fontSize: 13, paintOrder: 'stroke', stroke: '#ffffff', strokeWidth: 3, strokeLinejoin: 'round' } as const
 const INK = '#1f2933'
 const GRID = '#e3e7ec'
 const SEL_BG = '#e9f1f6'
+// 기준선 글자: v는 기준선 지수, width는 글자 폭(viewBox 단위, 13px 글자를 잰 53.9와 42.0에 여유를 더했다), inset은 오른쪽 끝에서 기본 자리까지 거리
+const TICKS = [
+  { v: 35, word: '무던함', width: 56, inset: 62 },
+  { v: 65, word: '붐빔', width: 44, inset: 50 },
+]
+const NUM_W = 16 // 숫자만 쓸 때의 글자 폭
+const TICK_GAP = 3 // 글자와 막대 사이를 비우는 간격. 글자 둘레 흰 테두리 반경(1.5)보다 넓다
+// 축 글자의 반폭 추정(viewBox 단위). 15px 글자에서 한글 15, 숫자 8.5, 공백 4로 잡고, 굵은 글자는 4% 더한다.
+const textHalf = (t: string, bold: boolean) => ([...t].reduce((a, c) => a + (c === ' ' ? 4 : /\d/.test(c) ? 8.5 : 15), 0) * (bold ? 1.04 : 1)) / 2
 
 /** 위만 둥근 막대. 바닥은 각지게 두어 기준선에서 자라는 모양이 된다. */
 const barPath = (x: number, y: number, w: number, h: number) => {
@@ -68,6 +77,10 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
   // 고른 막대의 글자가 '지금' 글자와 겹치면, 고른 쪽 글자를 보이고 지금 글자는 뺀다
   const selCx = selIdx >= 0 ? padL + selIdx * bw + bw / 2 : 0
   const nowShown = nowLabel !== null && !(selIdx > 0 && selCx - 17 < nowEnd)
+  // 고른 막대의 글자가 차지하는 구간(오른쪽 끝이면 끝에 붙는다). 이 구간에 걸치는 다른 눈금 글자는 뺀다.
+  const selHalf = selIdx >= 0 ? textHalf(`${tomorrow(selIdx) ? '내일 ' : ''}${scores[selIdx].hour}시`, true) : 0
+  const selR = Math.min(selCx + selHalf, W - 2)
+  const selL = selR - 2 * selHalf
   const endX = nowShown ? nowEnd : 0
   // 막대가 좁은 화면(막대 한 칸 20~30px)에서도 한 시간씩 옮길 수 있는 단추. 고르기 전에는 첫 칸(지금)에서 시작한다.
   const cur = selIdx >= 0 ? selIdx : 0
@@ -100,18 +113,23 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
   const hasHighlight = highlight !== null && scores.some((s) => s.hour === highlight)
   const hasHatch = scores.some(missingNoise)
   const noNoise = !hasNoise && scores.some((s) => s.index !== null)
-  // 기준선 글자는 막대와 겹치지 않는 자리(기준선보다 높은 막대가 없는 구간)를 오른쪽 끝부터 찾아 놓는다. 없으면 겹침이 가장 적은 자리.
-  const labelX = (v: number, width: number) => {
-    let best = { x: W - 2 - width, hits: Infinity }
-    for (let k = 0; k <= n; k += 1) {
-      const x0 = W - 2 - width - k * bw
-      if (x0 < padL) break
-      const hits = scores.filter((s, i) => (s.index ?? 0) > v && padL + i * bw + 2 < x0 + width && padL + i * bw + bw - 2 > x0).length
-      if (hits < best.hits) best = { x: x0, hits }
-      if (hits === 0) break
-    }
-    return best.x
+  // 기준선 글자는 기준선보다 높은 막대와 겹치지 않는 자리에 둔다(글자와 막대 사이는 TICK_GAP 이상 비운다).
+  // 오른쪽 끝의 기본 자리에서 한 칸씩 왼쪽으로 옮겨 보고, 그래도 없으면 막대 바로 왼쪽 자리를 오른쪽부터 찾는다.
+  // 어느 자리에도 글이 들어가지 않으면 숫자만 쓰고, 숫자도 놓을 곳이 없으면 쓰지 않는다. 막대 위에는 글자를 얹지 않는다.
+  const barLeft = (i: number) => padL + i * bw + (bw - barW) / 2
+  const tickX = (v: number, width: number, from: number) => {
+    const clear = (x0: number) => scores.every((s, i) => (s.index ?? 0) <= v || barLeft(i) - TICK_GAP >= x0 + width || barLeft(i) + barW + TICK_GAP <= x0)
+    const steps: number[] = []
+    for (let x0 = from; x0 >= padL; x0 -= bw) steps.push(x0)
+    const beside = [W - 2 - width, ...scores.map((_, i) => barLeft(i) - TICK_GAP - width)].sort((a, b) => b - a)
+    return [...steps, ...beside].find((x0) => x0 >= padL && clear(x0))
   }
+  const ticks = TICKS.flatMap(({ v, word, width, inset }) => {
+    const x = tickX(v, width, W - inset)
+    if (x !== undefined) return [{ v, x, text: `${word} ${v}` }]
+    const xNum = tickX(v, NUM_W, W - 2 - NUM_W)
+    return xNum === undefined ? [] : [{ v, x: xNum, text: String(v) }]
+  })
 
   return (
     <>
@@ -135,8 +153,15 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
             const cx = x + barW / 2
             const sel = i === selIdx
             // 고른 막대의 시각 글자가 이웃 눈금 글자와 겹치지 않게, 바로 옆 눈금은 뺀다
-            const nearSel = selIdx >= 0 && Math.abs(i - selIdx) === 1
-            const showLabel = sel || (!nearSel && (i === 0 || (s.hour % 3 === 0 && cx - 14 >= endX)))
+            const half = textHalf(labelOf(s, i), false)
+            const mid = Math.min(cx, W - 2 - half) // 오른쪽 끝에 붙는 글자의 가운데
+            const nearSel = selIdx >= 0 && (Math.abs(i - selIdx) === 1 || (!sel && mid + half + 3 > selL && mid - half - 3 < selR))
+            // 관측이 아닌 예측으로 시작하는 첫 칸(자료가 묵은 때)은 바로 다음 칸이 눈금이면 글자가 붙으므로 뺀다
+            const firstOk = i === 0 && !(nowLabel === null && (scores[1]?.hour ?? 1) % 3 === 0)
+            const showLabel = sel || (!nearSel && (firstOk || (i > 0 && s.hour % 3 === 0 && cx - 14 >= endX)))
+            const labelText = i === 0 && nowShown ? (nowLabel ?? '') : sel ? `${tomorrow(i) ? '내일 ' : ''}${s.hour}시` : labelOf(s, i)
+            // 오른쪽 끝 막대의 '내일 N시'가 그래프 밖으로 잘리지 않게 끝에 붙인다
+            const atEnd = !(i === 0 && nowShown) && cx + textHalf(labelText, sel) > W - 2
             return (
               <g key={s.time}>
                 {/* 막대는 가장 큰 높이로 한 번 그려 두고 위치(translateY)만 옮긴다. 높이를 바꾸는 방식과 달리 위쪽 둥근 모양이 일그러지지 않고, 기준선 아래로 내려간 부분은 clipPath가 자른다. */}
@@ -150,16 +175,16 @@ export default function HourChart({ scores, highlight, selectedHour = null, onSe
                   </g>
                 </g>
                 {showLabel && (
-                  <text x={i === 0 && nowShown ? padL : cx} y={H - 6} textAnchor={i === 0 && nowShown ? 'start' : 'middle'} style={sel ? TEXT_SEL : TEXT}>
-                    {i === 0 && nowShown ? nowLabel : sel ? `${tomorrow(i) ? '내일 ' : ''}${s.hour}시` : labelOf(s, i)}
+                  <text x={atEnd ? W - 2 : i === 0 && nowShown ? padL : cx} y={H - 6} textAnchor={atEnd ? 'end' : i === 0 && nowShown ? 'start' : 'middle'} style={sel ? TEXT_SEL : TEXT}>
+                    {labelText}
                   </text>
                 )}
               </g>
             )
           })}
           {/* 기준선 글자는 막대 위에 얹히지 않는 자리에, 막대보다 앞에 그려 가려지지 않게 한다 */}
-          {[35, 65].map((y) => (
-            <text key={y} x={labelX(y, y === 35 ? 60 : 48)} y={yOf(y) - 3} style={TICK}>{y === 35 ? '무던함 35' : '붐빔 65'}</text>
+          {ticks.map(({ v, x, text }) => (
+            <text key={v} x={x} y={yOf(v) - 3} style={TICK}>{text}</text>
           ))}
         </svg>
         {onSelectHour && (
