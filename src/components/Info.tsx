@@ -3,7 +3,8 @@ import type { ForecastMetrics, LeadMetric, NoiseData, SenseTag, Snapshot, WeekPa
 import { TAG_LABEL } from '../types'
 import samplesRaw from '../data/samples.json'
 import { HAS_API, loadPublicJson } from '../lib/publicData'
-import { level3, noiseScore, NOISE_WEIGHT } from '../lib/index'
+import { level3, NOISE_DB_HIGH, NOISE_DB_LOW, noiseScore, NOISE_WEIGHT } from '../lib/index'
+import { NOISE_HIGH_FROM_DB, NOISE_MID_FROM_DB, SPIKE_BIG_ADD } from '../lib/scoreWords'
 import { noiseLookup } from '../lib/noise'
 import { NOT_COLLECTED } from '../lib/landingCopy'
 import { accuracyPending, accuracyText, BUSY_FROM, LEADS, lowerLeads, meaningNote, MID_FROM, MIN_PAIRS, pct, stampText } from '../lib/trustText'
@@ -98,7 +99,7 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
           <tbody>
             <tr><th>점수의 뜻</th><td>지수는 0~100이고 낮을수록 무던해요. {MID_FROM} 미만은 무던함, {MID_FROM} 이상 {BUSY_FROM} 미만은 보통, {BUSY_FROM} 이상은 붐빔이에요. {meaningNote(snap)}</td></tr>
             <tr><th>자료 시각</th><td>{stampLine} 서울시 자료는 매시 새로 모아서 올리지만 늦을 때가 있어요.</td></tr>
-            <tr><th>개인정보</th><td>아이의 이름, 병원 기록, 행동 기록은 받지 않아요. 고른 내용과 다녀온 뒤 기록은 이 기기에만 저장해요.</td></tr>
+            <tr><th>개인정보</th><td>아이의 이름, 병원 기록, 행동 기록은 받지 않아요. 고른 내용과 다녀온 뒤 기록, 추천 탭에서 고른 기준 장소 이름은 이 기기에만 저장해요.</td></tr>
             <tr>
               <th>검증 범위</th>
               <td>
@@ -161,8 +162,8 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
         <p className="plain-p">{NOT_COLLECTED}</p>
         <h3 className="sub">이 기기에 저장하는 정보</h3>
         <ul className="plain">
-          <li>우리 아이 맞춤(민감 요인 7개의 3단계 값), 다녀온 뒤 기록, 장소별 지수 보정, 소리 측정 요약을 이 기기의 저장소에 보관합니다.</li>
-          <li>위 정보는 우리 아이 탭의 "이 기기의 맞춤·기록 지우기"로 지울 수 있습니다.</li>
+          <li>우리 아이 맞춤(민감 요인 7개의 3단계 값), 다녀온 뒤 기록, 장소별 지수 보정, 소리 측정 요약, 추천 탭에서 고른 기준 장소 이름을 이 기기의 저장소에 보관합니다.</li>
+          <li>위 정보는 우리 아이 탭의 "이 기기의 맞춤·기록 지우기"로 지울 수 있습니다. 추천 탭에서 고른 기준 장소 이름은 "어디서" 단추를 열고 "서울 전체"나 "기준 지우기"를 눌러도 지울 수 있습니다.</li>
           <li>화면을 이루는 파일은 오프라인에서도 열리도록 이 기기에 캐시합니다(지도 그림과 서울시 자료는 제외).</li>
         </ul>
         <h3 className="sub">밖으로 전달되는 정보</h3>
@@ -171,12 +172,12 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
             <>
               <li>소리 측정 요약(장소, 요일, 시각, 태그별 숫자)과 카드 요청(장소, 시간대, 예민한 요인의 이름)은 서버로 전달됩니다.</li>
               <li>서버는 카드 요청의 내용을 생성형 AI에 전달합니다. 맞춤 지수를 켜 두었다면 예민한 요인의 이름도 여기에 들어갑니다.</li>
-              <li>우리 아이 맞춤의 3단계 값과 다녀온 뒤 기록은 이 기기 밖으로 나가지 않습니다.</li>
+              <li>우리 아이 맞춤의 3단계 값, 다녀온 뒤 기록, 추천 탭에서 고른 기준 장소 이름은 이 기기 밖으로 나가지 않습니다.</li>
               <li>지도 타일을 받을 때 접속 정보(IP 주소)가 OpenStreetMap에 전달됩니다.</li>
             </>
           ) : (
             <>
-              <li>이 서비스에는 정보를 받는 서버가 없어서 우리 아이 맞춤, 기록, 소리 측정 요약, 이용자의 위치는 이 기기 밖으로 나가지 않습니다.</li>
+              <li>이 서비스에는 정보를 받는 서버가 없어서 우리 아이 맞춤, 기록, 소리 측정 요약, 추천 탭에서 고른 기준 장소 이름, 이용자의 위치는 이 기기 밖으로 나가지 않습니다.</li>
               <li>지도 타일, 자료 파일, 소리 분류 모델을 받을 때 접속 정보(IP 주소)가 OpenStreetMap, GitHub에 전달됩니다.</li>
               <li>생성형 AI에는 자료를 수집하는 단계에서 장소 이름과 혼잡도 예측만 전달합니다.</li>
             </>
@@ -272,6 +273,10 @@ export default function Info({ snap, loading = false, metrics, noise, placeCount
               <li>최종 지수에 다녀온 뒤 기록의 지수 보정을 더합니다.</li>
             </ul>
             <p className="muted">이 산식과 숫자는 검증 전 가설입니다. 공사·행사 정보는 지수에 넣지 않고 따로 보여 줍니다.</p>
+            <p className="muted">
+              장소 화면의 낱말은 지수 산식의 값을 말로 옮긴 것입니다. 평소 소음은 평균 소음 {NOISE_DB_LOW}dB(0점)과 {NOISE_DB_HIGH}dB(100점) 사이를 지수와 같은 경계({MID_FROM}점, {BUSY_FROM}점)로 나눠 {NOISE_MID_FROM_DB - 1}dB 이하는 낮음, {NOISE_MID_FROM_DB}~{NOISE_HIGH_FROM_DB - 1}dB는 보통, {NOISE_HIGH_FROM_DB}dB 이상은 높음으로 부릅니다.
+              소리가 갑자기 커지는 정도는 큰 소리 가산 점수가 0점이면 작음, 0점을 넘고 {SPIKE_BIG_ADD}점 미만이면 보통, {SPIKE_BIG_ADD}점 이상이면 큼입니다. 두 기준은 검증 전 표현 기준입니다. 이 앱이 받는 서울시 센서 자료에는 소리의 크기만 있어서 사이렌이 나는지는 알 수 없습니다.
+            </p>
             {shift && pattern && (
               <div className="stat">
                 <h4 className="sub">소음을 더하면 단계가 달라지는 칸</h4>

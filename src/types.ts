@@ -115,6 +115,10 @@ export interface HourScore {
   obs?: string
   /** 지수의 단계별 구성(왜 이 지수인가 화면용) */
   parts?: ScoreParts
+  /** 이 칸의 서울시 혼잡도 이름(예측 또는 관측). 낱말 문구가 서울시 혼잡도를 그대로 쓰도록 hourScores가 채운다. */
+  crowdLevel?: CongestLevel
+  /** 이 칸의 지수에 들어간 주변 센서의 평소 소음. 소음 자료가 있을 때만 값이 있다. */
+  nz?: { avg: number; max: number | null }
 }
 
 export interface Card {

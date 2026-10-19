@@ -123,6 +123,7 @@ export default function Onboarding({ places, snap, sound, offsets, noise, nowKey
               <span className="ob-pv-note">{SHEET.noExample}</span> // 미룬 계산이 따라잡은 뒤에도 예가 없을 때만 알린다
             ) : null}
           </div>
+          <p className="muted ob-note ob-siren">{SHEET.sudden}</p>
           <p className="muted ob-note">{SHEET.foot}</p>
         </div>
         <div className="ob-actions">

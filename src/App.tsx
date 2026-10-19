@@ -10,13 +10,14 @@ import MapView from './components/MapView'
 import PlaceDetail from './components/PlaceDetail'
 import ChildProfileView from './components/ChildProfile'
 import Briefing from './components/Briefing'
-import Recommend, { type RecommendUi } from './components/Recommend'
+import Recommend from './components/Recommend'
 import LazyBoundary from './components/LazyBoundary'
 import Onboarding from './components/Onboarding'
 import Landing from './components/Landing'
 import { isBlankHash, markLandingDone, shouldAutoShowLanding } from './lib/landing'
 import { HEADER_LINK_LABEL, LANDING_TITLE, TIP_TEXT } from './lib/landingCopy'
 import { tagCard, useChangeTick, withViewTransition } from './lib/motion'
+import { initialRecUi, type RecommendUi } from './lib/recPrefs'
 import './styles/nav.css'
 
 // 소리 측정(TensorFlow.js)과 정보 화면은 처음 화면에 필요 없으므로 열 때 내려받는다
@@ -369,7 +370,7 @@ export default function App() {
   useEffect(() => {
     refresh()
   }, [])
-  const [recUi, setRecUi] = useState<RecommendUi>({ group: 0, pos: null, byDistance: false })
+  const [recUi, setRecUi] = useState<RecommendUi>(initialRecUi)
   useEffect(() => {
     void loadSoundStore().then(setSound)
   }, [soundVersion])
@@ -627,6 +628,7 @@ export default function App() {
             ui={recUi}
             onUi={setRecUi}
             onOpen={openPlace}
+            onSelectHour={setSelectedHour}
           />
         )}
         {view === 'child' && (
@@ -643,6 +645,7 @@ export default function App() {
             onCleared={() => {
               setOffsets({})
               setSoundVersion((v) => v + 1)
+              setRecUi((u) => ({ ...u, anchor: null, where: u.where === 'place' ? 'all' : u.where }))
             }}
           />
         )}

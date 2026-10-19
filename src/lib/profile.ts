@@ -5,6 +5,8 @@ import { KEY_SOUND } from './snapshot'
 const KEY_PROFILE = 'calmmap.profile.v1'
 const KEY_OFFSET = 'calmmap.offset.v1'
 const KEY_LOG = 'calmmap.log.v1'
+/** 추천 탭에서 고른 기준 장소 이름. 저장하는 것은 이름 하나뿐이고 좌표는 저장하지 않는다. */
+export const KEY_REC_ANCHOR = 'calmmap.recAnchor.v1'
 
 export function defaultProfile(): ChildProfile {
   const tags = Object.fromEntries(SENSE_TAGS.map((t) => [t, 1])) as Record<SenseTag, Sensitivity>
@@ -147,7 +149,7 @@ export function removeVisit(place: string, ts: string): Record<string, number> {
   return offsets
 }
 
-/** 이 기기에 저장한 프로필·보정치·기록·소리 측정 요약을 모두 지운다. */
+/** 이 기기에 저장한 프로필·보정치·기록·소리 측정 요약·추천 탭에서 고른 기준 장소 이름을 모두 지운다. */
 export function clearAll() {
-  for (const k of [KEY_PROFILE, KEY_OFFSET, KEY_LOG, KEY_SOUND]) localStorage.removeItem(k)
+  for (const k of [KEY_PROFILE, KEY_OFFSET, KEY_LOG, KEY_SOUND, KEY_REC_ANCHOR]) localStorage.removeItem(k)
 }

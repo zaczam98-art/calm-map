@@ -143,9 +143,11 @@ for (const { dh, mm, key } of nowKeys) {
         if (mm !== 6 || oi !== dh % offsets.length) continue
         const c = scores[(name.length + dh) % scores.length]
         const html = L.renderToStaticMarkup(
-          L.createElement(L.WhyIndex, { cell: c, label: `${c.hour}시`, crowdLevel: '보통', noiseAvg: c.parts.n === null ? undefined : 60, personal: prof ? { crowd: prof.crowd, loud: prof.loud } : null }),
+          L.createElement(L.WhyIndex, { cell: c, label: `${c.hour}시`, personal: prof ? { crowd: prof.crowd, loud: prof.loud, sudden: prof.tags.sudden } : null }),
         )
-        const lis = [...html.matchAll(/<li[^>]*>(.*?)<\/li>/g)].map((m) => m[1])
+        // 막대 줄(ol.why-rows)만 본다. 위쪽 낱말 문장(ul.why-words)의 li는 제외한다.
+        const rows = html.match(/<ol class="why-rows">(.*?)<\/ol>/)[1]
+        const lis = [...rows.matchAll(/<li[^>]*>(.*?)<\/li>/g)].map((m) => m[1])
         const num = (s, re) => {
           const m = s.match(re)
           return m ? Number(m[1].replace('+', '')) : null

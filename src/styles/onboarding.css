@@ -11,6 +11,7 @@
 .ob-pv-num b { font-size: 20px; }
 .ob-pv-note { font-size: 13px; color: var(--muted); }
 .ob-note { margin: 0 0 12px; font-size: 13px; }
+.ob-siren { min-height: 3em; margin-bottom: 4px; } /* 한 줄이든 두 줄이든 같은 자리를 차지한다. 칩을 눌러도 이 문장은 그대로라서 시트 높이가 변하지 않는다 */
 /* 작은 화면에서 내용이 길어도 버튼은 시트 아래에 고정해 항상 보이게 한다 */
 .ob-actions { flex: none; display: flex; gap: 8px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card); }
 .ob-actions .btn { flex: 1; font-size: 16px; }

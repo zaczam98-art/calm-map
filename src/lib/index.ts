@@ -149,7 +149,7 @@ export function hourScores(
     const off = personal ? offset : 0
     const idx = clamp((1 - w) * base + w * (s ?? 0) + off, 0, 100)
     const index = Math.round(idx) // 화면에 보이는 정수와 단계가 어긋나지 않게 반올림한 값으로 단계를 정한다
-    return { time: p.time, hour: h, index, level: level3(index), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null, obs: p.obs, parts: { c, n, s, w, offset: off, base } }
+    return { time: p.time, hour: h, index, level: level3(index), soundN: b?.n ?? 0, forecast: p.forecast, noise: n !== null, obs: p.obs, parts: { c, n, s, w, offset: off, base }, crowdLevel: p.level, nz }
   })
 }
 

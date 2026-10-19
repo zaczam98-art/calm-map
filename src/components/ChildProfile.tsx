@@ -4,6 +4,8 @@ import { SENSE_TAGS, TAG_LABEL } from '../types'
 import { clearAll, defaultProfile, loadLog, removeVisit } from '../lib/profile'
 import { canPreview, isPlain, isSoundOnly, usePreviewChange, type PreviewChange, type PreviewInput } from '../lib/preview'
 import { PRIVACY_ASK, SHEET, STORED_HERE } from '../lib/landingCopy'
+import { entryTexts, RECORD_OFF_LIST, RECORD_TAG_LIST } from '../lib/recordEffect'
+import { CHILD_SIREN_NOTE } from '../lib/scoreWords'
 import Fold from './Fold'
 import '../styles/child.css'
 import '../styles/onboarding.css'
@@ -169,6 +171,8 @@ interface Props extends PreviewInput {
 export default function ChildProfileView({ profile, onChange, onCleared, onOffsetsChange, ...input }: Props) {
   const [log, setLog] = useState(loadLog)
   const recent = log.slice(-SHOWN_LOG).reverse()
+  const entryLines = entryTexts(recent, input.offsets, profile.enabled) // 항목마다 같은 문장을 되풀이하지 않도록 한 번만 말할 것은 목록 위에 둔다
+  const tagRaised = recent.some((v) => !v.ok && v.topTags.length > 0)
   // 마지막으로 누른 프리셋을 누르기 직전의 값. 그 프리셋이 바꾼 값 그대로일 때만 되돌릴 수 있고(그 뒤에 직접 바꾸면 사라진다), 화면에 적힌 변경(line)이 바로 되돌리는 변경이다.
   // baseBefore는 그때 마지막으로 눌러 둔 프리셋이라, 되돌리면 세부 요약의 기준도 함께 돌아간다.
   const [undo, setUndo] = useState<{ before: ChildProfile; baseBefore: ChildProfile | null; applied: ChildProfile; label: string; line: string } | null>(null)
@@ -226,6 +230,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
           </div>
         )}
         <Preview snap={input.snap} profile={profile} state={pv} />
+        {profile.tags.sudden > 1 && <p className="muted child-preset-note">{CHILD_SIREN_NOTE}</p>}
         <div className="folds">
           <Fold title="세부 민감도 직접 고르기" brief={detailBrief(profile, base)}>
             <PreviewStick snap={input.snap} profile={profile} change={pv.change} />
@@ -248,7 +253,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
         <button
           className="btn child-clear"
           onClick={() => {
-            if (confirm('이 기기에 저장된 프로필과 기록을 모두 지울까요? 소리 측정 요약도 함께 지워요.')) {
+            if (confirm('이 기기에 저장된 프로필과 기록을 모두 지울까요? 소리 측정 요약, 추천 탭에서 고른 기준 장소 이름도 함께 지워요.')) {
               clearAll()
               onChange(defaultProfile())
               setBase(null)
@@ -266,11 +271,12 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
           <p className="muted">아직 기록이 없어요. 장소 화면의 "다녀온 뒤 기록"에서 남길 수 있어요.</p>
         ) : (
           <>
-            <p className="muted">최근 {recent.length}건이에요. 지우면 그 기록이 바꾼 장소 보정(5점)은 되돌리고, 올라간 소리 민감도는 "세부 민감도 직접 고르기"에서 바꿔 주세요.</p>
+            <p className="muted">최근 {recent.length}건이에요. {tagRaised && `${RECORD_TAG_LIST} `}지우면 그 기록이 바꾼 장소 보정(5점)은 되돌리고, 올라간 소리 민감도는 "세부 민감도 직접 고르기"에서 바꿔 주세요.</p>
+            {!profile.enabled && <p className="muted">{RECORD_OFF_LIST}</p>}
             <ul className="visit-log">
-              {recent.map((v) => (
+              {recent.map((v, i) => (
                 <li key={v.ts + v.place}>
-                  <span><b>{v.place}</b> <span className="muted">{stamp(v.ts)}</span><br />{v.ok ? '괜찮았어요' : '힘들었어요'}</span>
+                  <span><b>{v.place}</b> <span className="muted">{stamp(v.ts)}</span><br />{entryLines[i]}</span>
                   <button
                     className="btn"
                     aria-label={`${v.place} ${stamp(v.ts)} 기록 지우기`}

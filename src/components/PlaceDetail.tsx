@@ -4,6 +4,7 @@ import { placeLabel, TAG_LABEL } from '../types'
 import { dowOfTime, hourScores, LEVEL3_LABEL, noiseScore, recommend, scoreAt } from '../lib/index'
 import { bucketKey, type SoundStore } from '../lib/snapshot'
 import { loadLog, recordVisit, undoVisit } from '../lib/profile'
+import { RECORD_GO_CHILD, RECORD_OFF_TEXT, recordChipAt } from '../lib/recordEffect'
 import { assembleCard, getCard, loadCardModules, type CardModule } from '../lib/cards'
 import { HAS_API } from '../lib/publicData'
 import { topTags } from '../lib/tags'
@@ -70,6 +71,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
   // 맞춤 전후 비교용: 맞춤을 끈 같은 시계열
   const plainScores = useMemo(() => (profile.enabled ? hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], null, 0, nowKey, noiseAt) : []), [ps, sound, profile.enabled, place.name, nowKey, noiseAt])
+  // 기록 칩이 이 시각에 기록이 실제로 바꾼 폭을 말하도록, 기록만 뺀 같은 시계열(맞춤을 켠 채 기록이 있을 때만)
+  const bareScores = useMemo(() => (profile.enabled && (offsets[place.name] ?? 0) !== 0 ? hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, 0, nowKey, noiseAt) : undefined), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
   // 막대를 눌러 고른 시각(null이면 선택 없음: 머리 줄은 지금, 카드는 권고 시각 기준). 예측이 있는 칸만 고를 수 있다.
   // 부모가 값을 주면 지도 슬라이더와 같은 값을 쓰고(장소를 바꿔도 유지), 주지 않으면 이 시트 안에서만 기억한다.
   const [ownHour, setOwnHour] = useState<number | null>(null)
@@ -93,6 +96,8 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const nowTags = tagsOf(now) // 방문 기록은 지금 있었던 시간대의 소리로 남긴다
   const plain = profile.enabled && shown ? scoreAt(plainScores, shown.hour) : undefined
   const scoreShown = useCountUp(shown?.index ?? null, shown?.hour ?? -1) // 같은 시각의 지수가 맞춤 때문에 바뀌면 이전 값에서 새 값으로 센다(다른 시각을 고르면 세지 않는다)
+  const myOffset = offsets[place.name] ?? 0 // 기록으로 정해진 이 장소의 지수 보정(맞춤을 켠 때만 hourScores가 더한다)
+  const recordNote = shown ? recordChipAt(shown, bareScores, myOffset, profile.enabled) : null
   const profileTick = useChangeTick(profile) // 맞춤 설정이 바뀔 때마다 오르는 번호: 맞춤 전후 줄을 새로 그려 배경 강조를 한 번 돌린다
   const placeIdx = places.findIndex((p) => p.name === place.name) // 추천 목록의 카드와 같은 view-transition-name을 만드는 번호
   const [enter] = useState(() => enterProp && document.documentElement.dataset.vt !== 'place') // 닫혀 있다가 열릴 때만 올라온다. 추천 카드에서 이어져 열리는 시트는 전환이 움직이므로 따로 쓰지 않는다.
@@ -311,7 +316,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   }
 
   // 접이식의 요약 한 줄. 값이 없으면 그 접이식은 그리지 않는다.
-  const whyText = shown ? whyBrief(shown, profile.enabled) : null
+  const whyText = shown ? whyBrief(shown, profile.enabled ? profile.tags.sudden : null) : null
   const factorsText = factorsBrief(factorsExtra, factorsFrom)
   const noiseText = noiseBrief(noise, place.name)
   const weekText = weekBrief(pattern, place.name)
@@ -362,14 +367,23 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
         {shown?.index != null && <span className="muted">{shownLabel} {shown.forecast ? '예측 ' : ''}지수 <span className="vt-box" style={placeVt(placeIdx, 'score')}>{scoreShown}점</span></span>}
         {noise !== null && !noise.places[place.name] && <>{' '}<span className="nonoise">소음 미반영</span></>}
       </p>
-      {plain?.index != null && shown?.index != null && (
+      {plain?.index != null && shown?.index != null ? (
         <div key={profileTick} className={profileTick ? 'adapt flash' : 'adapt'}>
           <span className="muted">
             {plain.index !== shown.index
               ? `맞춤 전 ${plain.index}점 → 후 ${shown.index}점${plain.level !== shown.level ? ` (${LEVEL3_LABEL[plain.level]} → ${LEVEL3_LABEL[shown.level]})` : ''}`
               : chosen ? `이 시간은 맞춤 전후가 같아요(${shown.index}점).${soundOnlyChosen ? ' 고른 항목은 소리를 직접 잰 시간대에서만 지수에 반영돼요.' : ''}` : '민감도를 고르면 달라져요.'}
           </span>
+          {recordNote && <span className="recfx">{recordNote}</span>}
           {plain.index === shown.index && !chosen && onGoChild && <button className="btn" onClick={onGoChild}>우리 아이에서 고르기</button>}
+        </div>
+      ) : (
+        recordNote && <div className="adapt"><span className="recfx">{recordNote}</span></div>
+      )}
+      {shown && !profile.enabled && myOffset !== 0 && (
+        <div className="adapt rec-off">
+          <span className="muted">{RECORD_OFF_TEXT}</span>
+          {onGoChild && <button className="btn" onClick={onGoChild}>{RECORD_GO_CHILD}</button>}
         </div>
       )}
       <p><b>{tooOld ? '자료가 오래돼 예측을 보여 드리지 못해요.' : rec.text}</b></p>
@@ -424,8 +438,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
                 bare
                 cell={shown}
                 label={shortLabel}
-                crowdLevel={pointAt(shown)?.level}
-                noiseAvg={noiseAt(shown.hour, dowOfTime(shown.time))?.avg}
+                noiseDays={noise?.days}
                 personal={profile.enabled ? { crowd: profile.crowd, loud: profile.loud, sudden: profile.tags.sudden } : null}
                 visits={visitN}
               />
