@@ -3,7 +3,7 @@ import type { Level3 } from '../types'
 import { LEVEL3_LABEL } from '../lib/index'
 import { kmText } from '../lib/pick'
 import { TXT } from '../lib/nearbyText'
-import { EMPTY_BUTTON_TEXT, PICK, type EmptyButton, type EmptyView } from '../lib/pickText'
+import { EMPTY_BUTTON_TEXT, PICK, planOpenLabel, type EmptyButton, type EmptyView } from '../lib/pickText'
 import '../styles/nonoise.css'
 
 /** 후보 카드 한 장에 그릴 내용. 문장은 Recommend가 pickText.ts의 함수로 만들어 넘긴다. */
@@ -19,6 +19,8 @@ export interface CandCard {
   isBase: boolean
   far: boolean
   reason: string
+  /** 외출 계획을 만들 수 있는가(시트의 '외출 계획 세우기'와 같은 조건). 아니면 계획 단추를 그리지 않는다. */
+  canPlan: boolean
   /** 통제·비 꼬리표(최대 1개) */
   tag: string | null
   /** 내 기록 반영 칩 */
@@ -36,6 +38,7 @@ interface Props {
   /** 카드 영역 대신 보일 한 줄(외출 시간이 지남, 자료 없음, 자료를 받는 중) */
   notice: { text: string; wait: boolean } | null
   onOpen: (name: string, card: Element) => void
+  onOpenPlan: (name: string) => void
   onEmptyButton: (b: EmptyButton) => void
 }
 
@@ -45,7 +48,7 @@ const MAX_MARKS = 3 // 표지 줄에 그리는 표지의 최대 수
  * 추천 탭의 후보 카드(최대 3장)와 빈 상태. 번호나 순위는 붙이지 않는다.
  * motion.ts의 tagCard가 '.rec-main b'와 '.rec-index'를 찾으므로 두 선택자를 유지한다.
  */
-export default function RecCandidates({ cards, empty, notice, onOpen, onEmptyButton }: Props) {
+export default function RecCandidates({ cards, empty, notice, onOpen, onOpenPlan, onEmptyButton }: Props) {
   return (
     <div className={notice?.wait ? 'cand-wait' : undefined}>
       {notice && <p className="muted" role="status">{notice.text}</p>}
@@ -76,6 +79,12 @@ export default function RecCandidates({ cards, empty, notice, onOpen, onEmptyBut
                   <span className="cand-reason">{c.reason}</span>
                   {marks.length > 0 && <span className="cand-marks">{marks.slice(0, MAX_MARKS).flatMap((m, i) => (i > 0 ? [' ', m] : [m]))}</span>}
                 </button>
+                {/* 카드 본체가 button이므로 계획 단추는 그 안이 아니라 같은 li 안의 형제로 둔다. 테두리는 li가 가져서 카드와 단추가 한 덩어리로 보인다. */}
+                {c.canPlan && (
+                  <button className="btn cand-plan" aria-label={planOpenLabel(c.name)} onClick={() => onOpenPlan(c.name)}>
+                    {PICK.planOpen}
+                  </button>
+                )}
               </li>
             )
           })}

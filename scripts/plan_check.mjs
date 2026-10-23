@@ -16,6 +16,8 @@
  *  G4 문구 정합: 저장 항목을 말하는 줄이 '외출 계획 메모'를 함께 담음(서버 전달 항목은 예외)
  *  D4 새 파일의 문장이 서울시 혼잡도를 '단계'라고 부르지 않음
  *  P6 보정 1회차: 지수 없는 칸의 조사, sub 중복 제거, 접근 가능한 이름이 보이는 글자를 담음, 메모 칸 속성과 저장 시점, 사이렌 문장 조건, scroll-padding, 시트 단추 줄 간격(소스 사실만. 화면 동작은 브라우저 검사)
+ *  P8 대안이 '오늘은 이게 더 중요해요'를 따름: planAlternatives를 우선순위 4가지(없음, 덜 붐비는 곳, 소음이 덜한 곳, 가까운 곳)에서 독립 재구현과 대조하고, 후보 집합이 우선순위와 무관한지 확인
+ *  P9 계획 화면의 세 단계: STEPS의 번호와 제목 문구, Plan.tsx의 제목 순서, 바로가기, 2단계 안의 차례(카드, 메모), 칩과 안내 줄
  *  P7 보정 2회차: 대안 소개와 없을 때 문장의 기준 낱말, 두 이름 통일, 카드 안내의 권고 시간, 데모 데이터의 비교 범위 문장, 메모 안내의 설명 연결 위치(소스 사실만)
  * 기록(판정 없음): 대안이 있는 칸의 비율, 대안 수 분포
  */
@@ -47,9 +49,11 @@ await build({
       export * from './src/lib/nearbyText.ts'
       export * from './src/lib/plan.ts'
       export * from './src/lib/planText.ts'
+      export { guideText, PICK, PRIORITIES } from './src/lib/pickText.ts'
       export { basisLine } from './src/lib/trustText.ts'
       export { clearAll, KEY_PLAN } from './src/lib/profile.ts'
       export { noiseLookup } from './src/lib/noise.ts'
+      export { planResume } from './src/lib/planOverlay.ts'
       export { DATA_ITEMS } from './src/lib/landingCopy.ts'
       export { SENSE_TAGS } from './src/types.ts'
       export { FORBIDDEN, FORBIDDEN_PATTERNS } from './shared/cardRules.ts'
@@ -413,7 +417,7 @@ section('P4', '문구 금지어와 문장 끝')
     for (const sent of s.trim().split(/(?<=\.)\s+/)) if (!/(요|다)[.?]?$/.test(sent.trim().replace(/\([^)]*\)\.?$/, ''))) bad(`${tag}: 문장 끝이 요/다가 아님 | ${sent}`)
   }
   // 라벨, 단추, 자리표시는 문장 끝을 보지 않는다
-  const LABEL_KEYS = ['open', 'close', 'jump', 'altJump', 'whenHead', 'whenLabel', 'cardHead', 'cardMake', 'cardBusy', 'altHead', 'altGo', 'memoHead', 'memoClear', 'shareHead']
+  const LABEL_KEYS = ['open', 'close', 'jump', 'whenLabel', 'cardHead', 'cardMake', 'cardBusy', 'altGo', 'memoHead', 'memoClear', 'shareHead']
   const PLAN = L.PLAN
   const sentenceKeys = Object.keys(PLAN).filter((k) => !LABEL_KEYS.includes(k))
   const constants = Object.keys(PLAN).length
@@ -471,6 +475,18 @@ section('P4', '문구 금지어와 문장 끝')
     endsOk('whenLines', s)
   }
   for (const s of labelBag) textOk('선택지', s)
+  // 세 단계의 제목과 바로 가기 글자(라벨이라 문장 끝은 보지 않는다), 대안 구역의 우선순위 안내 줄
+  for (const s of L.STEPS) {
+    textOk(`STEPS.${s.key}.head`, s.head)
+    textOk(`STEPS.${s.key}.jump`, s.jump)
+  }
+  for (const pr of ['crowd', 'noise', 'near']) {
+    for (const gap of [null, 'file', 'pool']) {
+      const g = L.altGuide(pr, gap)
+      textOk(`altGuide(${pr},${gap})`, g)
+      endsOk(`altGuide(${pr},${gap})`, g)
+    }
+  }
   const sentences = textBag.size + sentenceKeys.length + combos.length * 4
   console.log(`  상수 ${constants}개, 조합 문장 ${combos.length * 4}개, whenLines 문장 ${textBag.size}개, 선택지 글자 ${labelBag.size}개 검사(문장 ${sentences}개)`)
 }
@@ -579,8 +595,8 @@ section('P7', '보정 2회차 항목(소스 사실. 화면 동작은 브라우�
   const read = (f) => readFileSync(path.join(root, f), 'utf-8')
   const planTsx = read('src/components/Plan.tsx')
   const planCss = read('src/styles/plan.css')
-  // 구역 제목과 바로 가기 단추가 한 이름을 쓴다
-  check(L.PLAN.altJump === L.PLAN.altHead && L.PLAN.altHead === '안 맞을 때 가까운 다른 곳', `바로 가기 단추와 구역 제목의 이름 ${L.PLAN.altJump} | ${L.PLAN.altHead}`)
+  // 구역 제목 이름이 세 단계 제목 하나(STEPS)에서 나오고, 바로 가기 단추는 번호와 짧은 이름을 쓴다(결정 41)
+  check(L.STEPS[2].head === '3. 안 맞을 때 가까운 다른 곳' && L.STEPS[2].jump === '3 안 맞을 때', `대안 구역의 제목과 바로 가기 단추 ${L.STEPS[2].head} | ${L.STEPS[2].jump}`)
   // 카드 안내는 왜 그 시각인지(권고 시간)를 밝힌다
   check(L.cardOther('21시').includes('권고 시간'), '카드 안내에 권고 시간이 없음')
   // 데모 데이터에서는 서울시 실시간 자료처럼 읽히는 첫 문장을 데모 안내로 바꾸고, 나머지 문장(직선 거리, 이동 시간)은 그대로 둔다
@@ -598,6 +614,194 @@ section('P7', '보정 2회차 항목(소스 사실. 화면 동작은 브라우�
   // 카드 구역은 머리와 단추를 한 줄에 둔다
   check(/\.plan-card-row \{ display: flex;/.test(planCss) && planTsx.includes('className="plan-card-row"') && !planTsx.includes('plan-make'), '카드 구역 머리 줄(.plan-card-row)이 없음')
   console.log('  이름 통일, 카드 안내, 데모 비교 범위, 메모 설명 연결, 카드 구역 머리 줄 확인')
+}
+
+// ---- P8
+section('P8', '대안이 우선순위를 따름(planAlternatives 독립 재구현)')
+{
+  const PRI = [null, 'crowd', 'noise', 'near']
+  const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+  const refSpike = (nz) => (nz && nz.max !== null ? clampN((nz.max - nz.avg - 3) * 4, 0, 20) : 0)
+  // 후보 집합: 6km 안, 같은 시각의 칸, 지수 있음, 종류(예측이나 관측) 같음, 목표 단계보다 낮음, stale 제외
+  const found = (base, cell, S, isStale) => {
+    if (cell.index === null || cell.level === 'nodata') return []
+    const limit = cell.level === 'calm' ? 1 : RANK[cell.level]
+    const out = []
+    for (const p of places) {
+      if (p.name === base.name || isStale(p.name)) continue
+      const km = L.distanceKm(base, p)
+      if (km > 6) continue
+      const c = S.get(p.name).find((x) => t13(x.time) === t13(cell.time))
+      if (!c || c.index === null || c.forecast !== cell.forecast) continue
+      if (RANK[c.level] >= limit) continue
+      out.push({ p, km, c })
+    }
+    return out
+  }
+  // 정렬 키를 독립적으로 다시 만든다(plan.ts와 pick.ts의 키 함수를 부르지 않는다). 마지막 동점은 place.id다.
+  const keyOf = (f, pr) => {
+    const R = f.c.level === 'calm' ? 0 : 1
+    if (pr === 'crowd') return [R, Math.round(f.c.parts.c), f.km]
+    if (pr === 'noise') return f.c.nz ? [R, 0, Math.round(f.c.nz.avg), refSpike(f.c.nz), f.km] : [R, 1, 0, 0, f.km]
+    if (pr === 'near') return [f.km]
+    return [R, f.km]
+  }
+  const reference = (list, pr) => {
+    const arr = list.map((f) => ({ f, k: keyOf(f, pr) }))
+    // 우선순위가 없으면 지금처럼 (단계, 거리)이고 동점은 장소 목록 순서(안정 정렬)다
+    arr.sort((a, b) => {
+      for (let i = 0; i < a.k.length; i++) if (a.k[i] !== b.k[i]) return a.k[i] - b.k[i]
+      return pr === null ? 0 : a.f.p.id < b.f.p.id ? -1 : 1
+    })
+    return arr.slice(0, 2).map((x) => ({ name: x.f.p.name, km: x.f.km, index: x.f.c.index, level: x.f.c.level, time: x.f.c.time }))
+  }
+  const names = (items) => items.map((it) => it.place.name)
+  const brief = (items) => items.map((it) => ({ name: it.place.name, km: it.km, index: it.index, level: it.level, time: it.cell.time }))
+  const actualStale = new Set(places.filter((p) => snap.places[p.name]?.stale === true).map((p) => p.name))
+  const synthNames = new Set(places.filter((_, i) => i % 7 === 0).map((p) => p.name))
+  const STALES = [
+    ['stale 실제', (n) => actualStale.has(n)],
+    ['stale 합성(17곳)', (n) => synthNames.has(n)],
+  ]
+  const stat = { cells: 0, differs: { crowd: 0, noise: 0, near: 0 }, nearMixed: 0, noiseNoNz: 0 }
+  const nearDiff = new Map() // 프로필과 기록 보정별로 '가까운 곳'의 앞 2곳이 (단계, 거리) 순과 달라진 칸 수(stale 실제만). FABLE_확인목록 28번의 근거다.
+  for (const [pn, profile] of PROFILES) {
+    for (const [on, offsets] of OFFSETS) {
+      const S = makeScores(snap, nowKey, profile, offsets)
+      for (const [sn, isStale] of STALES) {
+        for (const base of places) {
+          for (const cell of S.get(base.name).filter(inDay)) {
+            const args = { place: base, places, cell, getScores: (n) => S.get(n), isStale }
+            const list = found(base, cell, S, isStale)
+            const pool = L.planPool(args)
+            const tag = `${pn}/${on}/${sn}/${base.name}/${cell.time}`
+            // 후보 집합은 우선순위와 상관없이 같고, 우선순위를 불러도 집합 자체는 바뀌지 않는다
+            if (!same([...pool.map((it) => it.place.name)].sort(), list.map((f) => f.p.name).sort())) bad(`후보 집합이 독립 재구현과 다름 ${tag}`)
+            const before = pool.map((it) => it.place.name)
+            const got = {}
+            for (const pr of PRI) {
+              got[pr] = L.planAlternatives({ ...args, priority: pr })
+              const want = reference(list, pr)
+              if (!same(brief(got[pr]), want)) bad(`독립 재구현과 다름 ${tag}/${pr ?? '없음'} | ${JSON.stringify(brief(got[pr]))} != ${JSON.stringify(want)}`)
+              if (got[pr].length > 2) bad(`2곳을 넘음 ${tag}/${pr}`)
+              if (got[pr].some((it) => !pool.some((q) => q.place.name === it.place.name))) bad(`집합 밖의 후보 ${tag}/${pr}`)
+              if (!same(L.rankAlternatives(pool, pr).map((it) => it.place.name), got[pr].map((it) => it.place.name))) bad(`rankAlternatives와 planAlternatives가 다름 ${tag}/${pr}`)
+            }
+            if (!same(pool.map((it) => it.place.name), before)) bad(`rankAlternatives가 집합의 순서를 바꿈 ${tag}`)
+            // 우선순위가 없으면 이전 배포와 같은 결과: (단계, 거리) 순 상위 2곳
+            if (!same(names(got[null]), names(L.rankAlternatives(pool, null)))) bad(`우선순위 없음이 집합의 앞 2곳과 다름 ${tag}`)
+            if (sn === 'stale 실제') {
+              const e = nearDiff.get(`${pn}/${on}`) ?? { cells: 0, withPool: 0, diff: 0 }
+              e.cells++
+              if (pool.length > 0) e.withPool++
+              if (!same(names(got.near), names(got[null]))) e.diff++
+              nearDiff.set(`${pn}/${on}`, e)
+            }
+            if (pn === '샘플 프로필' && on === '보정 있음' && sn === 'stale 실제') {
+              stat.cells++
+              for (const pr of ['crowd', 'noise', 'near']) if (!same(names(got[pr]), names(got[null]))) stat.differs[pr]++
+              if (got.near.some((it) => it.level === 'mid') && got.near.some((it) => it.level === 'calm')) stat.nearMixed++
+              if (pool.length > 0 && pool.every((it) => !it.cell.nz)) stat.noiseNoNz++
+            }
+          }
+        }
+      }
+    }
+  }
+  // 이 검사가 무의미하지 않으려면 우선순위가 실제로 순서를 바꾸는 칸이 있어야 한다
+  check(stat.differs.crowd > 0 && stat.differs.noise > 0 && stat.differs.near > 0, `우선순위가 순서를 바꾸는 칸이 없음 ${JSON.stringify(stat.differs)}`)
+  // 소음 가름이 불가능한 집합의 판정: 후보 어디에도 소음 값이 없으면 file(소음 파일 없음)이나 pool(파일은 있음)
+  const nzPool = [{ place: places[0], km: 1, index: 10, level: 'calm', cell: { nz: undefined } }]
+  check(L.planNoiseGap(nzPool, false) === 'file' && L.planNoiseGap(nzPool, true) === 'pool', 'planNoiseGap 판정(소음 값 없음)')
+  check(L.planNoiseGap([{ ...nzPool[0], cell: { nz: { avg: 50, max: 60 } } }], true) === null && L.planNoiseGap([], true) === null, 'planNoiseGap 판정(소음 값 있음, 빈 집합)')
+  console.log(`  기준 칸 ${stat.cells}개(샘플 프로필, 보정 있음, stale 실제)에서 우선순위가 앞 2곳을 바꾼 칸: 덜 붐비는 곳 ${stat.differs.crowd}, 소음이 덜한 곳 ${stat.differs.noise}, 가까운 곳 ${stat.differs.near}`)
+  console.log(`  기록: 가까운 곳이 무던함과 보통을 함께 보여 준 칸 ${stat.nearMixed}개, 후보 어디에도 소음 값이 없는 칸 ${stat.noiseNoNz}개`)
+  for (const [k, e] of nearDiff) console.log(`  기록: ${k}에서 가까운 곳(거리만)이 (단계, 거리) 순과 앞 2곳이 달라진 칸 ${e.diff}개 / 후보가 있는 칸 ${e.withPool}개 / 기준 칸 ${e.cells}개`)
+}
+
+// ---- P9
+section('P9', '계획 화면의 세 단계(소스 사실. 화면 동작은 브라우저 검사가 본다)')
+{
+  const planTsx = readFileSync(path.join(root, 'src/components/Plan.tsx'), 'utf-8')
+  const planCss = readFileSync(path.join(root, 'src/styles/plan.css'), 'utf-8')
+  // 번호와 제목 문구는 planText.ts의 STEPS에 있다
+  check(L.STEPS.length === 3 && L.STEPS.map((s) => s.key).join() === 'when,info,alt', 'STEPS의 순서')
+  check(L.STEPS.map((s) => s.head).join('|') === '1. 언제 갈까요|2. 미리 볼 정보|3. 안 맞을 때 가까운 다른 곳', `STEPS 제목: ${L.STEPS.map((s) => s.head).join('|')}`)
+  check(L.STEPS.map((s) => s.jump).join('|') === '1 언제|2 미리 볼 정보|3 안 맞을 때', `STEPS 바로가기 글자: ${L.STEPS.map((s) => s.jump).join('|')}`)
+  // Plan.tsx: 세 제목이 STEPS 순서로 나오고, 각각 포커스 대상(tabIndex -1, ref)이며, 바로가기가 STEPS를 돌며 같은 ref로 이동한다
+  const at = (s) => planTsx.indexOf(s)
+  const heads = [0, 1, 2].map((i) => at(`ref={stepTitles[${i}]}>{STEPS[${i}].head}</h3>`))
+  check(heads.every((x) => x > 0) && heads[0] < heads[1] && heads[1] < heads[2], '세 단계 제목이 STEPS 순서로 나오지 않음')
+  check((planTsx.match(/<section className="plan-step">/g) ?? []).length === 3, '단계 section이 셋이 아님')
+  check((planTsx.match(/className="plan-step-head" tabIndex=\{-1\}/g) ?? []).length === 3, '단계 제목이 포커스 대상(tabIndex -1)이 아님')
+  check(/\{STEPS\.map\(\(s, i\) => \(\s*<button key=\{s\.key\} className="btn" onClick=\{\(\) => jump\(stepTitles\[i\]\.current\)\}>\{s\.jump\}<\/button>/.test(planTsx), '바로가기가 STEPS의 단계마다 단추를 그리지 않음')
+  check(!planTsx.includes('PLAN.altJump') && !planTsx.includes('memoTitle') && !planTsx.includes('PLAN.whenHead') && !planTsx.includes('PLAN.altHead'), '옛 바로가기와 제목 이름이 남음')
+  // 2단계 안에서 미리 보는 카드가 내 메모보다 앞이고, 둘 다 2단계와 3단계 제목 사이에 있다
+  const card = at('<CardView')
+  const make = at('PLAN.cardMake')
+  const memo = at('className="card plan-memo"')
+  check(card > heads[1] && make > heads[1] && memo > card && memo > make && memo < heads[2], '2단계 안의 차례가 카드, 메모가 아님')
+  // 1단계에는 시각 선택과 head가, 3단계에는 우선순위 칩과 대안 행이 있다
+  const sel = at('<select id=')
+  check(sel > heads[0] && sel < heads[1], '시각 선택이 1단계 안에 없음')
+  const chips = at('className="rec-prio-chips"')
+  const alt = at('className="nearby"')
+  check(chips > heads[2] && alt > chips, '우선순위 칩이 3단계 대안 행 앞에 있지 않음')
+  const share = at('PLAN.shareHead')
+  check(share > alt && !planTsx.slice(share - 120, share).includes('plan-step'), '나누기가 3단계 뒤에 번호 없이 있지 않음')
+  // 칩: 추천 탭과 같은 PRIORITIES와 라벨, aria-pressed, 다시 누르면 해제
+  check(planTsx.includes("import { PICK, PRIORITIES } from '../lib/pickText'") && planTsx.includes('PRIORITIES.map(([key, label])') && planTsx.includes('{PICK.priorityLabel}'), '추천 탭과 같은 칩 문구를 쓰지 않음')
+  check(planTsx.includes('aria-pressed={priority === key}') && planTsx.includes('onPriority(priority === key ? null : key)'), '칩이 aria-pressed와 해제를 지키지 않음')
+  check(L.PRIORITIES.length === 3 && L.PRIORITIES.map((x) => x[1]).join('|') === '덜 붐비는 곳|소음이 덜한 곳|가까운 곳' && L.PICK.priorityLabel === '오늘은 이게 더 중요해요', '추천 탭의 칩 문구')
+  // 안내 줄: 덜 붐비는 곳과 소음이 덜한 곳은 추천 탭과 같은 문장
+  for (const pr of ['crowd', 'noise']) for (const gap of [null, 'file', 'pool']) check(L.altGuide(pr, gap) === L.guideText(pr, true, gap), `안내 줄이 추천 탭과 다름 ${pr}/${gap}`)
+  check(L.altGuide('near', null) === L.PLAN.altGuideNear && L.PLAN.altGuideNear === '가까운 곳을 먼저 둬요. 무던함인지 보통인지는 따지지 않아요. 지수는 그대로예요.', `가까운 곳 안내 줄: ${L.altGuide('near', null)}`)
+  check(/\{priority \? altGuide\(priority, noiseGap\) : ''\}/.test(planTsx) && /role="status">\{priority \? altGuide/.test(planTsx), '안내 줄이 칩을 고른 때만 role=status로 나오지 않음')
+  // 후보 집합은 우선순위와 무관하게 만들고(planPool), 우선순위는 줄 세우기에만 쓴다
+  check(/const alts = useMemo\(\(\) => rankAlternatives\(pool, priority\), \[pool, priority\]\)/.test(planTsx) && !/planPool\([^)]*priority/.test(planTsx), 'Plan.tsx가 집합과 줄 세우기를 나누지 않음')
+  // CSS: 단계 제목과 부제목
+  check(/\.plan-step-head \{/.test(planCss) && /\.plan-body h4, \.plan-body \.card h3\.plan-sub \{/.test(planCss), '단계 제목과 부제목 스타일')
+  // 보정 1회차: 도움말은 추천 목록의 시각이 그대로임을 밝히고, 카드가 있을 때 내 메모 제목은 카드 제목(h3)과 같은 층이다
+  check(L.PLAN.whenHelp === '바꾸면 이 장소 시트와 지도의 시각도 함께 바뀌어요. 후보 목록의 시각은 그대로예요.', `도움말: ${L.PLAN.whenHelp}`)
+  check(planTsx.includes("const MemoHead = card && assembled ? 'h3' : 'h4'") && planTsx.includes('<MemoHead id='), '내 메모 제목의 층이 카드 유무에 따라 정해지지 않음')
+  console.log('  STEPS 문구, 제목 순서, 바로가기, 2단계 안의 차례, 칩과 안내 줄, 집합과 줄 세우기의 분리 확인')
+}
+
+// ---- P10
+section('P10', '대안 시트에서 뒤로 돌아오면 계획이 대안 단계에서 다시 열림(소스 사실. 화면 동작은 브라우저 검사가 본다)')
+{
+  const read = (f) => readFileSync(path.join(root, f), 'utf-8')
+  const overlay = read('src/lib/planOverlay.ts')
+  const planTsx = read('src/components/Plan.tsx')
+  const detail = read('src/components/PlaceDetail.tsx')
+  // planResume: 계획의 표지와 단계 번호가 모두 있고 주소가 그 장소인 칸일 때만 돌려준다(주소로 처음 연 칸은 state에 장소가 없다)
+  const name = places[0].name
+  const read1 = (state, who = name, hash = `#/place/${encodeURIComponent(name)}`) => {
+    globalThis.history = { state }
+    globalThis.location = { hash }
+    return L.planResume(who)
+  }
+  const eq = (v, w) => JSON.stringify(v) === JSON.stringify(w)
+  check(eq(read1({ view: 'map', selected: name, plan: 7, planStep: 2 }), { id: 7, step: 2 }), '표지와 단계가 있는 칸을 읽지 못함')
+  check(eq(read1({ view: 'map', selected: name, plan: 7, planStep: 0 }), { id: 7, step: 0 }), '단계 0을 없는 값으로 읽음')
+  check(read1({ view: 'map', selected: name, plan: 7 }) === null, '단계 번호가 없는 계획 칸(새로고침 뒤 칸 포함)을 돌아온 칸으로 읽음')
+  check(read1({ view: 'map', selected: name, planStep: 2 }) === null, '계획 표지가 없는 칸을 돌아온 칸으로 읽음')
+  check(eq(read1({ plan: 7, planStep: 1 }), { id: 7, step: 1 }), '주소로 처음 연 칸(state에 장소가 없음)을 읽지 못함')
+  check(read1({ view: 'map', selected: name, plan: 7, planStep: 2 }, places[1].name) === null, '다른 장소의 칸을 돌아온 칸으로 읽음')
+  check(read1({ plan: 7, planStep: 2 }, name, `#/place/${encodeURIComponent(places[1].name)}`) === null && read1({ plan: 7, planStep: 2 }, name, '#/recommend') === null && read1({ plan: 7, planStep: 2 }, name, '#/place/%E0%A4%A') === null, '주소가 다른 장소나 다른 화면이거나 깨진 칸을 돌아온 칸으로 읽음')
+  check(read1({ view: 'map', selected: name, plan: '7', planStep: '2' }) === null && read1(null) === null && read1('x') === null, '숫자가 아닌 표지와 빈 상태를 거르지 못함')
+  delete globalThis.history
+  delete globalThis.location
+  // 대안으로 떠날 때는 계획의 기록 칸을 되돌리지 않고 단계 번호만 남긴다(뒤로 가기가 그 칸으로 돌아오게)
+  const leave = overlay.match(/const leaveTo = useCallback\(([\s\S]*?)\n {2}\}, \[\]\)/)?.[1] ?? ''
+  check(leave.includes('history.replaceState') && leave.includes('planStep: step') && leave.includes('fn()') && !leave.includes('history.back') && !overlay.includes('leaveThen'), 'leaveTo가 칸을 되돌리거나 단계 번호를 남기지 않음')
+  // 돌아온 칸은 한 번만 쓰고(단계 번호를 지움) 새 칸을 쌓지 않으며, 계획이 처음부터 열린 채로 시작한다
+  check(/if \(resume\) \{\s*mark\.current = resume\.id[\s\S]*?delete next\.planStep[\s\S]*?\} else if \(startOpen\) openPlan\(\)/.test(overlay), 'resume이 새 칸을 쌓거나 단계 번호를 지우지 않음')
+  check(detail.includes('useState(() => planResume(place.name))') && detail.includes('const resume = canPlan ? back : null') && detail.includes('startStep={resume?.step}') && /onOpenPlace=\{\(name, step\) => plan\.leaveTo\(step, \(\) => onSelect\(name, place\.name\)\)\}/.test(detail), 'PlaceDetail이 돌아온 칸을 읽어 계획에 단계를 넘기지 않음')
+  // Plan: 대안 단계 번호는 STEPS에서 찾고, 돌아오면 그 단계 제목으로 스크롤하고 포커스를 옮긴다(없으면 제목 h2)
+  check(L.STEPS[2].key === 'alt' && planTsx.includes("const ALT_STEP = STEPS.findIndex((s) => s.key === 'alt')") && planTsx.includes('onOpenPlace(r.name, ALT_STEP)'), '대안 행의 단추가 대안 단계 번호를 넘기지 않음')
+  check(/if \(startStep !== undefined && stepTitles\[startStep\]\) jump\(stepTitles\[startStep\]\.current\)\s*else titleRef\.current\?\.focus\(\)/.test(planTsx), '돌아온 계획이 떠났던 단계 제목으로 가지 않음')
+  console.log('  planResume 판정, 떠날 때 단계 번호만 남김, 돌아올 때 새 칸 없이 이어 씀, 단계 제목으로 이동 확인')
 }
 
 console.log(fail === 0 ? '\n모든 검사 통과' : `\n위반 ${fail}건`)

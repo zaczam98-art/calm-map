@@ -24,9 +24,11 @@
  *  PK14 소음이 덜한 곳 안내 줄은 순서가 적용된 때만 사이렌 한계 문장을 담음
  *  PK15 전체 목록 행의 설명 줄이 고른 시각의 칸을 말함
  *  PK16 비 예보 꼬리표가 고른 시각 이후의 예보만 반영함
- *  PK17 어디서의 '서울 전체'는 저장된 기준 장소를 지우고 '내 위치'는 그대로 둠. 덜 붐비는 곳 안내 줄의 낱말이 시트 막대 이름과 같음
+ *  PK17 어디서의 '서울 전체'와 후보가 없을 때의 '서울 전체에서 찾기'가 같은 길로 저장된 기준 장소를 지우고 '내 위치'는 그대로 둠(S1). '기준 지우기' 단추가 없음(S2). 혼잡 점수 한 이름(S3)
+ *  PK18 후보 카드 옆 '외출 계획 세우기'(F1): 카드 button의 형제, 표시 조건, 시각 값을 먼저 넘김, 전체 목록 행에는 없음, 시트가 계획을 함께 여는 연결
+ *  PK19 rankKey가 sortKey의 가운데 토막과 같음
  */
-import { readFileSync, mkdirSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -57,6 +59,7 @@ await build({
       export * from './src/lib/pickText.ts'
       export * from './src/lib/scoreWords.ts'
       export * from './src/lib/recPrefs.ts'
+      export { hasPlanCells } from './src/lib/plan.ts'
       export { clearAll, KEY_REC_ANCHOR } from './src/lib/profile.ts'
       export { noiseLookup } from './src/lib/noise.ts'
       export { factorTags, activeControls } from './src/lib/factors.ts'
@@ -384,6 +387,7 @@ const allTexts = []
   }
   for (const v of Object.values(L.PICK)) add(v)
   for (const [, label] of L.PRIORITIES) add(label)
+  for (const p of places) add(L.planOpenLabel(p.name))
   for (const fam of [true, false]) for (const n of [0, 1, 2, 3]) add(L.titleText(fam, n))
   for (const n of [0, 1, 3]) add(L.foundText(n))
   add(L.placeNoneText(121))
@@ -793,10 +797,11 @@ section('PK16', '비 예보 꼬리표와 고른 시각')
 }
 
 // ---------- PK17 ----------
-section('PK17', "어디서의 '서울 전체'가 기준 장소를 지움, 덜 붐비는 곳 안내 줄의 낱말")
+section('PK17', "서울 전체와 서울 전체에서 찾기가 기준 장소를 지움, 기준 지우기 단추 없음, 혼잡 점수 한 이름")
+const readSrc = (f) => readFileSync(path.join(root, f), 'utf-8')
 {
   // RecConditions의 칩 세 개 가운데 서울 전체만 onClearAnchor를 부르고, 내 위치와 다른 장소 근처는 기준을 그대로 둔다
-  const src = readFileSync(path.join(root, 'src/components/RecConditions.tsx'), 'utf-8')
+  const src = readSrc('src/components/RecConditions.tsx')
   const chipOf = (label) => {
     const end = src.indexOf(`{PICK.${label}}`)
     const start = src.lastIndexOf('<button', end)
@@ -808,20 +813,97 @@ section('PK17', "어디서의 '서울 전체'가 기준 장소를 지움, 덜 �
   check(all.includes('onClearAnchor()'), '서울 전체 칩이 onClearAnchor를 부르지 않음')
   check(gps !== '' && !gps.includes('onClearAnchor') && !gps.includes('saveAnchor'), '내 위치 칩이 기준 장소를 건드림')
   check(place !== '' && !place.includes('onClearAnchor'), '다른 장소 근처 칩이 기준 장소를 지움')
-  // onClearAnchor는 저장값을 지우고 anchor와 where를 서울 전체로 돌린다
-  const rec = readFileSync(path.join(root, 'src/components/Recommend.tsx'), 'utf-8')
-  check(/onClearAnchor=\{\(\) => \{\s*saveAnchor\(null\)\s*patchUi\(\{ anchor: null, where: 'all' \}\)/.test(rec), 'onClearAnchor가 저장값을 지우고 서울 전체로 돌리지 않음')
-  // 덜 붐비는 곳 안내 줄은 시트 '왜 이 지수인가요'의 첫 막대 이름을 그대로 쓰고, 화면 어디에도 없는 '혼잡 점수'라는 말은 쓰지 않는다
-  const bar = readFileSync(path.join(root, 'src/components/WhyIndex.tsx'), 'utf-8').match(/key: 'c', text: '([^']+)'/)?.[1]
-  check(bar === '혼잡만 보면', `시트 첫 막대 이름이 바뀜: ${bar}`)
+  // S1: clearAnchor는 저장값을 지우고 anchor와 where를 서울 전체로 돌리며, 서울 전체 칩과 후보가 없을 때의 '서울 전체에서 찾기'가 같은 함수를 부른다
+  const rec = readSrc('src/components/Recommend.tsx')
+  check(/const clearAnchor = \(\) => \{\s*saveAnchor\(null\)\s*patchUi\(\{ anchor: null, where: 'all' \}\)\s*\}/.test(rec), 'clearAnchor가 저장값을 지우고 서울 전체로 돌리지 않음')
+  check(/onClearAnchor=\{clearAnchor\}/.test(rec), '서울 전체 칩이 clearAnchor를 부르지 않음')
+  check(/if \(b === 'allSeoul'\) clearAnchor\(\)/.test(rec), "'서울 전체에서 찾기'가 clearAnchor를 부르지 않음")
+  check(!/patchUi\(\{ where: 'all' \}\)/.test(rec), '저장값을 지우지 않고 where만 바꾸는 호출이 남음')
+  check(L.EMPTY_BUTTON_TEXT.allSeoul === '서울 전체에서 찾기', "'서울 전체에서 찾기' 단추 글자")
+  // S2: '기준 지우기' 단추와 문구 키가 없고, 지우는 길을 말하는 문장이 두 길(서울 전체, 맞춤·기록 지우기)로 맞춰져 있다
+  check(!('clearAnchor' in L.PICK), 'PICK.clearAnchor가 남음')
+  check((src.match(/onClearAnchor\(\)/g) ?? []).length === 1 && !src.includes('PICK.clearAnchor'), 'RecConditions에 서울 전체 칩 말고 기준 지우기 호출이 남음')
+  const gone = '기준 ' + '지우기'
+  for (const f of ['src/lib/pickText.ts', 'src/components/RecConditions.tsx', 'src/components/Recommend.tsx', 'src/components/Info.tsx', 'README.md']) check(!readSrc(f).includes(gone), `${f}에 '${gone}'가 남음`)
+  check(readSrc('src/components/Info.tsx').includes('"어디서" 단추를 열고 "서울 전체"를 눌러도 지울 수 있습니다.'), '정보 탭의 지우는 길 문장')
+  check(readSrc('README.md').includes('"서울 전체에서 찾기"') && readSrc('README.md').includes('"이 기기의 맞춤·기록 지우기"'), 'README의 지우는 길 문장')
+  // S3: 시트 첫 막대와 덜 붐비는 곳 안내 줄이 '혼잡 점수' 한 이름을 쓰고, 옛 이름은 어디에도 없다
+  const bar = readSrc('src/components/WhyIndex.tsx').match(/key: 'c', text: '([^']+)'/)?.[1]
+  check(bar === '혼잡 점수', `시트 첫 막대 이름: ${bar}`)
   for (const o of [true, false]) {
     const g = L.guideText('crowd', o)
-    check(g.includes(`'${bar}' 점수가 낮은 곳을 앞에 둬요`), `덜 붐비는 곳 안내 줄에 시트 막대 이름이 없음: ${g}`)
-    check(!g.includes('혼잡 점수'), `덜 붐비는 곳 안내 줄에 '혼잡 점수'가 남음: ${g}`)
+    check(g === '같은 단계 안에서 혼잡 점수가 낮은 곳을 앞에 둬요. 지수는 그대로라서 순서와 다르게 보일 수 있어요.', `덜 붐비는 곳 안내 줄이 명세와 다름: ${g}`)
   }
   // 소음이 덜한 곳의 문장은 그대로
   check(L.guideText('noise', true, null).startsWith('같은 단계 안에서 평소 소음이 낮은 곳을 앞에 둬요. 지수는 그대로라서 순서와 다르게 보일 수 있어요.'), '소음이 덜한 곳 문장이 바뀜')
+  const old = '혼잡만 ' + '보면'
+  const walk = (dir) => readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : /\.(tsx?|css)$/.test(e.name) ? [path.join(dir, e.name)] : []))
+  for (const f of [...walk('src'), 'README.md']) check(!readSrc(f).includes(old), `${f}에 옛 이름이 남음`)
   console.log(`  덜 붐비는 곳 안내 줄: ${L.guideText('crowd', true)}`)
+}
+
+// ---------- PK18 ----------
+section('PK18', "후보 카드의 '외출 계획 세우기'(F1) 소스 사실")
+{
+  const cand = readSrc('src/components/RecCandidates.tsx')
+  const rec = readSrc('src/components/Recommend.tsx')
+  const detail = readSrc('src/components/PlaceDetail.tsx')
+  const app = readSrc('src/App.tsx')
+  // 카드 본체가 button이므로 계획 단추는 같은 li 안의 형제다(중첩 button 금지)
+  const li = cand.match(/<li key=\{c\.name\}>([\s\S]*?)<\/li>/)?.[1] ?? ''
+  const opens = [...li.matchAll(/<button\b/g)].map((m) => m.index)
+  const closes = [...li.matchAll(/<\/button>/g)].map((m) => m.index)
+  check(opens.length === 2 && closes.length === 2 && opens[1] > closes[0], '계획 단추가 카드 button 안에 들어 있거나 button이 둘이 아님')
+  check(li.includes('className="rec-item cand-item"') && li.includes('className="btn cand-plan"'), '카드와 계획 단추의 클래스')
+  check(li.includes('c.canPlan &&') && li.includes('aria-label={planOpenLabel(c.name)}') && li.includes('{PICK.planOpen}'), '계획 단추의 표시 조건, 접근 가능한 이름, 글자')
+  // 전체 목록 행에는 계획 단추를 더하지 않는다
+  const listPart = rec.slice(rec.indexOf('<ul className="rec-list">'))
+  check(listPart.length > 100 && !/PICK\.planOpen|cand-plan|onOpenPlan/.test(listPart), '전체 목록 행에 계획 단추가 있음')
+  // 표시 조건은 시트의 단추와 같은 함수다
+  check(rec.includes('canPlan: hasPlanCells(r.scores)') && detail.includes('const canPlan = !tooOld && hasPlanCells(scores)'), '표시 조건이 시트와 같은 hasPlanCells가 아님')
+  check(L.hasPlanCells([]) === false && L.hasPlanCells([{ index: null }]) === false && L.hasPlanCells([{ index: null }, { index: 0 }]) === true, 'hasPlanCells의 판정')
+  // 누르면 지도 시각을 추천 탭 '언제' 값으로 바꾼 다음에 그 장소의 시트와 계획을 연다
+  check(/onOpenPlan=\{\(name\) => \{\s*onSelectHour\(when\)\s*onOpenPlan\(name\)\s*\}\}/.test(rec), 'onSelectHour(when)을 먼저 부르지 않음')
+  // App: 신호 하나로 시트를 계획과 함께 열고(카드 전환 없이 openPlace), 시트가 신호를 받으면 지운다
+  check(/onOpenPlan=\{\(name\) => \{\s*setPlanFor\(name\)\s*openPlace\(name\)\s*\}\}/.test(app), 'App의 onOpenPlan이 신호를 정하고 openPlace를 부르지 않음')
+  check(app.includes('openPlan={planFor !== null && planFor === selected}') && app.includes('onPlanOpened={() => setPlanFor(null)}'), 'App이 시트에 계획 신호를 넘기지 않음')
+  check(app.includes('priority={recUi.priority}') && app.includes('onPriority={(priority) => setRecUi((u) => ({ ...u, priority }))}'), 'App이 시트에 우선순위 값과 setter를 넘기지 않음')
+  check(/if \(!openPlan\) return\s*onPlanOpened\?\.\(\)\s*if \(canPlan\) plan\.openPlan\(\)/.test(detail), 'PlaceDetail이 마운트 때 canPlan일 때만 계획을 열지 않음')
+  // 문구: 보이는 글자로 시작하는 접근 가능한 이름
+  check(L.PICK.planOpen === '외출 계획 세우기', `단추 글자: ${L.PICK.planOpen}`)
+  for (const p of places) check(L.planOpenLabel(p.name) === `외출 계획 세우기, ${p.name}` && L.planOpenLabel(p.name).startsWith(L.PICK.planOpen), `접근 가능한 이름 ${L.planOpenLabel(p.name)}`)
+  // 모양: 테두리와 모서리는 li가 갖고, 카드 본체와 계획 단추는 테두리 없이 그 안에 한 덩어리로 들어간다(단추가 자기 카드의 것으로 읽힘). 단추 높이는 .btn의 44px 이상.
+  const css = readSrc('src/styles/recommend.css')
+  check(/\.cand-list > li \{ border: 1px solid var\(--ctl-line\); border-radius: var\(--radius\);/.test(css), 'li가 카드의 테두리와 모서리를 갖지 않음')
+  check(/button\.cand-item \{[^}]*border: 0;/.test(css) && /button\.cand-plan \{[^}]*margin: 0;[^}]*border: 0; border-top: 1px solid var\(--line\);/.test(css), '카드 본체와 계획 단추가 테두리 없이 한 덩어리가 아님')
+  // 보정: 시트의 단추는 배포된 글자 그대로이고(카드의 단추만 새 글자), 계획과 함께 여는 시트는 처음부터 함께 그리며, 같은 장소의 시트가 열려 있어도 신호를 읽는다
+  const planTextSrc = readSrc('src/lib/planText.ts')
+  check(planTextSrc.includes("open: '외출 계획 만들기',") && detail.includes('>{PLAN.open}</button>'), '시트의 계획 단추 글자가 배포된 "외출 계획 만들기"가 아님')
+  check(/\}, \[openPlan\]\)/.test(detail) && detail.includes('usePlanOverlay(planBtn, startPlan, resume)') && detail.includes('const startPlan = canPlan && (openPlan || resume !== null)') && /enterProp && !startPlan/.test(detail) && detail.includes('if (!startPlan) sheet.current?.focus('), '같은 장소의 시트가 열려 있을 때 신호를 읽지 않거나, 시트가 계획보다 먼저 그려지거나, 계획의 포커스를 시트가 덮음')
+  check(readSrc('src/lib/planOverlay.ts').includes('useState(startOpen)') && rec.includes('className="rec-title" tabIndex={-1}') && detail.includes("document.querySelector<HTMLElement>('.rec-title')"), '시트를 닫을 때 누른 카드가 사라진 경우의 포커스 되돌림')
+  console.log('  카드 형제 단추, 표시 조건, 시각 값 순서, App과 PlaceDetail 연결 확인')
+}
+
+// ---------- PK19 ----------
+section('PK19', 'rankKey가 sortKey의 가운데 토막과 같음')
+{
+  let n = 0
+  for (const [, profile] of PROFILES) {
+    const S = makeSeries(profile)
+    for (const p of places) {
+      for (const cell of S.get(p.name)) {
+        if (cell.index === null || (cell.level !== 'calm' && cell.level !== 'mid')) continue
+        const r = { place: p, km: 3.25, cell, stale: false }
+        const R = cell.level === 'calm' ? 0 : 1
+        for (const pr of ['crowd', 'noise']) {
+          n++
+          check(same(L.sortKey(r, pr), [R, ...L.rankKey(cell, pr), cell.index, 3.25]), `sortKey와 rankKey 불일치 ${p.name} ${cell.time} ${pr}`)
+        }
+      }
+    }
+  }
+  check(same(L.rankKey({ parts: { c: 41.5 } }, 'crowd'), [42]) && same(L.rankKey({ nz: undefined }, 'noise'), [1, 0, 0]), 'rankKey 기본값')
+  console.log(`  칸 ${n}건`)
 }
 
 console.log(`\n${fail === 0 ? '통과' : `실패 ${fail}건`} ${Object.keys(fails).length ? JSON.stringify(fails) : ''}`)

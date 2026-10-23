@@ -25,7 +25,6 @@ export const PICK = {
   placeMore: '검색어를 더 적어 주세요.',
   placeHelp: `고른 장소에서 직선 ${NEARBY_MAX_KM}km 안의 곳을 찾아요. 고른 장소 이름은 이 기기에만 저장해요.`,
   gpsNote: '내 위치(GPS) 좌표는 거리 계산에만 쓰고, 저장하거나 어디로 보내지 않아요.',
-  clearAnchor: '기준 지우기',
   geoUnsupported: '이 브라우저는 위치 기능을 지원하지 않아요.',
   geoWait: '위치를 확인하는 중이에요…',
   geoFail: '위치를 확인하지 못했어요. 브라우저의 위치 권한을 확인해 주세요.',
@@ -37,6 +36,7 @@ export const PICK = {
   indexNote: '카드와 행에 적힌 숫자가 지수예요. 지수는 0~100이고 낮을수록 무던해요.',
   loading: '자료를 불러오는 중이에요…',
   noSnap: '서울시 자료도 데모 데이터도 받지 못해서 목록을 보여 드릴 수 없어요. 연결을 확인한 뒤 위의 다시 시도를 눌러 주세요.',
+  planOpen: '외출 계획 세우기',
   allSeoul: '서울 전체에서 찾기',
   allKinds: "종류를 '전체'로 바꾸기",
   foldPickTitle: '후보는 이렇게 골랐어요',
@@ -66,6 +66,9 @@ export function placeNoneText(n: number): string {
   return `찾는 장소가 목록에 없어요(서울시 추적 ${n}곳만 있어요)`
 }
 
+/** 후보 카드 옆 계획 단추의 접근 가능한 이름. 보이는 글자로 시작해서 읽기 도구와 음성 조작이 같은 말로 부른다. */
+export const planOpenLabel = (name: string): string => `${PICK.planOpen}, ${name}`
+
 /** 후보 수가 바뀔 때 스크린리더로만 알리는 문장 */
 export function foundText(n: number): string {
   return n > 0 ? `후보 ${n}곳을 찾았어요.` : ''
@@ -86,7 +89,7 @@ export function whereText(where: Where, anchor: string | null): string {
  * 순서가 적용된 소음 안내 줄 끝에는 사이렌·경적·알람을 센서로 알 수 없다는 한계를 붙인다(평균 소음이 낮아도 사이렌이 적다는 뜻으로 읽히지 않게 한다).
  */
 export function guideText(priority: Priority, hasOrigin: boolean, noiseGap: NoiseGap = null): string {
-  if (priority === 'crowd') return "같은 단계 안에서 '혼잡만 보면' 점수가 낮은 곳을 앞에 둬요. 지수는 그대로라서 순서와 다르게 보일 수 있어요."
+  if (priority === 'crowd') return '같은 단계 안에서 혼잡 점수가 낮은 곳을 앞에 둬요. 지수는 그대로라서 순서와 다르게 보일 수 있어요.'
   if (priority === 'noise') {
     if (noiseGap === 'file') return '소음 자료를 받지 못해서 이 순서는 적용하지 못했어요.'
     if (noiseGap === 'pool') return '이 후보들은 평소 소음 자료가 없어서 이 순서는 적용하지 못했어요.'

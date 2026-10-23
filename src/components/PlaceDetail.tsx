@@ -14,7 +14,10 @@ import { noiseLookup } from '../lib/noise'
 import { SHARED_BAND } from '../lib/landingCopy'
 import { basisLine } from '../lib/trustText'
 import { placeVt, useChangeTick, useCountUp } from '../lib/motion'
-import { usePlanOverlay } from '../lib/planOverlay'
+import { planResume, usePlanOverlay } from '../lib/planOverlay'
+import { hasPlanCells } from '../lib/plan'
+import { PLAN } from '../lib/planText'
+import type { Priority } from '../lib/pick'
 import HourChart from './HourChart'
 import CardView from './CardView'
 import NearbyCalm, { type NearbyRow } from './NearbyCalm'
@@ -65,9 +68,16 @@ interface Props {
   onIntro?: () => void
   /** 시트가 닫혀 있다가 열릴 때만 true. 열린 채 다른 장소로 바꾼 경우는 false라서 올라오는 애니메이션 없이 내용만 바뀐다. */
   enter?: boolean
+  /** '오늘은 이게 더 중요해요' 선택(추천 탭과 같은 값). 외출 계획의 대안을 줄 세우는 데만 쓴다. */
+  priority: Priority | null
+  onPriority: (p: Priority | null) => void
+  /** 추천 탭의 '외출 계획 세우기'로 열린 시트일 때 true. 마운트하자마자 계획을 함께 연다. */
+  openPlan?: boolean
+  /** 열 계획 신호를 받았다고 알린다(부모가 신호를 지운다) */
+  onPlanOpened?: () => void
 }
 
-export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, tooOld = false, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro, enter: enterProp = true }: Props) {
+export default function PlaceDetail({ place, places, pattern, noise, onSelect, nowKey, snap, sound, profile, offsets, onClose, onRecorded, onMeasure, tooOld = false, onGoChild, selectedHour: hourProp, onSelectHour, backTo, onBack, onIntro, enter: enterProp = true, priority, onPriority, openPlan = false, onPlanOpened }: Props) {
   const ps = snap?.places[place.name]
   const noiseAt = useMemo(() => noiseLookup(noise, place.name), [noise, place.name])
   const scores = useMemo(() => hourScores(ps, (h, d) => sound[place.name]?.[bucketKey(d, h)], profile, offsets[place.name] ?? 0, nowKey, noiseAt), [ps, sound, profile, offsets, place.name, nowKey, noiseAt])
@@ -102,7 +112,11 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const recordNote = shown ? recordChipAt(shown, bareScores, myOffset, profile.enabled) : null
   const profileTick = useChangeTick(profile) // 맞춤 설정이 바뀔 때마다 오르는 번호: 맞춤 전후 줄을 새로 그려 배경 강조를 한 번 돌린다
   const placeIdx = places.findIndex((p) => p.name === place.name) // 추천 목록의 카드와 같은 view-transition-name을 만드는 번호
-  const [enter] = useState(() => enterProp && document.documentElement.dataset.vt !== 'place') // 닫혀 있다가 열릴 때만 올라온다. 추천 카드에서 이어져 열리는 시트는 전환이 움직이므로 따로 쓰지 않는다.
+  const canPlan = !tooOld && hasPlanCells(scores) // 예측이 없거나 자료가 12시간 넘게 묵었으면 외출 계획을 만들지 않는다
+  const [back] = useState(() => planResume(place.name)) // 대안 시트에서 뒤로 돌아온 기록 칸이면(계획이 대안 단계로 떠난 칸) 그 계획을 같은 단계에서 다시 연다
+  const resume = canPlan ? back : null
+  const startPlan = canPlan && (openPlan || resume !== null) // 시트와 계획을 같은 화면에서 함께 그린다
+  const [enter] = useState(() => enterProp && !startPlan && document.documentElement.dataset.vt !== 'place') // 닫혀 있다가 열릴 때만 올라온다. 추천 카드에서 이어져 열리는 시트는 전환이 움직이므로 따로 쓰지 않고, 계획이 바로 덮는 시트도 올라오지 않는다.
   // 맞춤을 켰어도 지수가 하나도 달라지지 않았으면 공유 이미지에 '맞춤 반영'을 붙이지 않는다
   const adapted = profile.enabled && scores.some((s, i) => s.index !== plainScores[i]?.index)
   const chosen = profile.crowd !== 1 || profile.loud !== 1 || Object.values(profile.tags).some((v) => v !== 1)
@@ -204,18 +218,28 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
   const sheet = useRef<HTMLElement>(null)
   const opener = useRef<Element | null>(document.activeElement?.closest('.sheet, .plan-back') && lastOpener?.isConnected ? lastOpener : document.activeElement)
   const planBtn = useRef<HTMLButtonElement>(null)
-  const plan = usePlanOverlay(planBtn)
-  const canPlan = !tooOld && scores.some((c) => c.index !== null) // 예측이 없거나 자료가 12시간 넘게 묵었으면 외출 계획을 만들지 않는다
+  const plan = usePlanOverlay(planBtn, startPlan, resume)
   useEffect(() => {
     if (plan.open && !canPlan) plan.closePlan()
   }, [plan.open, plan.closePlan, canPlan])
+  // 추천 탭의 '외출 계획 세우기'로 열린 시트는 계획과 함께 열린다(열 수 없는 시트이면 시트만 연다). 같은 장소의 시트가 이미 열려 있으면 마운트가 일어나지 않으므로 신호가 바뀔 때마다 읽는다.
+  useEffect(() => {
+    if (!openPlan) return
+    onPlanOpened?.()
+    if (canPlan) plan.openPlan()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openPlan])
 
   // 시트가 열리면 시트로 포커스를 옮기고, 닫히면 열기 전 위치로 되돌린다
   useEffect(() => {
     lastOpener = opener.current
-    sheet.current?.focus({ preventScroll: true })
+    if (!startPlan) sheet.current?.focus({ preventScroll: true }) // 계획과 함께 열린 시트는 계획의 제목이 포커스를 가진다(자식 효과가 먼저 돌므로 여기서 가져가면 계획의 포커스를 덮는다)
     return () => {
-      if (opener.current instanceof HTMLElement) opener.current.focus()
+      const o = opener.current
+      if (!(o instanceof HTMLElement)) return
+      if (o.isConnected) o.focus()
+      // 시트가 열린 사이 목록이 바뀌어 누른 카드가 사라졌고 포커스를 둘 곳이 없으면 추천 목록의 제목으로 간다
+      else if (document.activeElement === document.body) document.querySelector<HTMLElement>('.rec-title')?.focus()
     }
   }, [])
 
@@ -406,7 +430,7 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
       {!tooOld && <HourChart animateIn={enterProp} scores={scores} highlight={rec.from} selectedHour={sel ? sel.hour : null} onSelectHour={pickHour} />}
       <div className="row sheet-actions">
         {!tooOld && <button className="btn primary" onClick={() => void makeCard(true)} disabled={loading}>{loading ? '만드는 중…' : '미리 보는 카드 만들기'}</button>}
-        {canPlan && <button className="btn" ref={planBtn} aria-haspopup="dialog" onClick={plan.openPlan}>외출 계획 만들기</button>}
+        {canPlan && <button className="btn" ref={planBtn} aria-haspopup="dialog" onClick={plan.openPlan}>{PLAN.open}</button>}
         <button className="btn" onClick={onMeasure}>여기서 소리 측정하기</button>
       </div>
       {/* 계획이 열려 있는 동안에도 카드를 언마운트하지 않고 감춘다(지역 상태와 포커스 이동을 지키려는 것) */}
@@ -428,13 +452,16 @@ export default function PlaceDetail({ place, places, pattern, noise, onSelect, n
           adapted={adapted}
           selectedHour={selectedHour}
           onPickHour={pickHour}
+          priority={priority}
+          onPriority={onPriority}
           card={card}
           assembled={assembled}
           loading={loading}
           cardFocus={cardFocus}
           onMakeCard={() => void makeCard(true)}
           onClose={plan.closePlan}
-          onOpenPlace={(name) => plan.leaveThen(() => onSelect(name, place.name))}
+          startStep={resume?.step}
+          onOpenPlace={(name, step) => plan.leaveTo(step, () => onSelect(name, place.name))}
         />
       )}
       {assembled?.reason && <p className="muted">{assembled.reason}</p>}

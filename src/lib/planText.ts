@@ -2,22 +2,27 @@ import type { HourScore, Snapshot } from '../types'
 import { LEVEL3_LABEL } from './index'
 import { calmRun, NEARBY_MAX_KM } from './nearby'
 import { PLACE_COUNT, runText, TXT, type Label } from './nearbyText'
+import type { NoiseGap, Priority } from './pick'
 import { MEMO_MAX, type MemoKey } from './plan'
+import { guideText } from './pickText'
 import { basisLine } from './trustText'
 
 // 외출 계획 화면의 문구는 모두 이 파일에서 만든다. 컴포넌트와 scripts/plan_check.mjs가 같은 코드를 쓴다.
 // 문체는 '~해요'체이고, 순위나 보증으로 읽히는 낱말('추천', '정확')은 쓰지 않는다.
 
-const ALT_HEAD = '안 맞을 때 가까운 다른 곳' // 구역 제목과 바로 가기 단추가 같은 이름을 쓴다
+/** 계획 화면의 세 단계. 번호가 붙은 제목과 맨 위 바로 가기 단추의 글자를 한 곳에 둔다. */
+export const STEPS = [
+  { key: 'when', head: '1. 언제 갈까요', jump: '1 언제' },
+  { key: 'info', head: '2. 미리 볼 정보', jump: '2 미리 볼 정보' },
+  { key: 'alt', head: '3. 안 맞을 때 가까운 다른 곳', jump: '3 안 맞을 때' },
+] as const
 
 export const PLAN = {
-  open: '외출 계획 만들기',
+  open: '외출 계획 만들기', // 장소 시트의 단추. 추천 카드의 단추 글자는 PICK.planOpen
   close: '닫기',
   jump: '바로 가기',
-  altJump: ALT_HEAD,
-  whenHead: '언제 갈까요',
   whenLabel: '도착할 시각',
-  whenHelp: '바꾸면 지도의 시각 선택도 함께 바뀌어요.',
+  whenHelp: '바꾸면 이 장소 시트와 지도의 시각도 함께 바뀌어요. 후보 목록의 시각은 그대로예요.',
   whenStale: '이 장소는 서울시 자료를 새로 받지 못해서 이전에 받은 값이에요.',
   cardHead: '미리 보는 카드',
   cardMake: '카드 만들기',
@@ -25,7 +30,7 @@ export const PLAN = {
   cardSame: '고른 시각의 단계(무던함, 보통, 붐빔)에 맞춰 만들어요.',
   cardWorking: '카드를 만드는 중이에요.',
   cardDone: '카드를 만들었어요.',
-  altHead: ALT_HEAD,
+  altGuideNear: '가까운 곳을 먼저 둬요. 무던함인지 보통인지는 따지지 않아요. 지수는 그대로예요.',
   altNoForecast: '이 시각은 예측이 없어서 다른 곳을 고르지 못했어요.',
   altDemo: '데모 데이터끼리만 비교한 값이라 실제 현장과 달라요.',
   altRetry: '다른 시각을 고르면 달라질 수 있어요.',
@@ -97,6 +102,9 @@ const altKind = (cell: HourScore): string => {
   if (cell.level === 'calm') return cell.forecast ? '무던할 것으로 예측되는' : '무던한 것으로 관측되는'
   return `더 낮은 단계로 ${cell.forecast ? '예측' : '관측'}되는`
 }
+
+/** 대안 구역의 우선순위 안내 줄. 덜 붐비는 곳과 소음이 덜한 곳은 추천 탭과 같은 문장이고, 가까운 곳은 대안이 단계를 가리지 않고 거리만 보므로 계획 전용 문장이다. */
+export const altGuide = (priority: Priority, noiseGap: NoiseGap): string => (priority === 'near' ? PLAN.altGuideNear : guideText(priority, true, noiseGap))
 
 /** 대안 소개 */
 export const altIntro = (cell: HourScore, when: string): string => `${when} 기준으로, 직선 ${NEARBY_MAX_KM}km 안에서 ${cell.level === 'calm' ? '같은 시각에 ' : ''}${altKind(cell)} 곳이에요.`

@@ -2,6 +2,7 @@ import type { ChildProfile, HourScore, Level3, NoiseData, Place, Snapshot } from
 import { hourScores } from './index'
 import { calmerNearby, candidateCell, distanceKm, NEARBY_MAX_KM, type NearbyItem } from './nearby'
 import { noiseLookup } from './noise'
+import { noiseGapOf, rankKey, type NoiseGap, type Picked, type Priority } from './pick'
 import { KEY_PLAN } from './profile'
 import { bucketKey, type SoundStore } from './snapshot'
 
@@ -82,20 +83,56 @@ export function scoresGetter(a: {
   }
 }
 
-/**
- * 고른 칸이 안 맞을 때 직선 6km 안에서 같은 시각에 단계가 더 낮은 곳을 단계, 거리 순으로 2곳까지 고른다.
- * 기준 칸이 무던함이면 무던한 곳만, 보통이나 붐빔이면 그보다 낮은 곳을 후보로 삼는다.
- */
-export function planAlternatives(a: {
+/** 외출 계획을 만들 수 있는 시계열인가: 지수가 있는 칸이 하나 이상. 자료가 12시간 넘게 묵은 경우(tooOld)는 부르는 쪽이 따로 거른다. */
+export const hasPlanCells = (scores: HourScore[]): boolean => scores.some((c) => c.index !== null)
+
+const ALT_LIMIT = 2 // 대안으로 보여 주는 최대 수
+
+interface PoolArgs {
   place: Place
   places: Place[]
   cell: HourScore
   getScores: (name: string) => HourScore[] | undefined
   isStale: (name: string) => boolean
-}): NearbyItem[] {
+}
+
+/**
+ * 고른 칸이 안 맞을 때 갈 수 있는 곳 전부: 직선 6km 안에서 같은 시각의 같은 종류(예측이나 관측) 칸이 있고 단계가 더 낮은 곳을 단계, 거리 순으로 늘어놓는다.
+ * 기준 칸이 무던함이면 무던한 곳만, 보통이나 붐빔이면 그보다 낮은 곳을 후보로 삼는다. 우선순위는 이 집합을 바꾸지 않는다.
+ */
+export function planPool(a: PoolArgs): NearbyItem[] {
   if (a.cell.index === null || a.cell.level === 'nodata') return []
   const target: Level3 = a.cell.level === 'calm' ? 'mid' : a.cell.level
-  return calmerNearby(a.place, target, a.places, (p) => (a.isStale(p.name) ? undefined : candidateCell(a.getScores(p.name), a.cell, false)), NEARBY_MAX_KM, 2)
+  return calmerNearby(a.place, target, a.places, (p) => (a.isStale(p.name) ? undefined : candidateCell(a.getScores(p.name), a.cell, false)), NEARBY_MAX_KM, Infinity, true)
+}
+
+/**
+ * 후보 집합을 '오늘은 이게 더 중요해요' 선택으로 줄 세워 앞의 2곳을 돌려준다. 키는 사전식이고 마지막 동점은 place.id다.
+ * 선택이 없으면 집합이 이미 (단계, 거리) 순이므로 그대로 쓴다. 덜 붐비는 곳은 (단계, 혼잡 점수, 거리), 소음이 덜한 곳은 (단계, 소음 키, 거리), 가까운 곳은 (거리)다.
+ */
+export function rankAlternatives(pool: NearbyItem[], priority: Priority | null): NearbyItem[] {
+  if (priority === null) return pool.slice(0, ALT_LIMIT)
+  const key = (it: NearbyItem): number[] => (priority === 'near' ? [it.km] : [it.level === 'calm' ? 0 : 1, ...rankKey(it.cell, priority), it.km])
+  const order = (a: NearbyItem, b: NearbyItem): number => {
+    const ka = key(a)
+    const kb = key(b)
+    for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i]
+    return a.place.id < b.place.id ? -1 : a.place.id > b.place.id ? 1 : 0
+  }
+  return [...pool].sort(order).slice(0, ALT_LIMIT)
+}
+
+/** 안 맞을 때 갈 대안 2곳까지. priority가 없으면 단계, 거리 순이다. */
+export function planAlternatives(a: PoolArgs & { priority?: Priority | null }): NearbyItem[] {
+  return rankAlternatives(planPool(a), a.priority ?? null)
+}
+
+/** '소음이 덜한 곳'을 골랐지만 후보 어디에도 소음 값이 없어서 순서를 적용하지 못하는 이유(추천 탭과 같은 noiseGapOf 판정) */
+export function planNoiseGap(pool: NearbyItem[], noiseLoaded: boolean): NoiseGap {
+  return noiseGapOf(
+    pool.map((it) => ({ place: it.place, km: it.km, stale: false, cell: it.cell as Picked['cell'] })),
+    noiseLoaded,
+  )
 }
 
 /** 맞춤을 켰어도 고른 민감도도, 비교에 든 6km 안 장소의 기록 보정도 없으면 지수가 기본 기준과 같다(시트의 무던한 곳 안내와 같은 판정) */

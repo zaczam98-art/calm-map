@@ -306,6 +306,8 @@ console.log('[F6] 렌더')
       const kind = v.forecast ? '예측' : '관측'
       if (!html.includes(L.SIREN_WHY)) bad(`${tag}: 사이렌 줄이 없음`)
       if (!html.includes('class="why-words"')) bad(`${tag}: ul.why-words가 없음`)
+      // 결정 41: 첫 막대는 정렬 키와 같은 값이고 '혼잡 점수' 한 이름으로 부른다
+      if (!/<ol class="why-rows"><li[^>]*><span class="why-l">혼잡 점수<\/span>/.test(html)) bad(`${tag}: 첫 막대 이름이 '혼잡 점수'가 아님`)
       if (v.crowdLevel) {
         const eyo = { 여유: '예요', 보통: '이에요', '약간 붐빔': '이에요', 붐빔: '이에요' }[v.crowdLevel]
         if (!html.includes(`서울시 혼잡도 ${kind}은 '${v.crowdLevel}'${eyo}.`)) bad(`${tag}: 혼잡 문장이 없음`)

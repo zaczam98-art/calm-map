@@ -371,6 +371,7 @@ export default function App() {
     refresh()
   }, [])
   const [recUi, setRecUi] = useState<RecommendUi>(initialRecUi)
+  const [planFor, setPlanFor] = useState<string | null>(null) // 추천 카드의 '외출 계획 세우기'로 열 장소. 시트가 마운트하며 계획을 함께 열고 이 신호를 지운다
   useEffect(() => {
     void loadSoundStore().then(setSound)
   }, [soundVersion])
@@ -613,6 +614,10 @@ export default function App() {
             backTo={backTo}
             onBack={() => window.history.back()}
             onIntro={view === 'map' && selected === sharedPlace ? openStart : undefined}
+            priority={recUi.priority}
+            onPriority={(priority) => setRecUi((u) => ({ ...u, priority }))}
+            openPlan={planFor !== null && planFor === selected}
+            onPlanOpened={() => setPlanFor(null)}
           />
         )}
         {view === 'recommend' && (
@@ -629,6 +634,10 @@ export default function App() {
             onUi={setRecUi}
             onOpen={openPlace}
             onSelectHour={setSelectedHour}
+            onOpenPlan={(name) => {
+              setPlanFor(name)
+              openPlace(name)
+            }}
           />
         )}
         {view === 'child' && (

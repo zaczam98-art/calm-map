@@ -4,13 +4,16 @@ import type { ChildProfile, HourScore, NoiseData, Place, Snapshot } from '../typ
 import { DAY_FROM, DAY_TO, LEVEL3_LABEL, scoreAt, type recommend } from '../lib/index'
 import { calmRun, NEARBY_FAR_KM, noiseState } from '../lib/nearby'
 import { customText, metaText, midText, runText, TXT, type Label } from '../lib/nearbyText'
-import { customApplied, emptyMemo, loadMemo, MEMO_MAX, memoIsEmpty, planAlternatives, saveMemo, scoresGetter, type Memo, type MemoKey } from '../lib/plan'
-import { altEmpty, altGoLabel, altIntro, cardOther, evidenceText, isNowCell, liveWhen, MEMO_FIELDS, PLAN, planTitle, whenLines, whenName, whenOption } from '../lib/planText'
+import type { Priority } from '../lib/pick'
+import { PICK, PRIORITIES } from '../lib/pickText'
+import { customApplied, emptyMemo, loadMemo, MEMO_MAX, memoIsEmpty, planNoiseGap, planPool, rankAlternatives, saveMemo, scoresGetter, type Memo, type MemoKey } from '../lib/plan'
+import { altEmpty, altGoLabel, altGuide, altIntro, cardOther, evidenceText, isNowCell, liveWhen, MEMO_FIELDS, PLAN, planTitle, STEPS, whenLines, whenName, whenOption } from '../lib/planText'
 import { SIREN_GUIDE } from '../lib/scoreWords'
 import type { SoundStore } from '../lib/snapshot'
 import type { AssembledCard } from '../lib/cards'
 import CardView from './CardView'
 import ShareImage from './ShareImage'
+import '../styles/recommend.css' // 우선순위 칩은 추천 탭과 같은 모양이다
 import '../styles/plan.css'
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, a[href]'
@@ -47,23 +50,29 @@ interface Props {
   selectedHour: number | null
   /** 지도 슬라이더와 시트가 함께 쓰는 선택 시각(null=지금)을 바꾼다 */
   onPickHour: (hour: number | null) => void
+  /** '오늘은 이게 더 중요해요' 선택. 추천 탭과 같은 값이고, 대안을 줄 세우는 키에만 쓰인다. */
+  priority: Priority | null
+  onPriority: (p: Priority | null) => void
   card: { note: string } | null
   assembled: AssembledCard | null
   loading: boolean
   cardFocus: number
   onMakeCard: () => void
+  /** 대안 단계 번호(0부터). 대안 시트에서 뒤로 돌아오면 계획이 이 단계에서 다시 열린다. */
+  startStep?: number
   onClose: () => void
-  /** 대안 장소의 시트를 연다(계획이 쌓은 기록 칸을 먼저 되돌린 뒤) */
-  onOpenPlace: (name: string) => void
+  /** 대안 장소의 시트를 연다. step은 돌아올 때 다시 열 단계다. */
+  onOpenPlace: (name: string, step: number) => void
 }
 
+const ALT_STEP = STEPS.findIndex((s) => s.key === 'alt')
+
 /** 전체 화면 외출 계획. 열리면 제목으로 포커스를 옮기고, 화면 안에서만 Tab이 돈다. 열려 있을 때만 마운트된다. */
-export default function Plan({ place, places, scores, shown, rec, label, nowKey, snap, sound, profile, offsets, noise, adapted, selectedHour, onPickHour, card, assembled, loading, cardFocus, onMakeCard, onClose, onOpenPlace }: Props) {
+export default function Plan({ place, places, scores, shown, rec, label, nowKey, snap, sound, profile, offsets, noise, adapted, selectedHour, onPickHour, priority, onPriority, card, assembled, loading, cardFocus, onMakeCard, startStep, onClose, onOpenPlace }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const firstInput = useRef<HTMLTextAreaElement | null>(null)
-  const altTitle = useRef<HTMLHeadingElement>(null)
-  const memoTitle = useRef<HTMLHeadingElement>(null)
+  const stepTitles = [useRef<HTMLHeadingElement>(null), useRef<HTMLHeadingElement>(null), useRef<HTMLHeadingElement>(null)] // STEPS와 같은 순서
   const id = useId()
   const now = scores[0]
   const isNow = isNowCell(shown, scores, nowKey)
@@ -96,13 +105,15 @@ export default function Plan({ place, places, scores, shown, rec, label, nowKey,
     }
   }, [loading])
 
-  // 안 맞을 때 가까운 다른 곳
+  // 안 맞을 때 가까운 다른 곳: 후보 집합은 우선순위와 무관하고, 우선순위는 앞의 2곳을 고르는 순서에만 들어간다
   const baseStale = snap?.places[place.name]?.stale === true
   const getScores = useMemo(() => scoresGetter({ snap, sound, profile, offsets, nowKey, noise, place, scores }), [snap, sound, profile, offsets, nowKey, noise, place, scores])
-  const alts = useMemo(
-    () => (baseStale ? [] : planAlternatives({ place, places, cell: shown, getScores, isStale: (n) => snap?.places[n]?.stale === true })),
+  const pool = useMemo(
+    () => (baseStale ? [] : planPool({ place, places, cell: shown, getScores, isStale: (n) => snap?.places[n]?.stale === true })),
     [baseStale, place, places, shown, getScores, snap],
   )
+  const alts = useMemo(() => rankAlternatives(pool, priority), [pool, priority])
+  const noiseGap = priority === 'noise' ? planNoiseGap(pool, noise !== null) : null
   const tagNoise = noise !== null && noiseState(noise, place.name, shown) !== 'allMissing' // 소음 자료가 없는 시간대는 후보마다 표지를 붙이지 않는다
   const rows = alts.map((it) => {
     const ns = noiseState(noise, it.place.name, it.cell)
@@ -170,9 +181,11 @@ export default function Plan({ place, places, scores, shown, rec, label, nowKey,
     firstInput.current?.focus() // 누른 단추가 비활성이 되므로 포커스를 첫 입력 칸으로 옮긴다
   }
 
-  // 마지막에 제목으로 포커스를 옮긴다(자식인 카드가 마운트될 때 가져간 포커스보다 나중에 돌아 이긴다)
+  // 마지막에 제목으로 포커스를 옮긴다(자식인 카드가 마운트될 때 가져간 포커스보다 나중에 돌아 이긴다). 대안 시트에서 돌아와 다시 열린 계획은 떠났던 단계의 제목으로 간다.
   useEffect(() => {
-    titleRef.current?.focus()
+    if (startStep !== undefined && stepTitles[startStep]) jump(stepTitles[startStep].current)
+    else titleRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 포털 자손(한 단계씩 보기)에서 올라온 키는 그쪽이 처리한다. Esc는 계획만 닫고 시트는 남긴다.
@@ -197,6 +210,7 @@ export default function Plan({ place, places, scores, shown, rec, label, nowKey,
   }
 
   const noForecast = shown.index === null || shown.level === 'nodata'
+  const MemoHead = card && assembled ? 'h3' : 'h4' // 카드가 있으면 CardView의 제목(h3)과 같은 층에 두어, 메모가 카드의 하위 항목으로 읽히지 않게 한다
   const live = snap?.source === 'seoul' // 데모 데이터이면 서울시 실시간 자료처럼 읽히는 문장과 공유 이미지를 쓰지 않는다
   const updatedAt = live ? snap.updatedAt : undefined
 
@@ -208,114 +222,132 @@ export default function Plan({ place, places, scores, shown, rec, label, nowKey,
       <div className="plan-body">
         <h2 id={`${id}-title`} tabIndex={-1} ref={titleRef}>{planTitle(place.name)}</h2>
         <div className="plan-jump" role="group" aria-label={PLAN.jump}>
-          <button className="btn" onClick={() => jump(altTitle.current)}>{PLAN.altJump}</button>
-          <button className="btn" onClick={() => jump(memoTitle.current)}>{PLAN.memoHead}</button>
+          {STEPS.map((s, i) => (
+            <button key={s.key} className="btn" onClick={() => jump(stepTitles[i].current)}>{s.jump}</button>
+          ))}
         </div>
         <p role="status" className="cs-sr">{liveTime}</p>
         <p role="status" className="cs-sr">{liveCard}</p>
 
-        <section className="card plan-when">
-          <h3>{PLAN.whenHead}</h3>
-          <label htmlFor={`${id}-when`} className="plan-label">{PLAN.whenLabel}</label>
-          <select id={`${id}-when`} value={valueOf(shown)} onChange={(e) => onWhen(e.target.value)} aria-describedby={`${id}-when-help`}>
-            {options.map((c) => (
-              <option key={c.time} value={valueOf(c)}>{whenOption(c, { isNow: isNowCell(c, scores, nowKey), isRec: c.hour === rec.from, label })}</option>
-            ))}
-          </select>
-          <p id={`${id}-when-help`} className="muted">{PLAN.whenHelp}</p>
-          <p className="plan-head"><b>{lines.head}</b></p>
-          {lines.sub && <p>{lines.sub}</p>}
-          {lines.rec && <p><b>{lines.rec}</b></p>}
-          {lines.basis && <p className="muted">{lines.basis}</p>}
-          {baseStale && <p className="muted">{PLAN.whenStale}</p>}
+        <section className="plan-step">
+          <h3 className="plan-step-head" tabIndex={-1} ref={stepTitles[0]}>{STEPS[0].head}</h3>
+          <div className="card plan-when">
+            <label htmlFor={`${id}-when`} className="plan-label">{PLAN.whenLabel}</label>
+            <select id={`${id}-when`} value={valueOf(shown)} onChange={(e) => onWhen(e.target.value)} aria-describedby={`${id}-when-help`}>
+              {options.map((c) => (
+                <option key={c.time} value={valueOf(c)}>{whenOption(c, { isNow: isNowCell(c, scores, nowKey), isRec: c.hour === rec.from, label })}</option>
+              ))}
+            </select>
+            <p id={`${id}-when-help`} className="muted">{PLAN.whenHelp}</p>
+            <p className="plan-head"><b>{lines.head}</b></p>
+            {lines.sub && <p>{lines.sub}</p>}
+            {lines.rec && <p><b>{lines.rec}</b></p>}
+            {lines.basis && <p className="muted">{lines.basis}</p>}
+            {baseStale && <p className="muted">{PLAN.whenStale}</p>}
+          </div>
         </section>
 
-        <section className="card">
-          <h3 tabIndex={-1} ref={altTitle}>{PLAN.altHead}</h3>
-          {baseStale ? (
-            <p className="muted">{TXT.baseStale}</p>
-          ) : noForecast ? (
-            <p className="muted">{PLAN.altNoForecast}</p>
-          ) : rows.length === 0 ? (
-            <p className="muted">{altEmpty(shown, when)}{options.length > 1 && ` ${PLAN.altRetry}`}</p>
-          ) : (
+        <section className="plan-step">
+          <h3 className="plan-step-head" tabIndex={-1} ref={stepTitles[1]}>{STEPS[1].head}</h3>
+          {card && assembled ? (
             <>
-              <p>{altIntro(shown, when)}</p>
-              <ul className="nearby">
-                {rows.map((r) => (
-                  <li key={r.name} className="plan-alt">
-                    <span className={`pill ${r.level}`}>{LEVEL3_LABEL[r.level]}</span>
-                    <span className="nearby-name">{r.name}</span>
-                    <span className="muted">{r.meta}</span>
-                    <span className="nearby-sub muted">{r.sub}</span>
-                    {(r.far || r.noNoise) && (
-                      <span className="nearby-tags">
-                        {r.far && <span className="nearby-far">{TXT.far}</span>}
-                        {r.noNoise && <span className="nonoise">{TXT.noNoise}</span>}
-                      </span>
-                    )}
-                    <button className="btn plan-alt-go" aria-label={altGoLabel(r.name)} onClick={() => onOpenPlace(r.name)}>{PLAN.altGo}</button>
-                  </li>
-                ))}
-              </ul>
-              {rows.some((r) => r.far) && <p className="muted nearby-note">{TXT.farNote}</p>}
-              <p className="nearby-note">{TXT.safe}</p>
-              <p className="muted nearby-note">{evidenceText(live)}</p>
-              <p className="muted nearby-note">{customText(profile.enabled, customApplied(profile, offsets, place, places))}</p>
-              {profile.enabled && profile.tags.sudden > 1 && <p className="muted nearby-note">{SIREN_GUIDE}</p>}
+              <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />
+              {assembled.reason && <p className="muted">{assembled.reason}</p>}
+              {cardCell !== shown && <p className="muted">{cardLine}</p>}
             </>
+          ) : (
+            <div className="card">
+              <div className="plan-card-row">
+                <h4>{PLAN.cardHead}</h4>
+                <button className="btn primary" onClick={onMakeCard} disabled={loading}>{loading ? PLAN.cardBusy : PLAN.cardMake}</button>
+              </div>
+              <p className="muted">{cardLine}</p>
+            </div>
           )}
+          <div className="card plan-memo">
+            <MemoHead id={`${id}-memo-head`} className="plan-sub">{PLAN.memoHead}</MemoHead>
+            <p id={`${id}-memo-note`} className="muted">{PLAN.memoNote}</p>
+            {/* 안내 문장은 칸마다 잇지 않고 묶음에 한 번만 잇는다(스크린리더가 칸을 옮길 때마다 같은 문장을 다시 읽지 않게) */}
+            <div role="group" aria-labelledby={`${id}-memo-head`} aria-describedby={`${id}-memo-note`}>
+              {MEMO_FIELDS.map((f, i) => (
+                <div key={f.key} className="plan-field">
+                  <label htmlFor={`${id}-${f.key}`} className="plan-label">{f.label}</label>
+                  <textarea
+                    id={`${id}-${f.key}`}
+                    ref={(el) => {
+                      if (i === 0) firstInput.current = el
+                      fit(el)
+                    }}
+                    rows={1}
+                    maxLength={MEMO_MAX}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={f.placeholder}
+                    value={memo[f.key]}
+                    onChange={(e) => edit(f.key, e.target.value.replace(/[\r\n]+/g, ' '))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.preventDefault() // 메모는 줄바꿈 없이 한 줄로 이어 쓴다
+                    }}
+                    onBlur={() => flush(true)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="row">
+              <button className="btn" onClick={clearMemo} disabled={memoIsEmpty(memo)}>{PLAN.memoClear}</button>
+            </div>
+            <p role="status" className="muted plan-save">{saveMsg}</p>
+          </div>
         </section>
 
-        {card && assembled ? (
-          <>
-            <CardView card={assembled.card} note={card.note} place={place.name} focusToken={cardFocus} />
-            {assembled.reason && <p className="muted">{assembled.reason}</p>}
-            {cardCell !== shown && <p className="muted">{cardLine}</p>}
-          </>
-        ) : (
-          <section className="card">
-            <div className="plan-card-row">
-              <h3>{PLAN.cardHead}</h3>
-              <button className="btn primary" onClick={onMakeCard} disabled={loading}>{loading ? PLAN.cardBusy : PLAN.cardMake}</button>
-            </div>
-            <p className="muted">{cardLine}</p>
-          </section>
-        )}
-
-        <section className="card plan-memo">
-          <h3 id={`${id}-memo-head`} tabIndex={-1} ref={memoTitle}>{PLAN.memoHead}</h3>
-          <p id={`${id}-memo-note`} className="muted">{PLAN.memoNote}</p>
-          {/* 안내 문장은 칸마다 잇지 않고 묶음에 한 번만 잇는다(스크린리더가 칸을 옮길 때마다 같은 문장을 다시 읽지 않게) */}
-          <div role="group" aria-labelledby={`${id}-memo-head`} aria-describedby={`${id}-memo-note`}>
-            {MEMO_FIELDS.map((f, i) => (
-              <div key={f.key} className="plan-field">
-                <label htmlFor={`${id}-${f.key}`} className="plan-label">{f.label}</label>
-                <textarea
-                  id={`${id}-${f.key}`}
-                  ref={(el) => {
-                    if (i === 0) firstInput.current = el
-                    fit(el)
-                  }}
-                  rows={1}
-                  maxLength={MEMO_MAX}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder={f.placeholder}
-                  value={memo[f.key]}
-                  onChange={(e) => edit(f.key, e.target.value.replace(/[\r\n]+/g, ' '))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.preventDefault() // 메모는 줄바꿈 없이 한 줄로 이어 쓴다
-                  }}
-                  onBlur={() => flush(true)}
-                />
-              </div>
-            ))}
+        <section className="plan-step">
+          <h3 className="plan-step-head" tabIndex={-1} ref={stepTitles[2]}>{STEPS[2].head}</h3>
+          <div className="card">
+            {baseStale ? (
+              <p className="muted">{TXT.baseStale}</p>
+            ) : noForecast ? (
+              <p className="muted">{PLAN.altNoForecast}</p>
+            ) : rows.length === 0 ? (
+              <p className="muted">{altEmpty(shown, when)}{options.length > 1 && ` ${PLAN.altRetry}`}</p>
+            ) : (
+              <>
+                <div className="rec-prio plan-prio" role="group" aria-labelledby={`${id}-prio-l`}>
+                  <span id={`${id}-prio-l`} className="rec-prio-l">{PICK.priorityLabel}</span>
+                  <div className="rec-prio-chips">
+                    {PRIORITIES.map(([key, label]) => (
+                      <button key={key} type="button" className={priority === key ? 'chip on' : 'chip'} aria-pressed={priority === key} onClick={() => onPriority(priority === key ? null : key)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="muted rec-prio-g" role="status">{priority ? altGuide(priority, noiseGap) : ''}</p>
+                </div>
+                <p>{altIntro(shown, when)}</p>
+                <ul className="nearby">
+                  {rows.map((r) => (
+                    <li key={r.name} className="plan-alt">
+                      <span className={`pill ${r.level}`}>{LEVEL3_LABEL[r.level]}</span>
+                      <span className="nearby-name">{r.name}</span>
+                      <span className="muted">{r.meta}</span>
+                      <span className="nearby-sub muted">{r.sub}</span>
+                      {(r.far || r.noNoise) && (
+                        <span className="nearby-tags">
+                          {r.far && <span className="nearby-far">{TXT.far}</span>}
+                          {r.noNoise && <span className="nonoise">{TXT.noNoise}</span>}
+                        </span>
+                      )}
+                      <button className="btn plan-alt-go" aria-label={altGoLabel(r.name)} onClick={() => onOpenPlace(r.name, ALT_STEP)}>{PLAN.altGo}</button>
+                    </li>
+                  ))}
+                </ul>
+                {rows.some((r) => r.far) && <p className="muted nearby-note">{TXT.farNote}</p>}
+                <p className="nearby-note">{TXT.safe}</p>
+                <p className="muted nearby-note">{evidenceText(live)}</p>
+                <p className="muted nearby-note">{customText(profile.enabled, customApplied(profile, offsets, place, places))}</p>
+                {profile.enabled && profile.tags.sudden > 1 && <p className="muted nearby-note">{SIREN_GUIDE}</p>}
+              </>
+            )}
           </div>
-          <div className="row">
-            <button className="btn" onClick={clearMemo} disabled={memoIsEmpty(memo)}>{PLAN.memoClear}</button>
-          </div>
-          <p role="status" className="muted plan-save">{saveMsg}</p>
         </section>
 
         {updatedAt && (

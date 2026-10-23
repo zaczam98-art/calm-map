@@ -4,7 +4,10 @@
 .plan-body { flex: none; width: 100%; max-width: 560px; margin: 0 auto; }
 .plan-back { scroll-padding-top: 72px; } /* 위쪽 고정 닫기 막대(약 58px) 아래로 포커스와 바로 가기 대상이 놓이게 한다 */
 .plan-body h2 { font-size: 20px; }
-.plan-jump { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.plan-jump { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 4px; }
+.plan-step-head { font-size: 17px; margin: 14px 0 8px; } /* 단계 제목은 카드 밖 위에 둔다(카드 안에 카드가 겹치지 않게) */
+.plan-body h4, .plan-body .card h3.plan-sub { font-size: 16px; line-height: 1.3; margin: 0 0 6px; } /* 카드가 있을 때의 내 메모 제목은 h3이지만 모양은 부제목 그대로다(detail.css의 .card h3:not(.sub) 17px보다 선택자가 앞선다) */
+.plan-prio { margin: 0 0 10px; }
 .plan-body h2:focus, .plan-body h3:focus { outline: none; }
 .plan-body h2:focus-visible, .plan-body h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .plan-back textarea:focus-visible, .plan-back select:focus-visible, .plan-back summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -13,7 +16,7 @@
 .plan-when .muted { margin-top: 6px; }
 .plan-head { margin: 12px 0 6px; }
 .plan-card-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
-.plan-card-row h3 { margin: 0; }
+.plan-card-row h4 { margin: 0; }
 /* 대안 행: 시트의 무던한 곳 안내(.nearby-btn)와 같은 모양에 '이곳 보기' 단추를 더한다 */
 .plan-alt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--ctl-line); border-radius: 10px; background: var(--card); }
 .plan-alt-go { flex: 1 0 100%; }

@@ -171,18 +171,6 @@ export default function RecConditions({ places, ui, where, when, slots, phase, h
             )}
             <p className="muted">{PICK.gpsNote}</p>
             <p className="muted rec-geo" role="status">{geoMsg ?? ''}</p>
-            {ui.anchor && (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  onClearAnchor()
-                  closeTo('where')
-                }}
-              >
-                {PICK.clearAnchor}
-              </button>
-            )}
           </>
         )}
       </div>

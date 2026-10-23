@@ -57,14 +57,22 @@ export function extraFrom(extra: PlaceExtra | undefined, fromHour: number | unde
   return { ...extra, weather: { ...extra.weather, rainHours: extra.weather.rainHours.filter((h) => h >= fromHour) } }
 }
 
+/**
+ * '덜 붐비는 곳'과 '소음이 덜한 곳'이 같은 단계 안에서 가르는 값(키의 가운데 토막). 추천 탭의 sortKey와 외출 계획의 대안 정렬이 함께 쓴다.
+ * 덜 붐비는 곳은 혼잡 점수 C를 반올림한 값이고, 소음이 덜한 곳은 소음 자료가 없으면 1 아니면 0, 평소 소음 반올림, 갑자기 커짐 가산이다.
+ */
+export function rankKey(c: HourScore, priority: 'crowd' | 'noise'): number[] {
+  if (priority === 'crowd') return [Math.round(c.parts?.c ?? 0)]
+  return c.nz ? [0, Math.round(c.nz.avg), spikeAdd(c.nz)] : [1, 0, 0]
+}
+
 /** 정렬 키(사전식, 앞이 우선). R은 무던함 0, 보통 1. 마지막 동점은 place.id(문자열 비교)로 정한다. */
 export function sortKey(r: Picked, priority: Priority | null): number[] {
   const c = r.cell
   const R = c.level === 'calm' ? 0 : 1
   const I = c.index
   const d = r.km ?? 0
-  if (priority === 'crowd') return [R, Math.round(c.parts?.c ?? 0), I, d]
-  if (priority === 'noise') return c.nz ? [R, 0, Math.round(c.nz.avg), spikeAdd(c.nz), I, d] : [R, 1, 0, 0, I, d]
+  if (priority === 'crowd' || priority === 'noise') return [R, ...rankKey(c, priority), I, d]
   if (priority === 'near') return [R, d, I]
   return [R, I, d]
 }

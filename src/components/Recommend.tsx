@@ -13,6 +13,7 @@ import { cellFor, clockOf, GROUPS, extraFrom, hasLaterDay, isCustomApplied, isFa
 import { emptyView, foundText, foldPickBrief, foldPickSteps, listIntro, PICK, placeNoneText, priorityMarker, reasonText, rowLineText, titleText, type EmptyButton } from '../lib/pickText'
 import { saveAnchor, type RecommendUi, type Where } from '../lib/recPrefs'
 import { RECORD_LEGEND, recordChipAt, unappliedText } from '../lib/recordEffect'
+import { hasPlanCells } from '../lib/plan'
 import Fold from './Fold'
 import RecConditions from './RecConditions'
 import RecCandidates, { type CandCard } from './RecCandidates'
@@ -35,6 +36,8 @@ interface Props {
   onOpen: (name: string, from?: string, card?: Element) => void
   /** 카드를 누르면 시트를 카드와 같은 시각으로 열도록 지도의 시각 선택(0~23, null=지금)을 바꾼다 */
   onSelectHour: (hour: number | null) => void
+  /** 카드 옆 '외출 계획 세우기': 그 장소의 시트를 열고 곧바로 계획을 함께 연다 */
+  onOpenPlan: (name: string) => void
 }
 
 const RANK: Record<Level3, number> = { calm: 0, mid: 1, busy: 2, nodata: 3 }
@@ -45,7 +48,7 @@ function sourceNote(snap: Snapshot | null, loading: boolean): string {
   return basisLine(snap)
 }
 
-export default function Recommend({ places, snap, loading = false, sound, profile, offsets, nowKey, noise, ui, onUi, onOpen, onSelectHour }: Props) {
+export default function Recommend({ places, snap, loading = false, sound, profile, offsets, nowKey, noise, ui, onUi, onOpen, onSelectHour, onOpenPlan }: Props) {
   const { group, byDistance } = ui
   // 위치 확인처럼 나중에 도착하는 응답이 그 사이에 바뀐 선택을 되돌리지 않도록, 항상 최신 상태에 바뀐 값만 합쳐 보낸다
   const uiRef = useRef(ui)
@@ -111,6 +114,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
     isBase: where === 'place' && r.place.name === ui.anchor,
     far: r.km !== null && isFarKm(r.km),
     reason: reasonText(r.cell, r.scores, label, when === null),
+    canPlan: hasPlanCells(r.scores),
     tag: r.tags[0]?.label ?? null,
     chip: recordChipAt(r.cell, r.bare, offsets[r.place.name] ?? 0, profile.enabled),
     marker: priorityMarker(r.cell, ui.priority),
@@ -172,15 +176,21 @@ export default function Recommend({ places, snap, loading = false, sound, profil
     )
   }
 
+  // 어디서 패널의 '서울 전체'와 후보가 없을 때의 '서울 전체에서 찾기'가 같은 길로 저장된 기준 장소를 지운다
+  const clearAnchor = () => {
+    saveAnchor(null)
+    patchUi({ anchor: null, where: 'all' })
+  }
+
   const onEmptyButton = (b: EmptyButton) => {
-    if (b === 'allSeoul') patchUi({ where: 'all' })
+    if (b === 'allSeoul') clearAnchor()
     else if (b === 'allKinds') patchUi({ group: 0 })
     else patchUi({ when: null })
   }
 
   return (
     <div className="page">
-      <h2 className="rec-title">{titleText(profile.enabled || where !== 'all', cards.length)}</h2>
+      <h2 className="rec-title" tabIndex={-1}>{titleText(profile.enabled || where !== 'all', cards.length)}</h2>
       <p className="rec-sr" role="status">{foundText(cards.length)}</p>
       <RecConditions
         places={places}
@@ -199,10 +209,7 @@ export default function Recommend({ places, snap, loading = false, sound, profil
           saveAnchor(name)
           patchUi({ anchor: name, where: 'place' })
         }}
-        onClearAnchor={() => {
-          saveAnchor(null)
-          patchUi({ anchor: null, where: 'all' })
-        }}
+        onClearAnchor={clearAnchor}
       />
       <RecCandidates
         cards={cards}
@@ -211,6 +218,10 @@ export default function Recommend({ places, snap, loading = false, sound, profil
         onOpen={(name, card) => {
           onSelectHour(when)
           onOpen(name, undefined, card)
+        }}
+        onOpenPlan={(name) => {
+          onSelectHour(when)
+          onOpenPlan(name)
         }}
         onEmptyButton={onEmptyButton}
       />

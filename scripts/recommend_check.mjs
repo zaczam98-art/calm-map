@@ -152,6 +152,7 @@ for (const { dh, mm, key } of nowKeys) {
           const m = s.match(re)
           return m ? Number(m[1].replace('+', '')) : null
         }
+        if (!lis[0].includes('why-l">혼잡 점수<')) bad(`${name} ${c.time} 첫 막대 이름이 '혼잡 점수'가 아님: ${lis[0].slice(0, 60)}`)
         let run = num(lis[0], /why-v">(-?\d+)</)
         for (const li of lis.slice(1, -1)) {
           const label = li.match(/why-l">([^<]*)</)[1]

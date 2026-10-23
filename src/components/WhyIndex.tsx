@@ -44,7 +44,7 @@ export default function WhyIndex({ cell, label, noiseDays, personal, visits, bar
   if (!b) return null
   const { p, hasNoise, hasSound, afterNoise, afterSound, adjust } = b
 
-  const rows: { key: string; text: string; value: number; delta?: number }[] = [{ key: 'c', text: '혼잡만 보면', value: round(p.c) }]
+  const rows: { key: string; text: string; value: number; delta?: number }[] = [{ key: 'c', text: '혼잡 점수', value: round(p.c) }]
   if (hasNoise) rows.push({ key: 'n', text: '소음을 더하면', value: afterNoise, delta: afterNoise - round(p.c) })
   if (hasSound) rows.push({ key: 's', text: '소리를 더하면', value: afterSound, delta: afterSound - afterNoise })
 
