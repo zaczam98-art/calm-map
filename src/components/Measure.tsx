@@ -301,13 +301,14 @@ export default function Measure({ places, defaultPlace, onSubmitted, onRunningCh
           <button className="btn" onClick={prefetch}>⬇️ 모델 미리 받기</button>
         </div>
         <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>처음 한 번 약 16MB를 내려받아요. 와이파이를 권하고, 받은 모델은 이 기기에 저장해 둬요.</p>
-        <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>마이크가 없어도 샘플 소리로 체험할 수 있어요. 누르면 소리가 나요. 사이렌과 오토바이 엔진은 큰 소리예요. 아이가 가까이 있으면 볼륨을 낮춰 주세요. 샘플은 분류가 예상대로 나오는 예시를 고른 것이고, 공개 음원 920개로 잰 일치율은 정보 화면에 있어요.</p>
+        <p className="muted" style={{ marginTop: 12, marginBottom: 6 }}>마이크가 없어도 샘플 소리로 체험할 수 있어요. 누르면 소리가 나요. 사이렌과 오토바이 엔진은 큰 소리라 아이가 가까이 있으면 볼륨을 낮춰 주세요.</p>
         <label className="m-check"><input type="checkbox" checked={quiet} onChange={(e) => setQuiet(e.target.checked)} />소리 없이 분류만 하기</label>
         <div className="row" role="group" aria-label="샘플 소리">
           {SAMPLES.map((s) => (
             <button key={s.id} className="btn" onClick={() => void playSample(s)} disabled={running || starting}>🔊 {s.label}</button>
           ))}
         </div>
+        <p className="muted" style={{ marginTop: 6, marginBottom: 0, fontSize: 13 }}>샘플은 분류가 예상대로 나오는 예시를 고른 것이고, 공개 음원 920개로 잰 일치율은 정보 화면에 있어요.</p>
         <p className="muted" style={{ marginTop: 8 }}>들은 시간 약 {windows.length}초{last && ` · 소리 크기 ${loudLevel(last.dbfs)} (기기 기준 ${last.dbfs.toFixed(0)})`}</p>
         <div className="meter" role="progressbar" aria-label="소리 크기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-valuetext={last ? loudLevel(last.dbfs) : undefined}><div style={{ width: `${pct}%` }} /></div>
         {last && (

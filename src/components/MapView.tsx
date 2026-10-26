@@ -338,7 +338,8 @@ export default function MapView({ places, snap, sound, profile, offsets, nowKey,
         <span><i className="dot calm" />무던함{counts && <b>{counts.calm}</b>}</span>
         <span><i className="dot mid" />보통{counts && <b>{counts.mid}</b>}</span>
         <span><i className="dot busy" />붐빔{counts && <b>{counts.busy}</b>}</span>
-        <span><i className="dot nodata" />자료 없음{counts && <b>{counts.nodata}</b>}</span>
+        {/* 자료 없는 곳이 없으면 항목을 빼서 좁은 화면에서 범례가 한 줄에 들어가게 한다 */}
+        {(!counts || counts.nodata > 0) && <span><i className="dot nodata" />자료 없음{counts && <b>{counts.nodata}</b>}</span>}
         <span><i className="dot ring" />공사·통제{hour !== null && '(지금 기준)'}</span>
       </div>
     </div>

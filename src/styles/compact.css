@@ -1,10 +1,12 @@
 /* 장소 시트를 줄이는 접이식(Fold). 접힌 줄은 44px 이상이고 제목 아래에 한 줄 요약을 둔다. */
 .folds { margin: 0 0 12px; border-bottom: 1px solid var(--line); }
 .fold { border-top: 1px solid var(--line); }
-.fold > summary { display: grid; grid-template-columns: 18px 1fr; column-gap: 8px; align-items: center; min-height: 44px; padding: 6px 0; cursor: pointer; list-style: none; }
+.fold > summary { display: grid; grid-template-columns: 24px 1fr; column-gap: 8px; align-items: center; min-height: 44px; padding: 6px 0; cursor: pointer; list-style: none; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::before { content: '▸' / ''; grid-row: 1 / span 2; grid-column: 1; text-align: center; color: var(--accent); font-size: 18px; line-height: 1; } /* 대체 텍스트를 비워 접근 가능한 이름에 기호가 들어가지 않게 한다 */
+/* 펼침 표시: 연한 원 안의 꺾쇠. 글자 기호(▸)는 작아서 점처럼 보였다. 내용이 비어 접근 가능한 이름에는 들어가지 않는다 */
+.fold > summary::before { content: ''; grid-row: 1 / span 2; grid-column: 1; box-sizing: border-box; width: 24px; height: 24px; border-radius: 50%; background: #e6eef3 no-repeat center / 10px 10px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.5 1.5 7 5l-3.5 3.5' fill='none' stroke='%232f6f8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); transition: transform .15s; }
 .fold[open] > summary::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .fold > summary::before { transition: none; } }
 .fold > summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* 선택자를 길게 쓴 까닭: 시트의 `.card h3:not(.sub)`(17px)보다 앞서야 카드 안팎의 접이식 제목이 같은 크기가 된다 */
 .fold > summary > h3.fold-t:not(.sub), .fold > summary > h4.fold-t:not(.sub) { grid-column: 2; margin: 0; font-size: 16px; line-height: 1.35; font-weight: 700; color: var(--accent); }

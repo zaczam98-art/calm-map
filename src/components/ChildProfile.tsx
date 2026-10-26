@@ -194,7 +194,7 @@ export default function ChildProfileView({ profile, onChange, onCleared, onOffse
           </label>
           <span className="muted">켜면 지도와 추천의 지수가 아이 민감도로 다시 계산돼요.</span>
         </div>
-        <p className="muted child-preset-hint" id="child-preset-hint">아래 단추를 누르면 맞춤이 켜지고 일곱 항목이 한 번에 정해져요. 이미 직접 고른 값은 누른 단추의 값으로 바뀌어요.</p>
+        <p className="muted child-preset-hint" id="child-preset-hint">단추 하나로 맞춤이 켜지고 일곱 항목이 한 번에 정해져요.</p>
         <div className="child-presets" role="group" aria-labelledby="child-preset-hint">
           {PRESETS.map(([label, p]) => {
             const on = same(profile, p)
